@@ -1,0 +1,111 @@
+'use client';
+
+import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import { Pencil, Trash2, Heart, Ban } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+
+interface WishesAndBlockedListProps {
+  employees: WishesAndBlockedEmployee[];
+  onEdit: (employee: WishesAndBlockedEmployee) => void;
+  onDelete: (id: number) => void;
+  isDeleting?: boolean;
+}
+
+export function WishesAndBlockedList({ 
+  employees, 
+  onEdit, 
+  onDelete,
+  isDeleting 
+}: WishesAndBlockedListProps) {
+  if (employees.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        Keine Einträge vorhanden. Erstelle den ersten Eintrag!
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Mitarbeiter</TableHead>
+            <TableHead>Wünsche</TableHead>
+            <TableHead>Blockierungen</TableHead>
+            <TableHead className="text-right">Aktionen</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {employees.map((employee) => {
+            return (
+              <TableRow key={employee.key}>
+                <TableCell className="font-medium">
+                  <div className="flex flex-col">
+                    <span>{employee.firstname} {employee.name}</span>
+                    <span className="text-xs text-muted-foreground">ID: {employee.key}</span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Heart className="h-4 w-4 text-green-500" />
+                      <Badge variant="outline" className="bg-green-50">
+                        {employee.wish_days.length} Wunsch-Tage
+                      </Badge>
+                    </div>
+                    
+                      <Badge variant="outline" className="bg-green-100 ml-6">
+                        {employee.wish_shifts.length} Wunsch-Schichten
+                      </Badge>
+                    
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2">
+                      <Ban className="h-4 w-4 text-red-500" />
+                      <Badge variant="outline" className="bg-red-50">
+                        {employee.blocked_days.length} Blockierte Tage
+                      </Badge>
+                    </div>
+        
+                      <Badge variant="outline" className="bg-red-100 ml-6">
+                        {employee.blocked_shifts.length} Blockierte Schichten
+                      </Badge>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onEdit(employee)}
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => onDelete(employee.key)}
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
+    </div>
+  );
+}

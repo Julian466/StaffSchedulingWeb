@@ -1,0 +1,167 @@
+import { ScheduleSolution, ScheduleSolutionRaw, ScheduleEmployee, Shift, ScheduleStats } from '@/types/schedule';
+
+/**
+ * Parses a raw schedule solution from the solver into a structured format
+ * with calculated fulfilled wishes and other derived data.
+ * 
+ * @param jsonData - Raw JSON data from the schedule solver
+ * @returns Parsed schedule solution with calculated data
+ */
+export function parseSolutionFile(jsonData: ScheduleSolutionRaw): ScheduleSolution {
+  const variables = jsonData.variables || {};
+  const employees = jsonData.employees || [];
+  const shifts = jsonData.shifts || [];
+  const days = jsonData.days.map((day) => new Date(day));
+  const stats = jsonData.stats || createEmptyStats();
+
+  // Calculate fulfilled wishes
+  const fulfilledDayOffCells = new Set<string>();
+  const fulfilledShiftWishCells = new Set<string>();
+  const allDayOffWishCells = new Set<string>();
+  const allShiftWishColors: Record<string, string[]> = {};
+
+  // Iterate over each employee and day to check wishes
+  employees.forEach((employee: ScheduleEmployee) => {
+    days.forEach((day) => {
+      const dateStr = day.toISOString().split('T')[0];
+      const cellKey = `${employee.id}-${dateStr}`;
+
+      // Day off wishes
+      if (employee.wishes.day_off_wishes.includes(day.getDate())) {
+        allDayOffWishCells.add(cellKey);
+
+        // Check if any shift is assigned
+        const hasShift = shifts.some((shift: Shift) => {
+          const key = `(${employee.id}, '${dateStr}', ${shift.id})`;
+          return variables[key] === 1;
+        });
+
+        if (!hasShift) {
+          fulfilledDayOffCells.add(cellKey);
+        }
+      }
+
+      // Shift wishes
+      const shiftWishes = employee.wishes.shift_wishes.filter((w) => w[0] === day.getDate());
+      if (shiftWishes.length > 0) {
+        const colors = shiftWishes
+          .map((w) => {
+            // Find the shift by abbreviation
+            const shift = shifts.find((s: Shift) => s.abbreviation === w[1]);
+            return shift?.color;
+          })
+          .filter(Boolean) as string[];
+
+        if (colors.length > 0) {
+          allShiftWishColors[cellKey] = colors;
+        }
+
+        // Check if none of the wished shifts are assigned
+        const hasWishedShift = shiftWishes.some((w) => {
+          const shift = shifts.find((s: Shift) => s.abbreviation === w[1]);
+          if (!shift) return false;
+          const key = `(${employee.id}, '${dateStr}', ${shift.id})`;
+          return variables[key] === 1;
+        });
+
+        if (!hasWishedShift && !employee.wishes.day_off_wishes.includes(day.getDate())) {
+          fulfilledShiftWishCells.add(cellKey);
+        }
+      }
+    });
+  });
+
+  return {
+    variables,
+    employees,
+    shifts,
+    days,
+    stats,
+    fulfilledDayOffCells,
+    fulfilledShiftWishCells,
+    allDayOffWishCells,
+    allShiftWishColors,
+  };
+}
+
+/**
+ * Creates an empty stats object with all values set to 0.
+ */
+function createEmptyStats(): ScheduleStats {
+  return {
+    forward_rotation_violations: 0,
+    consecutive_working_days_gt_5: 0,
+    no_free_weekend: 0,
+    consecutive_night_shifts_gt_3: 0,
+    total_overtime_hours: 0,
+    no_free_days_around_weekend: 0,
+    not_free_after_night_shift: 0,
+    violated_wish_total: 0,
+  };
+}
+
+/**
+ * Gets the assigned shift for a specific employee and day.
+ * 
+ * @param empId - Employee ID
+ * @param day - Date to check
+ * @param shifts - Array of available shifts
+ * @param variables - Variable assignments from solver
+ * @returns The assigned shift or null if no shift assigned
+ */
+export function getShiftForCell(
+  empId: number,
+  day: Date,
+  shifts: Shift[],
+  variables: Record<string, number>
+): Shift | null {
+  const dateStr = day.toISOString().split('T')[0];
+  for (const shift of shifts) {
+    const key = `(${empId}, '${dateStr}', ${shift.id})`;
+    if (variables[key] === 1) {
+      return shift;
+    }
+  }
+  return null;
+}
+
+/**
+ * Checks if a date is a weekend (Saturday or Sunday).
+ */
+export function isWeekend(day: Date): boolean {
+  const dayOfWeek = day.getDay();
+  return dayOfWeek === 0 || dayOfWeek === 6;
+}
+
+/**
+ * Calculates statistics for an employee's schedule.
+ * 
+ * @param employee - The employee to calculate stats for
+ * @param days - Array of dates in the schedule
+ * @param shifts - Array of available shifts
+ * @param variables - Variable assignments from solver
+ * @returns Employee statistics including hours worked and overtime
+ */
+export function getEmployeeStats(
+  employee: ScheduleEmployee,
+  days: Date[],
+  shifts: Shift[],
+  variables: Record<string, number>
+) {
+  let totalMinutes = 0;
+  let totalShifts = 0;
+
+  days.forEach((day) => {
+    const shift = getShiftForCell(employee.id, day, shifts, variables);
+    if (shift) {
+      totalMinutes += shift.duration;
+      totalShifts++;
+    }
+  });
+
+  const actualHours = totalMinutes / 60;
+  const targetHours = employee.target_working_time / 60;
+  const hasOvertime = actualHours > targetHours;
+
+  return { actualHours, targetHours, totalShifts, hasOvertime };
+}
