@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {Badge} from "@/components/ui/badge";
 
 interface EmployeeListProps {
   employees: Employee[];
@@ -30,6 +31,7 @@ export function EmployeeList({
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead>ID</TableHead>
             <TableHead>Vorname</TableHead>
             <TableHead>Nachname</TableHead>
             <TableHead>Beruf</TableHead>
@@ -38,6 +40,7 @@ export function EmployeeList({
         <TableBody>
           {employees.map((employee) => (
             <TableRow key={employee.key}>
+              <TableCell><Badge>{employee.key}</Badge></TableCell>
               <TableCell className="font-medium">
                 {employee.firstname}
               </TableCell>
