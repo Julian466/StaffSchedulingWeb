@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { ScheduleEmployee, Shift } from '@/types/schedule';
 import { getShiftForCell, isWeekend, getEmployeeStats } from '@/lib/services/schedule-parser';
@@ -10,6 +10,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Search } from 'lucide-react';
 
 interface ScheduleTableProps {
   employees: ScheduleEmployee[];
@@ -38,39 +40,67 @@ export function ScheduleTable({
   allShiftWishColors,
 }: ScheduleTableProps) {
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filteredEmployees = useMemo(() => {
+    if (!searchTerm) return employees;
+    
+    const lowerSearch = searchTerm.toLowerCase();
+    return employees.filter((employee) => 
+      employee.name.toLowerCase().includes(lowerSearch) ||
+      employee.level.toLowerCase().includes(lowerSearch) ||
+      employee.id.toString().includes(lowerSearch)
+    );
+  }, [employees, searchTerm]);
 
   return (
-    <TooltipProvider delayDuration={300} skipDelayDuration={100}>
-      <div className="relative overflow-auto max-h-[800px]">
-      <table className="w-full border-collapse text-sm">
-        <thead className="sticky top-0 z-20 bg-card">
-          <tr>
-            <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
-              Employee
-            </th>
-            {days.map((day, idx) => (
-              <th
-                key={idx}
-                className={cn(
-                  'border-b border-border p-3 text-center font-medium text-foreground min-w-[100px]',
-                  isWeekend(day) && 'bg-muted/30'
-                )}
-              >
-                <div className="space-y-1">
-                  <div className="font-semibold">
-                    {day.toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {day.toLocaleDateString('de-DE', { weekday: 'short' })}
-                  </div>
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {employees.map((employee) => {
-            const stats = getEmployeeStats(employee, days, shifts, variables);
+    <div className="space-y-4">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Suche nach Name, Level oder ID..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {filteredEmployees.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          Keine Mitarbeiter gefunden.
+        </div>
+      ) : (
+        <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+          <div className="relative overflow-auto max-h-[800px]">
+          <table className="w-full border-collapse text-sm">
+            <thead className="sticky top-0 z-20 bg-card">
+              <tr>
+                <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
+                  Employee
+                </th>
+                {days.map((day, idx) => (
+                  <th
+                    key={idx}
+                    className={cn(
+                      'border-b border-border p-3 text-center font-medium text-foreground min-w-[100px]',
+                      isWeekend(day) && 'bg-muted/30'
+                    )}
+                  >
+                    <div className="space-y-1">
+                      <div className="font-semibold">
+                        {day.toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+                      </div>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredEmployees.map((employee) => {
+                const stats = getEmployeeStats(employee, days, shifts, variables);
             return (
               <tr key={employee.id} className="group transition-colors">
                 <td
@@ -238,5 +268,7 @@ export function ScheduleTable({
       </table>
     </div>
     </TooltipProvider>
+      )}
+    </div>
   );
 }
