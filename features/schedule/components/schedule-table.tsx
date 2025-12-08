@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { EmployeeSummaryDialog, EmployeeIdentifier } from '@/components/employee-summary-dialog';
 
 interface ScheduleTableProps {
   employees: ScheduleEmployee[];
@@ -41,6 +42,17 @@ export function ScheduleTable({
 }: ScheduleTableProps) {
   const [hoveredCell, setHoveredCell] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
+
+  const parseName = (fullName: string) => {
+    const parts = fullName.trim().split(/\s+/);
+    if (parts.length === 0) return { firstname: '', lastname: '' };
+    if (parts.length === 1) return { firstname: parts[0], lastname: '' };
+    return {
+      firstname: parts[0],
+      lastname: parts.slice(1).join(' ')
+    };
+  };
 
   const filteredEmployees = useMemo(() => {
     if (!searchTerm) return employees;
@@ -105,11 +117,19 @@ export function ScheduleTable({
               <tr key={employee.id} className="group transition-colors">
                 <td
                   className={cn(
-                    'sticky left-0 z-20 border-b border-r border-border p-3',
+                    'sticky left-0 z-20 border-b border-r border-border p-3 cursor-pointer',
                     stats.hasOvertime 
-                      ? 'bg-red-50 dark:bg-red-950/40' 
+                      ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60' 
                       : 'bg-card group-hover:bg-muted'
                   )}
+                  onClick={() => {
+                    const { firstname, lastname } = parseName(employee.name);
+                    setSelectedEmployee({
+                      id: employee.id,
+                      firstname,
+                      lastname
+                    });
+                  }}
                 >
                   <div className="space-y-1">
                     <div className="font-medium text-foreground">{employee.name}</div>
@@ -268,6 +288,23 @@ export function ScheduleTable({
       </table>
     </div>
     </TooltipProvider>
+      )}
+
+      {selectedEmployee && (
+        <EmployeeSummaryDialog
+          employee={selectedEmployee}
+          open={!!selectedEmployee}
+          onOpenChange={(open) => !open && setSelectedEmployee(null)}
+          employeeList={filteredEmployees.map(e => {
+            const { firstname, lastname } = parseName(e.name);
+            return {
+              id: e.id,
+              firstname,
+              lastname
+            };
+          })}
+          onNavigate={(emp) => setSelectedEmployee(emp)}
+        />
       )}
     </div>
   );

@@ -11,9 +11,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Pencil, Trash2, Heart, Ban, Search } from 'lucide-react';
+import { Pencil, Trash2, Heart, Ban, Search, Eye } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { EmployeeSummaryDialog, EmployeeIdentifier } from '@/components/employee-summary-dialog';
 
 interface WishesAndBlockedListProps {
   employees: WishesAndBlockedEmployee[];
@@ -29,6 +30,7 @@ export function WishesAndBlockedList({
   isDeleting 
 }: WishesAndBlockedListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
 
   const filteredEmployees = useMemo(() => {
     if (!searchTerm) return employees;
@@ -82,7 +84,14 @@ export function WishesAndBlockedList({
               {filteredEmployees.map((employee) => {
                 return (
                   <TableRow key={employee.key}>
-                    <TableCell className="font-medium">
+                    <TableCell 
+                      className="font-medium cursor-pointer hover:bg-muted/50"
+                      onClick={() => setSelectedEmployee({
+                        id: employee.key,
+                        firstname: employee.firstname,
+                        lastname: employee.name
+                      })}
+                    >
                       <div className="flex flex-col">
                         <span>{employee.firstname} {employee.name}</span>
                         <span className="text-xs text-muted-foreground">ID: {employee.key}</span>
@@ -121,7 +130,20 @@ export function WishesAndBlockedList({
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => setSelectedEmployee({
+                          id: employee.key,
+                          firstname: employee.firstname,
+                          lastname: employee.name
+                        })}
+                        title="Details anzeigen"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => onEdit(employee)}
+                        title="Bearbeiten"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -130,6 +152,7 @@ export function WishesAndBlockedList({
                         size="icon"
                         onClick={() => onDelete(employee.key)}
                         disabled={isDeleting}
+                        title="Löschen"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -140,6 +163,20 @@ export function WishesAndBlockedList({
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {selectedEmployee && (
+        <EmployeeSummaryDialog
+          employee={selectedEmployee}
+          open={!!selectedEmployee}
+          onOpenChange={(open) => !open && setSelectedEmployee(null)}
+          employeeList={filteredEmployees.map(e => ({
+            id: e.key,
+            firstname: e.firstname,
+            lastname: e.name
+          }))}
+          onNavigate={(emp) => setSelectedEmployee(emp)}
+        />
       )}
     </div>
   );

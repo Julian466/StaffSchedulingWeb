@@ -42,6 +42,7 @@ export interface InteractiveCalendarProps {
   showLegend?: boolean; // Zeigt die Kategorien-Legende an (Standard: true)
   showCategoryTitle?: boolean; // Zeigt den Kategorienamen im Tag an (Standard: true)
   className?: string; // Zusätzliche CSS-Klassen für das Container-Element
+  readOnly?: boolean; // Aktiviert den Read-Only-Modus (Standard: false)
 }
 
 export function InteractiveCalendar({
@@ -55,6 +56,7 @@ export function InteractiveCalendar({
   showLegend = true,
   showCategoryTitle = false,
   className = "",
+  readOnly = false,
 }: InteractiveCalendarProps) {
   const [dayData, setDayData] = useState<DayData[]>(initialDayData);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -276,6 +278,7 @@ export function InteractiveCalendar({
                           variant={data.categoryId === undefined ? "default" : "outline"}
                           size="sm"
                           onClick={() => setCategory(date, undefined)}
+                          disabled={readOnly}
                         >
                           Keine
                         </Button>
@@ -285,6 +288,7 @@ export function InteractiveCalendar({
                             variant={data.categoryId === category.id ? "default" : "outline"}
                             size="sm"
                             onClick={() => setCategory(date, category.id)}
+                            disabled={readOnly}
                             style={{
                               backgroundColor:
                                 data.categoryId === category.id
@@ -303,8 +307,8 @@ export function InteractiveCalendar({
                     <div>
                       <Label>Termine</Label>
                       
-                      {/* Termin-Kategorie Buttons */}
-                      {eventCategories.length > 0 && (
+                      {/* Termin-Kategorie Buttons - nur anzeigen wenn nicht readOnly */}
+                      {!readOnly && eventCategories.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-2">
                           {eventCategories.map((eventCat) => (
                             <Button
@@ -354,13 +358,15 @@ export function InteractiveCalendar({
                                     </span>
                                   )}
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeEvent(date, event.id)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
+                                {!readOnly && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeEvent(date, event.id)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             ))}
                           </div>
