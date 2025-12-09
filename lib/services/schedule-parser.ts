@@ -9,7 +9,13 @@ import { ScheduleSolution, ScheduleSolutionRaw, ScheduleEmployee, Shift, Schedul
  */
 export function parseSolutionFile(jsonData: ScheduleSolutionRaw): ScheduleSolution {
   const variables = jsonData.variables || {};
-  const employees = jsonData.employees || [];
+  const employees = (jsonData.employees || []).map((emp: any) => ({
+    ...emp,
+    vacation_days: emp.vacation_days || [],
+    forbidden_days: emp.forbidden_days || [],
+    vacation_shifts: emp.vacation_shifts || [],
+    forbidden_shifts: emp.forbidden_shifts || [],
+  }));
   const shifts = jsonData.shifts || [];
   const days = jsonData.days.map((day) => new Date(day));
   const stats = jsonData.stats || createEmptyStats();
@@ -126,6 +132,35 @@ export function getShiftForCell(
 }
 
 /**
+ * Gets all assigned shifts for a specific employee and day.
+ * Updated to support multiple shifts per cell.
+ * 
+ * @param empId - Employee ID
+ * @param day - Date to check
+ * @param shifts - Array of available shifts
+ * @param variables - Variable assignments from solver
+ * @returns Array of assigned shifts (can be empty if no shifts assigned)
+ */
+export function getShiftsForCell(
+  empId: number,
+  day: Date,
+  shifts: Shift[],
+  variables: Record<string, number>
+): Shift[] {
+  const dateStr = day.toISOString().split('T')[0];
+  const result: Shift[] = [];
+
+  for (const shift of shifts) {
+    const key = `(${empId}, '${dateStr}', ${shift.id})`;
+    if (variables[key] === 1) {
+      result.push(shift);
+    }
+  }
+
+  return result;
+}
+
+/**
  * Checks if a date is a weekend (Saturday or Sunday).
  */
 export function isWeekend(day: Date): boolean {
@@ -152,16 +187,16 @@ export function getEmployeeStats(
   let totalShifts = 0;
 
   days.forEach((day) => {
-    const shift = getShiftForCell(employee.id, day, shifts, variables);
-    if (shift) {
+    const shiftsForDay = getShiftsForCell(employee.id, day, shifts, variables);
+    shiftsForDay.forEach((shift) => {
       totalMinutes += shift.duration;
       totalShifts++;
-    }
+    });
   });
 
   const actualHours = totalMinutes / 60;
   const targetHours = employee.target_working_time / 60;
-  const hasOvertime = actualHours > targetHours;
+  const hasOvertime = Math.abs(actualHours - targetHours) > 7.67;
 
   return { actualHours, targetHours, totalShifts, hasOvertime };
 }
