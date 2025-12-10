@@ -9,7 +9,7 @@ import { ScheduleSolution, ScheduleSolutionRaw, ScheduleEmployee, Shift, Schedul
  */
 export function parseSolutionFile(jsonData: ScheduleSolutionRaw): ScheduleSolution {
   const variables = jsonData.variables || {};
-  const employees = (jsonData.employees || []).map((emp: any) => ({
+  const employees = (jsonData.employees || []).map((emp) => ({
     ...emp,
     vacation_days: emp.vacation_days || [],
     forbidden_days: emp.forbidden_days || [],

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { ScheduleEmployee, Shift } from '@/types/schedule';
 import { getShiftsForCell, isWeekend, getEmployeeStats } from '@/lib/services/schedule-parser';
@@ -46,6 +46,15 @@ export function ScheduleTable({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | undefined>(undefined);
+
+  useEffect(() => {
+    if (isFullscreen && containerRef.current) {
+      setPortalContainer(containerRef.current);
+    } else {
+      setPortalContainer(undefined);
+    }
+  }, [isFullscreen]);
 
   const parseName = (fullName: string) => {
     const parts = fullName.trim().split(/\s+/);
@@ -278,7 +287,7 @@ export function ScheduleTable({
                               <TooltipTrigger asChild>
                                 <div className="absolute inset-0 top-8" />
                               </TooltipTrigger>
-                              <TooltipContent container={isFullscreen ? containerRef.current : undefined}>
+                              <TooltipContent container={portalContainer}>
                                 <div className="text-sm space-y-1">
                                   {shiftsForCell.length > 0 && (
                                     <div className="space-y-1">
@@ -397,7 +406,7 @@ export function ScheduleTable({
             };
           })}
           onNavigate={(emp) => setSelectedEmployee(emp)}
-          container={isFullscreen ? containerRef.current : undefined}
+          container={portalContainer}
         />
       )}
     </div>

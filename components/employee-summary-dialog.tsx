@@ -413,6 +413,7 @@ export function EmployeeSummaryDialog({
                       onDayDataChange={() => {}} // Read-only
                       showLegend={true}
                       readOnly={true}
+                      container={container}
                     />
                     <p className="text-xs text-muted-foreground text-center">
                       Diese Ansicht ist schreibgeschützt. Änderungen können auf der Wünsche & Blockierungen Seite vorgenommen werden.
