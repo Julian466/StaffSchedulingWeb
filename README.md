@@ -235,7 +235,9 @@ npm --version
 
 3. **Configure case data directory**
    
-   Edit `config.json` to set the path where case data will be stored:
+   The application will automatically look for `config.json` first, and fall back to `config.template.json` if not found.
+   
+   Create a `config.json` file (copy from `config.template.json`) to set the path where case data will be stored:
    ```json
    {
      "casesDirectory": "./cases"
@@ -248,6 +250,8 @@ npm --version
      "casesDirectory": "../StaffScheduling/cases"
    }
    ```
+   
+   **Note**: You can keep `config.template.json` as a template and add `config.json` to `.gitignore` for local configuration.
 
 4. **Create case data structure** (if not using existing StaffScheduling cases)
    

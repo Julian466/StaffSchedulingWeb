@@ -7,7 +7,7 @@ import { getCasesDirectory } from '@/lib/config/app-config';
 
 /**
  * Root directory where all case data is stored.
- * The path is loaded from config.json.
+ * The path is loaded from config.template.json.
  */
 const CASES_DIR = getCasesDirectory();
 

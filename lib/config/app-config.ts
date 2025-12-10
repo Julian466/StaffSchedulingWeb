@@ -1,5 +1,5 @@
 import { join } from 'path';
-import { readFileSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 
 /**
  * Application configuration structure.
@@ -18,19 +18,29 @@ interface AppConfig {
 }
 
 /**
- * Loads the application configuration from config.json.
+ * Loads the application configuration.
+ * First tries to load config.json, falls back to config.template.json if not found.
  * @returns The application configuration
- * @throws Error if config.json cannot be read or parsed
+ * @throws Error if neither config file can be read or parsed
  */
 function loadConfig(): AppConfig {
   const configPath = join(process.cwd(), 'config.json');
+  const templatePath = join(process.cwd(), 'config.template.json');
+  
+  let pathToUse = configPath;
+  
+  // Check if config.json exists, otherwise use template
+  if (!existsSync(configPath)) {
+    pathToUse = templatePath;
+  }
+  
   try {
-    const configContent = readFileSync(configPath, 'utf-8');
+    const configContent = readFileSync(pathToUse, 'utf-8');
     const config = JSON.parse(configContent) as AppConfig;
     return config;
   } catch (error) {
     throw new Error(
-      `Failed to load config.json: ${error instanceof Error ? error.message : String(error)}`
+      `Failed to load config file (${pathToUse}): ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -42,11 +52,11 @@ function loadConfig(): AppConfig {
  * @returns Absolute path to the cases directory
  * 
  * @example
- * // With config.json: { "casesDirectory": "/cases" }
+ * // With config.json (or config.template.json): { "casesDirectory": "/cases" }
  * getCasesDirectory(); // Returns "/path/to/project/cases"
  * 
  * @example
- * // With config.json: { "casesDirectory": "/absolute/path/to/cases" }
+ * // With config.json (or config.template.json): { "casesDirectory": "/absolute/path/to/cases" }
  * getCasesDirectory(); // Returns "/absolute/path/to/cases"
  */
 export function getCasesDirectory(): string {

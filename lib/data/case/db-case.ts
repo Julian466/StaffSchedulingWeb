@@ -15,7 +15,7 @@ interface CaseInfoData {
 /**
  * Root directory where all case data is stored.
  * Each case has its own subdirectory named by its case ID.
- * The path is loaded from config.json.
+ * The path is loaded from config.template.json.
  */
 const CASES_DIR = getCasesDirectory();
 
