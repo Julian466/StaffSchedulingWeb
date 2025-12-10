@@ -36,10 +36,14 @@ export interface ScheduleEmployee {
     /** Array of day numbers for preferred days off */
     day_off_wishes: number[];
   };
-  /** Days when employee is unavailable */
-  unavailable_days?: number[];
+  /** Days when employee is on vacation */
+  vacation_days: number[];
+  /** Days when employee cannot work */
+  forbidden_days: number[];
+  /** Shifts employee is on vacation for on specific days */
+  vacation_shifts: [number, string][];
   /** Shifts employee cannot work on specific days */
-  unavailable_shifts?: Record<number, string[]>;
+  forbidden_shifts: [number, string][];
 }
 
 /**

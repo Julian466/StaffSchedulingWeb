@@ -43,6 +43,7 @@ export interface InteractiveCalendarProps {
   showCategoryTitle?: boolean; // Zeigt den Kategorienamen im Tag an (Standard: true)
   className?: string; // Zusätzliche CSS-Klassen für das Container-Element
   readOnly?: boolean; // Aktiviert den Read-Only-Modus (Standard: false)
+  container?: HTMLElement | null; // Portal container for fullscreen mode
 }
 
 export function InteractiveCalendar({
@@ -57,6 +58,7 @@ export function InteractiveCalendar({
   showCategoryTitle = false,
   className = "",
   readOnly = false,
+  container,
 }: InteractiveCalendarProps) {
   const [dayData, setDayData] = useState<DayData[]>(initialDayData);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -260,7 +262,7 @@ export function InteractiveCalendar({
                   )}
                 </button>
               </PopoverTrigger>
-              <PopoverContent className="w-80" align="start">
+              <PopoverContent className="w-80" align="start" container={container}>
                 {/* Übersicht Modus */}
                 {(!popoverMode[date] || popoverMode[date] === "overview") && (
                   <div className="space-y-4">

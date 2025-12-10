@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +8,7 @@ import { CalendarDays, Maximize2, Upload, Trash2 } from 'lucide-react';
 import { ScheduleTable } from '@/features/schedule/components/schedule-table';
 import { StatsGrid } from '@/features/schedule/components/stats-grid';
 import { ScheduleFileUpload } from '@/features/schedule/components/schedule-file-upload';
+import { cn } from '@/lib/utils';
 import { ScheduleLegend } from '@/features/schedule/components/schedule-legend';
 import { ScheduleSelector } from '@/components/schedule-selector';
 import { SeedInputDialog } from '@/components/seed-input-dialog';
@@ -30,6 +31,7 @@ export default function SchedulePage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showSeedDialog, setShowSeedDialog] = useState(false);
   const [pendingSolution, setPendingSolution] = useState<ScheduleSolutionRaw | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
 
   const handleFileLoaded = async (solutionData: ScheduleSolutionRaw) => {
     setPendingSolution(solutionData);
@@ -77,14 +79,26 @@ export default function SchedulePage() {
   };
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen();
+    if (!document.fullscreenElement && tableRef.current) {
+      tableRef.current.requestFullscreen();
       setIsFullscreen(true);
     } else {
       document.exitFullscreen();
       setIsFullscreen(false);
     }
   };
+
+  // Listen for fullscreen changes (e.g., ESC key)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
 
   return (
     <div className="py-6 space-y-6">
@@ -139,7 +153,23 @@ export default function SchedulePage() {
           <StatsGrid stats={schedule.stats} />
 
           {/* Schedule Table */}
-          <Card className="overflow-hidden border-border/50 shadow-lg">
+          <Card 
+            ref={tableRef}
+            className={cn(
+              "overflow-hidden border-border/50 shadow-lg relative",
+              isFullscreen && "h-screen bg-background flex flex-col p-4 rounded-none border-0"
+            )}
+          >
+            {isFullscreen && (
+              <Button 
+                onClick={toggleFullscreen} 
+                variant="outline" 
+                className="absolute top-4 right-4 z-50 gap-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Exit Fullscreen
+              </Button>
+            )}
             <ScheduleTable
               employees={schedule.employees}
               days={schedule.days}
@@ -149,6 +179,7 @@ export default function SchedulePage() {
               fulfilledShiftWishCells={schedule.fulfilledShiftWishCells}
               allDayOffWishCells={schedule.allDayOffWishCells}
               allShiftWishColors={schedule.allShiftWishColors}
+              isFullscreen={isFullscreen}
             />
           </Card>
 

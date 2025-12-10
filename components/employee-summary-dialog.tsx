@@ -36,6 +36,7 @@ interface EmployeeSummaryDialogProps {
   onOpenChange: (open: boolean) => void;
   employeeList?: EmployeeIdentifier[]; // Liste der Mitarbeiter für Navigation
   onNavigate?: (employee: EmployeeIdentifier) => void; // Callback für Navigation
+  container?: HTMLElement | null; // Container für Portal (für Fullscreen-Modus)
 }
 
 // Helper to convert wishes and blocked data to calendar format (read-only)
@@ -113,6 +114,7 @@ export function EmployeeSummaryDialog({
   onOpenChange,
   employeeList = [],
   onNavigate,
+  container,
 }: EmployeeSummaryDialogProps) {
   const { caseInformation } = useCase();
   const { data: employeesData, isLoading: isLoadingEmployees } = useEmployees();
@@ -271,7 +273,7 @@ export function EmployeeSummaryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" container={container}>
         {/* Navigation Buttons */}
         {employeeList.length > 1 && (
           <>
@@ -411,6 +413,7 @@ export function EmployeeSummaryDialog({
                       onDayDataChange={() => {}} // Read-only
                       showLegend={true}
                       readOnly={true}
+                      container={container}
                     />
                     <p className="text-xs text-muted-foreground text-center">
                       Diese Ansicht ist schreibgeschützt. Änderungen können auf der Wünsche & Blockierungen Seite vorgenommen werden.
