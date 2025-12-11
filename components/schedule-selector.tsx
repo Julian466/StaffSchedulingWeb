@@ -20,14 +20,18 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, CheckCircle, Calendar, Loader2 } from "lucide-react";
+import { Trash2, CheckCircle, Calendar, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ScheduleSelectorProps {
   schedulesMetadata: SchedulesMetadata;
   onScheduleSelect: (scheduleId: string) => Promise<void>;
   onScheduleDelete: (scheduleId: string) => Promise<void>;
   onRefresh: () => Promise<void>;
+  selectedScheduleIds?: string[];
+  onMultipleSchedulesSelect?: (scheduleIds: string[]) => void;
+  compareMode?: boolean;
 }
 
 export function ScheduleSelector({
@@ -35,8 +39,12 @@ export function ScheduleSelector({
   onScheduleSelect,
   onScheduleDelete,
   onRefresh,
+  selectedScheduleIds = [],
+  onMultipleSchedulesSelect,
+  compareMode = false,
 }: ScheduleSelectorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedScheduleIds);
 
   const handleSelect = async (scheduleId: string) => {
     try {
@@ -98,114 +106,153 @@ export function ScheduleSelector({
     (a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
   );
 
+  const handleCheckboxChange = (scheduleId: string, checked: boolean) => {
+    const newSelection = checked 
+      ? [...localSelectedIds, scheduleId]
+      : localSelectedIds.filter(id => id !== scheduleId);
+    
+    setLocalSelectedIds(newSelection);
+    onMultipleSchedulesSelect?.(newSelection);
+  };
+
   return (
     <div className="flex items-center gap-4">
       <div className="flex-1 ">
-        <Select
-          value={schedulesMetadata.selectedScheduleId || ""}
-          onValueChange={handleSelect}
-          disabled={isLoading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Dienstplan auswählen..." />
-          </SelectTrigger>
-            <SelectContent>
-              {sortedSchedules.map((schedule) => {
-                return (
-                  <SelectItem key={schedule.scheduleId} value={schedule.scheduleId}>
-                    <div className="flex items-center gap-2">
-                      {schedule.isSelected && <CheckCircle className="h-4 w-4" />}
-                      <span>
-                        Seed: {schedule.seed} - {formatDate(schedule.generatedAt)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-        {schedulesMetadata.selectedScheduleId && (
-          <div className="text-sm text-muted-foreground">
-            {(() => {
-              const selected = schedulesMetadata.schedules.find(
-                (s) => s.scheduleId === schedulesMetadata.selectedScheduleId
-              );
-              if (!selected) return null;
-              return (
-                <span>
-                  Aktuell: Seed {selected.seed} - {formatDate(selected.generatedAt)}
-                </span>
-              );
-            })()}
+        {compareMode ? (
+          <div className="text-sm">
+            <span className="font-medium">{localSelectedIds.length} Dienstpläne</span> zum Vergleich ausgewählt
           </div>
+        ) : (
+          <>
+            <Select
+              value={schedulesMetadata.selectedScheduleId || ""}
+              onValueChange={handleSelect}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Dienstplan auswählen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {sortedSchedules.map((schedule) => {
+                  return (
+                    <SelectItem key={schedule.scheduleId} value={schedule.scheduleId}>
+                      <div className="flex items-center gap-2">
+                        {schedule.isSelected && <CheckCircle className="h-4 w-4" />}
+                        <span>
+                          Seed: {schedule.seed} - {formatDate(schedule.generatedAt)}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </>
         )}
+      </div>
+      {!compareMode && schedulesMetadata.selectedScheduleId && (
+        <div className="text-sm text-muted-foreground">
+          {(() => {
+            const selected = schedulesMetadata.schedules.find(
+              (s) => s.scheduleId === schedulesMetadata.selectedScheduleId
+            );
+            if (!selected) return null;
+            return (
+              <span>
+                Aktuell: Seed {selected.seed} - {formatDate(selected.generatedAt)}
+              </span>
+            );
+          })()}
+        </div>
+      )}
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">
-              Alle Dienstpläne ({schedulesMetadata.schedules.length})
+              {compareMode ? "Vergleich verwalten" : `Alle Dienstpläne (${schedulesMetadata.schedules.length})`}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Alle Dienstpläne</DialogTitle>
+              <DialogTitle>{compareMode ? "Dienstpläne zum Vergleich auswählen" : "Alle Dienstpläne"}</DialogTitle>
               <DialogDescription>
-                Vergleichen Sie verschiedene generierte Dienstpläne.
+                {compareMode 
+                  ? "Wählen Sie mehrere Dienstpläne aus, um sie zu vergleichen."
+                  : "Vergleichen Sie verschiedene generierte Dienstpläne."
+                }
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               {sortedSchedules.map((schedule, index) => {
+                const isChecked = localSelectedIds.includes(schedule.scheduleId);
                 return (
                   <Card
                     key={schedule.scheduleId}
                     className={
-                      schedule.isSelected ? "border-primary border-2" : ""
+                      compareMode && isChecked 
+                        ? "border-primary border-2" 
+                        : schedule.isSelected && !compareMode 
+                        ? "border-primary border-2" 
+                        : ""
                     }
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div className="space-y-1">
+                        <div className="flex items-start gap-3 flex-1">
+                          {compareMode && (
+                            <Checkbox 
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleCheckboxChange(schedule.scheduleId, checked as boolean)}
+                              className="mt-1"
+                            />
+                          )}
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-lg">
+                                Dienstplan #{index + 1}
+                              </CardTitle>
+                              {schedule.isSelected && !compareMode && (
+                                <Badge variant="default">Ausgewählt</Badge>
+                              )}
+                              {compareMode && isChecked && (
+                                <Badge variant="default">Zum Vergleich</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {formatDate(schedule.generatedAt)}
+                              </span>
+                              <span>Seed: {schedule.seed}</span>
+                            </div>
+                          </div>
+                        </div>
+                        {!compareMode && (
                           <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg">
-                              Dienstplan #{index + 1}
-                            </CardTitle>
-                            {schedule.isSelected && (
-                              <Badge variant="default">Ausgewählt</Badge>
-                            )}
+                            <Button
+                              size="sm"
+                              variant={schedule.isSelected ? "outline" : "default"}
+                              onClick={() => handleSelect(schedule.scheduleId)}
+                              disabled={isLoading || schedule.isSelected}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : schedule.isSelected ? (
+                                "Aktiv"
+                              ) : (
+                                "Auswählen"
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(schedule.scheduleId)}
+                              disabled={isLoading || schedule.isSelected}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {formatDate(schedule.generatedAt)}
-                            </span>
-                            <span>Seed: {schedule.seed}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant={schedule.isSelected ? "outline" : "default"}
-                            onClick={() => handleSelect(schedule.scheduleId)}
-                            disabled={isLoading || schedule.isSelected}
-                          >
-                            {isLoading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : schedule.isSelected ? (
-                              "Aktiv"
-                            ) : (
-                              "Auswählen"
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(schedule.scheduleId)}
-                            disabled={isLoading || schedule.isSelected}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>

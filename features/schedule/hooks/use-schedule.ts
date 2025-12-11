@@ -203,3 +203,42 @@ export function useUpdateSchedule() {
     },
   });
 }
+
+/**
+ * Hook to fetch multiple schedule solutions by their IDs.
+ * Used for comparing multiple schedules side by side.
+ * 
+ * @param scheduleIds - Array of schedule IDs to fetch
+ * @returns React Query result with array of parsed schedule data
+ */
+export function useMultipleSchedules(scheduleIds: string[]) {
+  const { currentCaseId } = useCase();
+  
+  return useQuery({
+    queryKey: ['schedules', 'multiple', scheduleIds.sort(), currentCaseId],
+    queryFn: async (): Promise<(ScheduleSolution & { scheduleId: string; seed: number })[]> => {
+      if (scheduleIds.length === 0) return [];
+      
+      const schedulePromises = scheduleIds.map(async (scheduleId) => {
+        const res = await fetch(`${API_URL}/${scheduleId}`, {
+          headers: { 'x-case-id': currentCaseId.toString() },
+        });
+        if (!res.ok) throw new Error(`Failed to fetch schedule ${scheduleId}`);
+        
+        const data = await res.json();
+        if (!data.solution) return null;
+        
+        const parsedSolution = parseSolutionFile(data.solution);
+        return {
+          ...parsedSolution,
+          scheduleId,
+          seed: data.seed,
+        };
+      });
+      
+      const results = await Promise.all(schedulePromises);
+      return results.filter((s): s is NonNullable<typeof s> => s !== null);
+    },
+    enabled: scheduleIds.length > 0,
+  });
+}

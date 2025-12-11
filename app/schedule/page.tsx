@@ -17,7 +17,8 @@ import {
   useSaveSchedule, 
   useDeleteSchedule,
   useSchedulesMetadata,
-  useSelectSchedule
+  useSelectSchedule,
+  useMultipleSchedules
 } from '@/features/schedule/hooks/use-schedule';
 import { ScheduleSolutionRaw } from '@/types/schedule';
 import { toast } from 'sonner';
@@ -32,6 +33,9 @@ export default function SchedulePage() {
   const [showSeedDialog, setShowSeedDialog] = useState(false);
   const [pendingSolution, setPendingSolution] = useState<ScheduleSolutionRaw | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
+  const { data: multipleSchedules, isLoading: isMultipleSchedulesLoading } = useMultipleSchedules(selectedScheduleIds);
 
   const handleFileLoaded = async (solutionData: ScheduleSolutionRaw) => {
     setPendingSolution(solutionData);
@@ -78,6 +82,18 @@ export default function SchedulePage() {
     await refetchSchedule();
   };
 
+  const handleMultipleSchedulesSelect = (scheduleIds: string[]) => {
+    setSelectedScheduleIds(scheduleIds);
+  };
+
+  const toggleCompareMode = () => {
+    if (compareMode) {
+      // Exiting compare mode
+      setSelectedScheduleIds([]);
+    }
+    setCompareMode(!compareMode);
+  };
+
   const toggleFullscreen = () => {
     if (!document.fullscreenElement && tableRef.current) {
       tableRef.current.requestFullscreen();
@@ -119,10 +135,12 @@ export default function SchedulePage() {
 
         {/* Controls */}
         <div className="flex flex-wrap items-center gap-4">
-          <ScheduleFileUpload 
-            onFileLoaded={handleFileLoaded} 
-            isLoading={saveSchedule.isPending}
-          />
+          {!compareMode && (
+            <ScheduleFileUpload 
+              onFileLoaded={handleFileLoaded} 
+              isLoading={saveSchedule.isPending}
+            />
+          )}
           
           {/* Schedule Selector */}
           {schedulesMetadata && !isMetadataLoading && (
@@ -131,7 +149,20 @@ export default function SchedulePage() {
               onScheduleSelect={handleScheduleSelect}
               onScheduleDelete={handleScheduleDelete}
               onRefresh={handleRefresh}
+              compareMode={compareMode}
+              selectedScheduleIds={selectedScheduleIds}
+              onMultipleSchedulesSelect={handleMultipleSchedulesSelect}
             />
+          )}
+
+          {schedulesMetadata && schedulesMetadata.schedules.length >= 2 && (
+            <Button 
+              onClick={toggleCompareMode} 
+              variant={compareMode ? "default" : "outline"} 
+              className="gap-2"
+            >
+              {compareMode ? 'Vergleich beenden' : 'Dienstpläne vergleichen'}
+            </Button>
           )}
 
           <Button onClick={toggleFullscreen} variant="outline" className="gap-2">
@@ -141,13 +172,43 @@ export default function SchedulePage() {
         </div>
       </header>
 
-      {isLoading ? (
+      {(isLoading || (compareMode && isMultipleSchedulesLoading)) ? (
         <Card className="border-border/50 p-12">
           <div className="flex flex-col items-center justify-center text-center space-y-4">
             <div className="text-lg text-muted-foreground">Lädt...</div>
           </div>
         </Card>
-      ) : schedule ? (
+      ) : compareMode && multipleSchedules && multipleSchedules.length > 0 ? (
+        <>
+          {/* Schedule Table in Compare Mode */}
+          <Card 
+            ref={tableRef}
+            className={cn(
+              "overflow-hidden border-border/50 shadow-lg relative",
+              isFullscreen && "h-screen bg-background flex flex-col p-4 rounded-none border-0"
+            )}
+          >
+            {isFullscreen && (
+              <Button 
+                onClick={toggleFullscreen} 
+                variant="outline" 
+                className="absolute top-4 right-4 z-50 gap-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Exit Fullscreen
+              </Button>
+            )}
+            <ScheduleTable
+              schedules={multipleSchedules}
+              compareMode={true}
+              isFullscreen={isFullscreen}
+            />
+          </Card>
+
+          {/* Legend */}
+          <ScheduleLegend />
+        </>
+      ) : schedule && !compareMode ? (
         <>
           {/* Statistics Grid */}
           <StatsGrid stats={schedule.stats} />
