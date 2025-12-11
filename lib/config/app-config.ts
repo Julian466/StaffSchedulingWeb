@@ -15,6 +15,28 @@ interface AppConfig {
    * @example "data/cases" (relative to project root)
    */
   casesDirectory: string;
+  
+  /**
+   * StaffScheduling Python project configuration.
+   */
+  staffSchedulingProject: {
+    /**
+     * Whether to enable Python solver integration.
+     */
+    include: boolean;
+    
+    /**
+     * Absolute path to the StaffScheduling Python project directory.
+     * Should contain the main Python CLI entry point.
+     */
+    path: string;
+    
+    /**
+     * Python executable command (e.g., 'uv', 'python', 'python3').
+     * @default 'uv'
+     */
+    pythonExecutable: string;
+  };
 }
 
 /**
@@ -63,21 +85,109 @@ export function getCasesDirectory(): string {
   const config = loadConfig();
   const casesDir = config.casesDirectory;
   
-  // If path starts with / or \ but is only one character followed by a letter,
-  // it's likely a relative path like "/cases" not an absolute path like "C:\cases"
-  if (casesDir.startsWith('/') || casesDir.startsWith('\\')) {
-    // Check if it's truly absolute (Windows: starts with drive letter, Unix: starts with /)
-    // On Windows, absolute paths typically look like C:\ or \\server\share
-    // On Unix, absolute paths start with /
-    const isWindowsAbsolute = /^[a-zA-Z]:[/\\]/.test(casesDir);
-    const isUncPath = /^[/\\]{2}/.test(casesDir);
-    const isUnixAbsolute = casesDir.startsWith('/') && process.platform !== 'win32';
-    
-    if (isWindowsAbsolute || isUncPath || isUnixAbsolute) {
-      return casesDir;
-    }
+  // Check if it's an absolute path
+  // Windows: C:\ or C:/ or \\server\share (UNC paths)
+  // Unix/Linux: /absolute/path
+  const isWindowsAbsolute = /^[a-zA-Z]:[/\\]/.test(casesDir);
+  const isUncPath = /^[/\\]{2}/.test(casesDir);
+  const isUnixAbsolute = casesDir.startsWith('/') && process.platform !== 'win32';
+  
+  if (isWindowsAbsolute || isUncPath || isUnixAbsolute) {
+    // It's an absolute path, return as-is
+    return casesDir;
   }
   
-  // Treat as relative path
+  // It's a relative path, resolve from project root
   return join(process.cwd(), casesDir);
+}
+
+/**
+ * Python configuration validation result.
+ */
+export interface PythonConfigValidation {
+  /**
+   * Whether the configuration is valid and ready to use.
+   */
+  isValid: boolean;
+  
+  /**
+   * Whether Python solver integration is enabled.
+   */
+  isEnabled: boolean;
+  
+  /**
+   * Validation error messages.
+   */
+  errors: string[];
+  
+  /**
+   * Warning messages (non-critical issues).
+   */
+  warnings: string[];
+}
+
+/**
+ * Gets the Python project configuration.
+ * @returns Python project configuration from config file
+ */
+export function getPythonConfig() {
+  const config = loadConfig();
+  return config.staffSchedulingProject;
+}
+
+/**
+ * Validates the Python project configuration.
+ * Checks if paths exist and are accessible.
+ * 
+ * @returns Validation result with status and error/warning messages
+ */
+export function validatePythonConfig(): PythonConfigValidation {
+  const result: PythonConfigValidation = {
+    isValid: true,
+    isEnabled: false,
+    errors: [],
+    warnings: []
+  };
+  
+  try {
+    const pythonConfig = getPythonConfig();
+    result.isEnabled = pythonConfig.include;
+    
+    // If not enabled, no need to validate further
+    if (!pythonConfig.include) {
+      return result;
+    }
+    
+    // Validate project path (must be set and not placeholder)
+    if (!pythonConfig.path || pythonConfig.path === '-') {
+      result.errors.push('Python project path is not configured');
+      result.isValid = false;
+      return result;
+    }
+    
+    if (!existsSync(pythonConfig.path)) {
+      result.errors.push(`Python project path does not exist: ${pythonConfig.path}`);
+      result.isValid = false;
+    }
+    
+    // Validate Python executable (path must be set)
+    if (!pythonConfig.pythonExecutable) {
+      result.errors.push('Python executable is not configured');
+      result.isValid = false;
+    }
+    
+    // Check if cases directory exists
+    const casesDir = getCasesDirectory();
+    if (!existsSync(casesDir)) {
+      result.warnings.push(`Cases directory does not exist yet: ${casesDir}`);
+    }
+    
+  } catch (error) {
+    result.errors.push(
+      `Failed to validate Python configuration: ${error instanceof Error ? error.message : String(error)}`
+    );
+    result.isValid = false;
+  }
+  
+  return result;
 }

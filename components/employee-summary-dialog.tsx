@@ -1,8 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
-import { ScheduleSolution } from '@/types/schedule';
+import { useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,

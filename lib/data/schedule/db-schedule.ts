@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
-import { SchedulesMetadata, ScheduleSolutionRaw, ScheduleDatabase } from '@/types/schedule';
+import { SchedulesMetadata, ScheduleDatabase } from '@/types/schedule';
 import fs from 'fs/promises';
 import { getCasesDirectory } from '@/lib/config/app-config';
 

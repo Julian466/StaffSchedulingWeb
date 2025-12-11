@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/navigation-menu';
 import { CaseSelector } from '@/components/case-selector';
 import { Separator } from '@/components/ui/separator';
-import { Users, Briefcase, Heart, Calendar } from 'lucide-react';
+import { Users, Briefcase, Heart, Calendar, Cog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -78,6 +78,21 @@ export function AppNavigation() {
                   >
                     <Calendar className="h-4 w-4 mr-2" />
                     Dienstplan
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/solver"
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      isActive('/solver') && 'bg-accent text-accent-foreground'
+                    )}
+                  >
+                    <Cog className="h-4 w-4 mr-2" />
+                    Solver
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
 import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
-import { ScheduleSolutionRaw } from '@/types/schedule';
 
 /**
  * GET /api/schedule

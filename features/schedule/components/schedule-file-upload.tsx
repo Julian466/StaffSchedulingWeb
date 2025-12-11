@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ScheduleSolutionRaw } from '@/types/schedule';
 
 interface ScheduleFileUploadProps {
