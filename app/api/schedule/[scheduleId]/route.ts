@@ -4,7 +4,7 @@ import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
 
 /**
  * GET /api/schedule/[scheduleId]
- * Retrieves a specific schedule solution.
+ * Retrieves a specific schedule solution with metadata.
  */
 export async function GET(
   request: NextRequest,
@@ -23,7 +23,15 @@ export async function GET(
       );
     }
     
-    return NextResponse.json({ solution: schedule });
+    // Get metadata to include seed
+    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId);
+    const scheduleMetadata = metadata.schedules.find(s => s.scheduleId === scheduleId);
+    
+    return NextResponse.json({ 
+      solution: schedule,
+      seed: scheduleMetadata?.seed,
+      generatedAt: scheduleMetadata?.generatedAt,
+    });
   } catch (error) {
     console.error('Error fetching schedule:', error);
     return NextResponse.json(
