@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ScheduleMetadata, SchedulesMetadata } from "@/types/schedule";
+import { SchedulesMetadata } from "@/types/schedule";
 import {
   Select,
   SelectContent,

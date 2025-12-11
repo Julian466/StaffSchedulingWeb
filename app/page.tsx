@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Building2, Briefcase, Calendar, ArrowRight, ClockFading } from 'lucide-react';
+import { Users, Calendar, ArrowRight, ClockFading } from 'lucide-react';
 
 export default function HomePage() {
   const databases = [
