@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import React, {useState} from 'react';
 import {useCase} from '@/components/case-provider';
 import {
     useFetch,
@@ -14,6 +14,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
+import {Progress} from '@/components/ui/progress';
 import {
     Select,
     SelectContent,
@@ -43,6 +44,10 @@ export function SolverControlPanel() {
     const [openDateRange, setOpenDateRange] = useState(false)
 
     const [startDate, setStartDate] = useState('');
+    
+    // Progress tracking
+    const [progress, setProgress] = useState(0);
+    const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
 
     const fetchMutation = useFetch();
     const solveMutation = useSolve();
@@ -59,10 +64,42 @@ export function SolverControlPanel() {
         deleteMutation.isPending ||
         processSolutionMutation.isPending;
 
+    // Update progress based on elapsed time vs timeout
+    React.useEffect(() => {
+        if (!isExecuting || !executionStartTime) {
+            setProgress(0);
+            return;
+        }
+
+        const currentTimeout = (command === 'solve' || command === 'solve-multiple') 
+            ? parseInt(timeout, 10) * 1000 
+            : 60000; // Default 60s for other commands
+
+        const interval = setInterval(() => {
+            const elapsed = Date.now() - executionStartTime;
+            const calculatedProgress = Math.min((elapsed / currentTimeout) * 100, 99);
+            setProgress(calculatedProgress);
+        }, 100); // Update every 100ms for smooth animation
+
+        return () => clearInterval(interval);
+    }, [isExecuting, executionStartTime, timeout, command]);
+
+    // Reset progress when execution completes
+    React.useEffect(() => {
+        if (!isExecuting) {
+            setProgress(0);
+            setExecutionStartTime(null);
+        }
+    }, [isExecuting]);
+
     const handleExecute = () => {
         if (!selectedCase) {
             return;
         }
+
+        // Track execution start time for progress
+        setExecutionStartTime(Date.now());
+        setProgress(0);
 
         const requiresDate = !COMMANDS_WITHOUT_DATE.includes(command);
 
@@ -374,9 +411,23 @@ export function SolverControlPanel() {
                 </Button>
 
                 {isExecuting && (
-                    <div className="p-4 bg-muted rounded-lg">
-                        <p className="text-sm text-center text-muted-foreground">
-                            Der Befehl wird ausgeführt. Dies kann je nach Komplexität einige Minuten dauern...
+                    <div className="p-4 bg-muted rounded-lg space-y-3">
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Fortschritt</span>
+                                <span className="text-muted-foreground font-mono">
+                                    {progress.toFixed(0)}%
+                                </span>
+                            </div>
+                            <Progress value={progress} className="h-2" />
+                        </div>
+                        <p className="text-xs text-center text-muted-foreground">
+                            {(command === 'solve' || command === 'solve-multiple') 
+                                ? `Geschätzte Laufzeit: ${timeout}s` 
+                                : 'Der Befehl wird ausgeführt...'}
+                        </p>
+                        <p className="text-xs text-center text-muted-foreground">
+                            {executionStartTime && `Gestartet: ${new Date(executionStartTime).toLocaleTimeString('de-DE')}`}
                         </p>
                     </div>
                 )}
