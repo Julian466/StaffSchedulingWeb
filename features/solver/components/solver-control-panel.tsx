@@ -270,7 +270,10 @@ export function SolverControlPanel() {
                                     type="text"
                                     placeholder="z.B. solution_1_2024-11-01-2024-11-30_0"
                                     value={filename}
-                                    onChange={(e) => setFilename(e.target.value)}
+                                    onChange={(e) => {
+                                        setFilename(e.target.value);
+                                        setOutput(`processed_${e.target.value || 'solution'}.json`)
+                                    }}
                                     disabled={isExecuting}
                                     className="flex-1"
                                 />
@@ -287,6 +290,7 @@ export function SolverControlPanel() {
                                                 // Remove .json extension from filename
                                                 const nameWithoutExtension = file.name.replace(/\.json$/, '');
                                                 setFilename(nameWithoutExtension);
+                                                setOutput(`processed_${nameWithoutExtension || 'solution'}.json`)
                                             }
                                         };
                                         input.click();
