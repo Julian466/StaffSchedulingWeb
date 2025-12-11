@@ -20,9 +20,10 @@ const CASES_DIR = getCasesDirectory();
  */
 export async function getSchedulesMetadataDb(caseId: number) {
   const caseDir = join(CASES_DIR, caseId.toString());
-  const file = join(caseDir, 'schedules.json');
+  const webDir = join(caseDir, 'web');
+  const file = join(webDir, 'schedules.json');
   
-  await fs.mkdir(caseDir, { recursive: true });
+  await fs.mkdir(webDir, { recursive: true });
   
   const adapter = new JSONFile<SchedulesMetadata>(file);
   const defaultData: SchedulesMetadata = {
@@ -51,9 +52,10 @@ export async function getSchedulesMetadataDb(caseId: number) {
  */
 export async function getScheduleDb(caseId: number, scheduleId: string) {
   const caseDir = join(CASES_DIR, caseId.toString());
-  const file = join(caseDir, `schedule_${scheduleId}.json`);
+  const webDir = join(caseDir, 'web');
+  const file = join(webDir, `schedule_${scheduleId}.json`);
   
-  await fs.mkdir(caseDir, { recursive: true });
+  await fs.mkdir(webDir, { recursive: true });
   
   const adapter = new JSONFile<ScheduleDatabase>(file);
   const defaultData: ScheduleDatabase = {
@@ -80,8 +82,9 @@ export async function getScheduleDb(caseId: number, scheduleId: string) {
 export async function listScheduleIds(caseId: number): Promise<string[]> {
   try {
     const caseDir = join(CASES_DIR, caseId.toString());
-    await fs.mkdir(caseDir, { recursive: true });
-    const files = await fs.readdir(caseDir);
+    const webDir = join(caseDir, 'web');
+    await fs.mkdir(webDir, { recursive: true });
+    const files = await fs.readdir(webDir);
     
     // Filter for schedule files: schedule_*.json
     return files
@@ -100,7 +103,8 @@ export async function listScheduleIds(caseId: number): Promise<string[]> {
  */
 export async function deleteSchedule(caseId: number, scheduleId: string): Promise<void> {
   const caseDir = join(CASES_DIR, caseId.toString());
-  const file = join(caseDir, `schedule_${scheduleId}.json`);
+  const webDir = join(caseDir, 'web');
+  const file = join(webDir, `schedule_${scheduleId}.json`);
   
   try {
     await fs.unlink(file);

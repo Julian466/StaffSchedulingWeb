@@ -33,10 +33,11 @@ const CASES_DIR = getCasesDirectory();
  */
 export async function getCaseInformationDb(caseId: number) {
   const caseDir = join(CASES_DIR, caseId.toString());
-  const file = join(caseDir, 'case_information.json');
+  const webDir = join(caseDir, 'web');
+  const file = join(webDir, 'case_information.json');
   
-  // Ensure case directory exists before creating database connection
-  await fs.mkdir(caseDir, { recursive: true });
+  // Ensure case and web directories exist before creating database connection
+  await fs.mkdir(webDir, { recursive: true });
   
   const adapter = new JSONFile<CaseInfoData>(file);
   // Set up default data with current date/time

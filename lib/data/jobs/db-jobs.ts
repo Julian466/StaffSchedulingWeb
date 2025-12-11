@@ -32,7 +32,8 @@ export async function getJobHistoryDb(caseId: number){
     // Check cache first
     if (!dbCache.has(caseId)) {
         const casePath = getCasePath(caseId);
-        const filePath = path.join(casePath, 'jobs.json');
+        const webDir = path.join(casePath, 'web');
+        const filePath = path.join(webDir, 'jobs.json');
         const db = await JSONFilePreset<JobHistoryData>(filePath, defaultData);
         dbCache.set(caseId, db);
     }
