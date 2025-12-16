@@ -1,67 +1,66 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
-import type { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { globalWishesAndBlockedRepository} from "@/features/global_wishes_and_blocked/api/global-wishes-and-blocked-repository";
+import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { createApiLogger } from '@/lib/logging/logger';
 
-const FILE_PATH = path.join(process.cwd(), 'cases', '1', 'global_wishes_and_blocked.json');
+const apiLogger = createApiLogger('/api/wishes-and-blocked');
 
-async function readFile(): Promise<{ employees: WishesAndBlockedEmployee[] }> {
-    const raw = await fs.readFile(FILE_PATH, 'utf-8');
-    return JSON.parse(raw);
-}
-
-async function writeFile(data: { employees: WishesAndBlockedEmployee[] }) {
-    await fs.writeFile(FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
-}
-
+/**
+ * GET /api/wishes-and-blocked
+ * Retrieves all employees with their wishes and blocked data for the current case.
+ *
+ * This includes information about:
+ * - Wish days
+ * - Wish shifts
+ * - Blocked days
+ * - Blocked shifts
+ *
+ * @returns JSON array of all employees with their wishes and blocked data
+ * @returns 500 error if the operation fails
+ */
 export async function GET() {
+    const method = 'GET';
+    let caseId: number | undefined;
     try {
-        const data = await readFile();
-        return NextResponse.json(data.employees);
-    } catch (err) {
-        return new NextResponse('Konnte Datei nicht lesen', { status: 500 });
+        caseId = await getCaseIdFromHeaders();
+        apiLogger.info('Fetching wishes-and-blocked employees', { method, caseId });
+        const employees = await globalWishesAndBlockedRepository.getAll(caseId);
+        apiLogger.info('Fetched wishes-and-blocked employees', { method, caseId, count: employees.length });
+        return NextResponse.json(employees);
+    } catch (error) {
+        apiLogger.error('Failed to fetch wishes and blocked employees', { method, caseId, error });
+        return NextResponse.json(
+            { error: 'Failed to fetch wishes and blocked employees' },
+            { status: 500 }
+        );
     }
 }
 
-export async function POST(req: Request) {
+/**
+ * POST /api/wishes-and-blocked
+ * Creates a new wishes and blocked employee entry for the current case.
+ *
+ * Note: This is typically called automatically when creating a new employee.
+ *
+ * @param request - The request containing the wishes and blocked employee data
+ * @returns JSON of the created employee with 201 status
+ * @returns 500 error if the operation fails
+ */
+export async function POST(request: Request) {
+    const method = 'POST';
+    let caseId: number | undefined;
     try {
-        const body = await req.json();
-        const data = await readFile();
-        const employees = data.employees || [];
-        const maxKey = employees.reduce((m, e) => Math.max(m, e.key ?? 0), 0);
-        const newEmployee: WishesAndBlockedEmployee = { key: maxKey + 1, ...body };
-        employees.push(newEmployee);
-        await writeFile({ employees });
-        return NextResponse.json(newEmployee);
-    } catch (err) {
-        return new NextResponse('Fehler beim Erstellen', { status: 500 });
-    }
-}
-
-export async function PUT(req: Request) {
-    try {
-        const { id, data: payload } = await req.json();
-        const file = await readFile();
-        const employees = file.employees || [];
-        const idx = employees.findIndex((e) => e.key === id);
-        if (idx === -1) return new NextResponse('Nicht gefunden', { status: 404 });
-        employees[idx] = { ...employees[idx], ...payload, key: id };
-        await writeFile({ employees });
-        return NextResponse.json(employees[idx]);
-    } catch (err) {
-        return new NextResponse('Fehler beim Aktualisieren', { status: 500 });
-    }
-}
-
-export async function DELETE(req: Request) {
-    try {
-        const { id } = await req.json();
-        const file = await readFile();
-        const employees = file.employees || [];
-        const filtered = employees.filter((e) => e.key !== id);
-        await writeFile({ employees: filtered });
-        return NextResponse.json({ success: true });
-    } catch (err) {
-        return new NextResponse('Fehler beim Löschen', { status: 500 });
+        caseId = await getCaseIdFromHeaders();
+        const body = await request.json();
+        apiLogger.info('Creating wishes-and-blocked employee', { method, caseId });
+        const employee = await globalWishesAndBlockedRepository.create(body, caseId);
+        apiLogger.info('Created wishes-and-blocked employee', { method, caseId, employeeKey: employee?.key });
+        return NextResponse.json(employee, { status: 201 });
+    } catch (error) {
+        apiLogger.error('Failed to create wishes and blocked employee', { method, caseId, error });
+        return NextResponse.json(
+            { error: 'Failed to create wishes and blocked employee' },
+            { status: 500 }
+        );
     }
 }

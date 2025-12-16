@@ -8,13 +8,26 @@
       "firstname": "Janett",
       "key": 791,
       "name": "Branz",
-      "wish_days": [],
+      "wish_days": [
+        13
+      ],
       "wish_shifts": [
         [
           25,
           "F"
         ]
       ]
+    },
+    {
+      "key": 792,
+      "firstname": "Nele",
+      "name": "Sewell",
+      "wish_days": [],
+      "wish_shifts": [],
+      "blocked_days": [
+        8
+      ],
+      "blocked_shifts": []
     }
   ]
 }
