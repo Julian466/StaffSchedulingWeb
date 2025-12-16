@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, ArrowRight, ClockFading } from 'lucide-react';
+import {Users, Calendar, ArrowRight, ClockFading, CalendarRangeIcon} from 'lucide-react';
+import {CalendarWeek} from "react-day-picker";
 
 export default function HomePage() {
   const databases = [
@@ -14,6 +15,14 @@ export default function HomePage() {
       href: '/employees',
       color: 'text-blue-500',
       bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Globale Wünsche & Blockierungen',
+      description: 'Verwalte allgemeine Wünsche und Blockierungen für alle Mitarbeiter',
+      icon: CalendarRangeIcon,
+      href: '/global-wishes-and-blocked',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-50',
     },
     {
       title: 'Wünsche & Blockierungen',

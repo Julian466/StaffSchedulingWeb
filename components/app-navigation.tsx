@@ -55,6 +55,22 @@ export function AppNavigation() {
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
+                      href="/global-wishes-and-blocked"
+                      className={cn(
+                          navigationMenuTriggerStyle(),
+                          isActive('/global-wishes-and-blocked') && 'bg-accent text-accent-foreground'
+                      )}
+                  >
+                    <Heart className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Allgemeine Wünsche</span>
+                    <span className="sm:hidden">Wünsche</span>
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
                     href="/employees"
                     className={cn(
                       navigationMenuTriggerStyle(),
