@@ -44,6 +44,7 @@ export interface InteractiveCalendarProps {
   className?: string; // Zusätzliche CSS-Klassen für das Container-Element
   readOnly?: boolean; // Aktiviert den Read-Only-Modus (Standard: false)
   container?: HTMLElement | null; // Portal container for fullscreen mode
+  view?: 'month' | 'week'; // View mode
 }
 
 export function InteractiveCalendar({
@@ -59,6 +60,7 @@ export function InteractiveCalendar({
   className = "",
   readOnly = false,
   container,
+  view = 'month',
 }: InteractiveCalendarProps) {
   const [dayData, setDayData] = useState<DayData[]>(initialDayData);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -165,22 +167,30 @@ export function InteractiveCalendar({
   const daysInPrevMonth = getDaysInMonth(prevMonth, prevYear);
 
   const calendarDays: Array<{ day: number; isCurrentMonth: boolean }> = [];
-  
-  // Tage vom vorherigen Monat
-  for (let i = firstDay - 1; i >= 0; i--) {
-    calendarDays.push({ day: daysInPrevMonth - i, isCurrentMonth: false });
+
+  if (view === "month")
+  {
+    // Tage vom vorherigen Monat
+    for (let i = firstDay - 1; i >= 0; i--) {
+      calendarDays.push({ day: daysInPrevMonth - i, isCurrentMonth: false });
+    }
+
+    // Tage vom aktuellen Monat
+    for (let day = 1; day <= daysInMonth; day++) {
+      calendarDays.push({ day, isCurrentMonth: true });
+    }
   }
-  
-  // Tage vom aktuellen Monat
-  for (let day = 1; day <= daysInMonth; day++) {
-    calendarDays.push({ day, isCurrentMonth: true });
+  else {
+    for (let day = 1; day <= 7; day++) {
+      calendarDays.push({ day, isCurrentMonth: true });
+    }
   }
 
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle className="text-center">
-          {monthNames[month - 1]} {year}
+          {view === "month" ? `${monthNames[month - 1]} ${year}` : `Musterwoche`}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -268,7 +278,8 @@ export function InteractiveCalendar({
                   <div className="space-y-4">
                     <div>
                       <h3 className="mb-2">
-                        {day}. {monthNames[month - 1]} {year}
+                        {view === "month" ? `${day}. ${monthNames[month - 1]} ${year}` : `Standard ${weekDays[day-1]}`}
+
                       </h3>
                     </div>
 

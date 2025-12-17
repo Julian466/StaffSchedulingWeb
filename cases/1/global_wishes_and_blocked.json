@@ -1,32 +1,28 @@
 {
   "employees": [
     {
-      "blocked_days": [
-        14
-      ],
-      "blocked_shifts": [],
-      "firstname": "Janett",
-      "key": 791,
-      "name": "Branz",
+      "key": 1,
+      "firstname": "Adriane",
+      "name": "Mccomas",
       "wish_days": [
-        13
+        2
       ],
-      "wish_shifts": [
+      "wish_shifts": [],
+      "blocked_days": [],
+      "blocked_shifts": [
         [
-          25,
-          "F"
+          1,
+          "N"
         ]
       ]
     },
     {
-      "key": 792,
-      "firstname": "Nele",
-      "name": "Sewell",
+      "key": 2,
+      "firstname": "Silvia",
+      "name": "Harkins",
       "wish_days": [],
       "wish_shifts": [],
-      "blocked_days": [
-        8
-      ],
+      "blocked_days": [],
       "blocked_shifts": []
     }
   ]

@@ -89,6 +89,7 @@ export default function GlobalWishesAndBlockedPage() {
                 employee={editingEmployee}
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
+                isGlobal={true}
             />
         </div>
     );

@@ -35,6 +35,7 @@ interface WishesAndBlockedFormProps {
   onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  isGlobal?: boolean;
 }
 
 // Helper to convert WishesAndBlockedEmployee data to DayData format
@@ -44,7 +45,7 @@ function convertToDayData(
   wishDays: number[],
   wishShifts: [number, string][],
   blockedDays: number[],
-  blockedShifts: [number, string][]
+  blockedShifts: [number, string][],
 ): DayData[] {
   const dayDataMap = new Map<number, DayData>();
 
@@ -143,7 +144,8 @@ export function WishesAndBlockedForm({
   employee,
   onSubmit,
   onCancel,
-  isSubmitting
+  isSubmitting,
+  isGlobal,
 }: WishesAndBlockedFormProps) {
   const { caseInformation } = useCase();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => 
@@ -287,7 +289,7 @@ export function WishesAndBlockedForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <CalendarIcon className="h-5 w-5" />
-                Monatskalender
+                {isGlobal ? `Wochenkalender` : `Monatskalender`}
               </CardTitle>
               <CardDescription>
                 Klicke auf einen Tag, um Wünsche oder Blockierungen zu verwalten
@@ -303,6 +305,7 @@ export function WishesAndBlockedForm({
                 onDayDataChange={handleCalendarDataChange}
                 maxVisibleEvents={3}
                 showLegend={true}
+                view={isGlobal ? 'week' : 'month'}
               />
             </CardContent>
           </Card>
