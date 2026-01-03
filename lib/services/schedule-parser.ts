@@ -189,7 +189,7 @@ export function getEmployeeStats(
   days.forEach((day) => {
     const shiftsForDay = getShiftsForCell(employee.id, day, shifts, variables);
     shiftsForDay.forEach((shift) => {
-      if(!(shift.name == "F2" || shift.name == "S2" || shift.name == "N5")){
+      if(!(shift.name == "F2_" || shift.name == "S2_" || shift.name == "N5")){
         totalMinutes += shift.duration;
         totalShifts++;
       }
