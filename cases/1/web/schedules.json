@@ -4,7 +4,7 @@
       "scheduleId": "1765285523650",
       "seed": 15,
       "generatedAt": "2025-12-09T13:05:23.678Z",
-      "isSelected": true,
+      "isSelected": false,
       "stats": {
         "forward_rotation_violations": 63,
         "consecutive_working_days_gt_5": 18,
@@ -15,7 +15,23 @@
         "not_free_after_night_shift": 41,
         "violated_wish_total": 8
       }
+    },
+    {
+      "scheduleId": "1767435707356",
+      "seed": 45645612,
+      "generatedAt": "2026-01-03T10:21:47.387Z",
+      "isSelected": true,
+      "stats": {
+        "forward_rotation_violations": 56,
+        "consecutive_working_days_gt_5": 10,
+        "no_free_weekend": 35,
+        "consecutive_night_shifts_gt_3": 7,
+        "total_overtime_hours": 154.4,
+        "no_free_days_around_weekend": 104,
+        "not_free_after_night_shift": 24,
+        "violated_wish_total": 2
+      }
     }
   ],
-  "selectedScheduleId": "1765285523650"
+  "selectedScheduleId": "1767435707356"
 }

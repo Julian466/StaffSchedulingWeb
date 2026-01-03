@@ -104,6 +104,8 @@ export default function SchedulePage() {
     }
   };
 
+  
+
   // Listen for fullscreen changes (e.g., ESC key)
   useEffect(() => {
     const handleFullscreenChange = () => {

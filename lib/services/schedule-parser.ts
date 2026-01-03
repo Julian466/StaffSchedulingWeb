@@ -189,8 +189,11 @@ export function getEmployeeStats(
   days.forEach((day) => {
     const shiftsForDay = getShiftsForCell(employee.id, day, shifts, variables);
     shiftsForDay.forEach((shift) => {
-      totalMinutes += shift.duration;
-      totalShifts++;
+      if(!(shift.name == "F2_" || shift.name == "S2_" || shift.name == "N5")){
+        console.log(shift.name);
+        totalMinutes += shift.duration;
+        totalShifts++;
+      }
     });
   });
 
