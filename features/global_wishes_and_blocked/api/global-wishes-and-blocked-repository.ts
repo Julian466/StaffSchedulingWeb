@@ -1,6 +1,7 @@
 import { getGlobalWishesAndBlockedDb as getDb } from "@/lib/data/global-wishes-and-blocked/db-global-wishes-and-blocked";
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
 import {getEmployeeDb} from "@/lib/data/employees/db-employee";
+import {wishesAndBlockedRepository} from "@/features/wishes_and_blocked/api/wishes-and-blocked-repository";
 
 /**
  * Repository for managing wishes and blocked data.
@@ -71,6 +72,8 @@ export const globalWishesAndBlockedRepository = {
 
         db.data.employees.push(newEmployee);
         await db.write();
+
+        await wishesAndBlockedRepository.updateGeneralWishes(existingEmployee.key, newEmployee, caseId);
         return newEmployee;
     },
 
@@ -97,6 +100,8 @@ export const globalWishesAndBlockedRepository = {
         };
 
         await db.write();
+
+        await wishesAndBlockedRepository.updateGeneralWishes(key, db.data.employees[index], caseId);
         return db.data.employees[index];
     },
 
