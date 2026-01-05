@@ -1,5 +1,6 @@
 import { getGlobalWishesAndBlockedDb as getDb } from "@/lib/data/global-wishes-and-blocked/db-global-wishes-and-blocked";
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import {getEmployeeDb} from "@/lib/data/employees/db-employee";
 
 /**
  * Repository for managing wishes and blocked data.
@@ -52,13 +53,19 @@ export const globalWishesAndBlockedRepository = {
      */
     async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number): Promise<WishesAndBlockedEmployee> {
         const db = await getDb(caseId);
+        const employeeDb = await getEmployeeDb(caseId);
         await db.read();
+        await employeeDb.read();
 
-        // Find the highest existing key and increment
-        const maxId = db.data.employees.reduce((max, emp) => Math.max(max, emp.key), 0);
+        // Validate that the employee exists in the main employee database
+        const existingEmployee = employeeDb.data.employees.find(emp => emp.firstname == data.firstname && emp.name === data.name);
+
+        if (!existingEmployee) {
+            throw new Error(`Employee ${data.firstname} ${data.name} does not exist in the main employee database.`);
+        }
 
         const newEmployee: WishesAndBlockedEmployee = {
-            key: maxId + 1,
+            key: existingEmployee.key ,
             ...data
         };
 
