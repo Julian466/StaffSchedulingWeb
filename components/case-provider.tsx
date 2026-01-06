@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CaseInformation } from '@/types/case';
+import { useWorkflow } from '@/contexts/workflow-context';
 
 interface CaseContextType {
   currentCaseId: number;
@@ -17,10 +18,12 @@ interface CaseContextType {
 const CaseContext = createContext<CaseContextType | undefined>(undefined);
 
 export function CaseProvider({ children }: { children: ReactNode }) {
+  const { workflowData } = useWorkflow();
   const [currentCaseId, setCurrentCaseId] = useState<number>(1);
   const [caseInformation, setCaseInformation] = useState<CaseInformation | null>(null);
   const [availableCases, setAvailableCases] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [workflowCaseApplied, setWorkflowCaseApplied] = useState(false);
 
   const refreshCases = async () => {
     try {
@@ -97,17 +100,26 @@ export function CaseProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       await refreshCases();
 
-      // Try to load last used case from localStorage
-      const savedCaseId = localStorage.getItem('currentCaseId');
-      const initialCaseId = savedCaseId ? parseInt(savedCaseId) : 1;
-
-      await loadCaseInformation(initialCaseId);
-      setCurrentCaseId(initialCaseId);
+      // Check if workflow mode is active and use workflow case ID
+      if (workflowData?.caseId && !workflowCaseApplied) {
+        const workflowCaseId = parseInt(workflowData.caseId);
+        await loadCaseInformation(workflowCaseId);
+        setCurrentCaseId(workflowCaseId);
+        localStorage.setItem('currentCaseId', workflowCaseId.toString());
+        setWorkflowCaseApplied(true);
+      } else if (!workflowData?.caseId) {
+        // Try to load last used case from localStorage only if not in workflow mode
+        const savedCaseId = localStorage.getItem('currentCaseId');
+        const initialCaseId = savedCaseId ? parseInt(savedCaseId) : 1;
+        await loadCaseInformation(initialCaseId);
+        setCurrentCaseId(initialCaseId);
+      }
+      
       setIsLoading(false);
     };
 
     initializeCase();
-  }, []);
+  }, [workflowData?.caseId]);
 
   return (
     <CaseContext.Provider
