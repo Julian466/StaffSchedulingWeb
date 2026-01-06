@@ -195,6 +195,30 @@ export default function WorkflowPage() {
           body.timeout = 30;
           break;
         case 'insert':
+          // First, save the currently selected schedule before exporting
+          toast.info('Speichere ausgewählten Dienstplan vor dem Export...');
+          
+          const saveSolutionResponse = await fetch('/api/solver/save-solution', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-case-id': caseId!
+            },
+            body: JSON.stringify({
+              start: isoStart,
+              end: isoEnd
+            })
+          });
+
+          if (!saveSolutionResponse.ok) {
+            const saveError = await saveSolutionResponse.json();
+            throw new Error(saveError.error || 'Fehler beim Speichern des Dienstplans vor dem Export');
+          }
+
+          const saveResult = await saveSolutionResponse.json();
+          console.log('Dienstplan gespeichert:', saveResult);
+          toast.success(`Dienstplan gespeichert als ${saveResult.filename}`);
+          
           endpoint = '/api/solver/insert';
           break;
       }
