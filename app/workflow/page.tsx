@@ -34,6 +34,8 @@ import {
 import { toast } from 'sonner';
 import { useWorkflow } from '@/contexts/workflow-context';
 import { useCase } from '@/components/case-provider';
+import { ImportSolutionDialog } from '@/components/import-solution-dialog';
+import { useImportSolution } from '@/features/solver/hooks/use-solver';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -71,6 +73,16 @@ export default function WorkflowPage() {
   const [solutionExists, setSolutionExists] = useState<boolean | null>(null);
   const [showDeleteWarning, setShowDeleteWarning] = useState(false);
   const [showFetchWarning, setShowFetchWarning] = useState(false);
+
+  // Import dialog state
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importParams, setImportParams] = useState<{
+    caseId: number;
+    start: string;
+    end: string;
+    solutionType: string;
+  } | null>(null);
+  const importSolutionMutation = useImportSolution();
 
   // Check configuration on mount
   useEffect(() => {
@@ -247,6 +259,17 @@ export default function WorkflowPage() {
       }));
 
       toast.success(`${getActionLabel(action)} erfolgreich abgeschlossen`);
+      
+      // Show import dialog after successful solve or multi-solve
+      if (action === 'solve' || action === 'multi-solve') {
+        setImportParams({
+          caseId: parseInt(caseId!),
+          start: isoStart,
+          end: isoEnd,
+          solutionType: action === 'solve' ? 'wdefault' : 'w0',
+        });
+        setShowImportDialog(true);
+      }
       
       // Refresh solution exists check after delete
       if (action === 'delete') {
@@ -507,6 +530,22 @@ export default function WorkflowPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Import Solution Dialog */}
+      {importParams && (
+        <ImportSolutionDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+          caseId={importParams.caseId}
+          start={importParams.start}
+          end={importParams.end}
+          solutionType={importParams.solutionType}
+          onImport={async (params) => {
+            await importSolutionMutation.mutateAsync(params);
+          }}
+          isImporting={importSolutionMutation.isPending}
+        />
+      )}
     </div>
   );
 }

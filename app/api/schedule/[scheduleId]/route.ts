@@ -23,13 +23,13 @@ export async function GET(
       );
     }
     
-    // Get metadata to include seed
+    // Get metadata to include description
     const metadata = await ScheduleRepository.getSchedulesMetadata(caseId);
     const scheduleMetadata = metadata.schedules.find(s => s.scheduleId === scheduleId);
     
     return NextResponse.json({ 
       solution: schedule,
-      seed: scheduleMetadata?.seed,
+      description: scheduleMetadata?.description,
       generatedAt: scheduleMetadata?.generatedAt,
     });
   } catch (error) {
@@ -67,7 +67,7 @@ export async function DELETE(
 
 /**
  * PATCH /api/schedule/[scheduleId]
- * Updates schedule metadata (comment, etc.)
+ * Updates schedule metadata (description, comment, etc.)
  */
 export async function PATCH(
   request: NextRequest,
@@ -77,6 +77,10 @@ export async function PATCH(
     const caseId = await getCaseIdFromHeaders();
     const { scheduleId } = await params;
     const body = await request.json();
+    
+    if (body.description !== undefined) {
+      await ScheduleRepository.updateScheduleDescription(caseId, scheduleId, body.description);
+    }
     
     if (body.comment !== undefined) {
       await ScheduleRepository.updateScheduleComment(caseId, scheduleId, body.comment);

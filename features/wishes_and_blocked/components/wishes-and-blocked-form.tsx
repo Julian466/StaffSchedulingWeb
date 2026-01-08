@@ -35,6 +35,7 @@ interface WishesAndBlockedFormProps {
   onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  excludedEmployeeKeys?: number[];
 }
 
 // Helper to convert WishesAndBlockedEmployee data to DayData format
@@ -143,7 +144,8 @@ export function WishesAndBlockedForm({
   employee,
   onSubmit,
   onCancel,
-  isSubmitting
+  isSubmitting,
+  excludedEmployeeKeys = []
 }: WishesAndBlockedFormProps) {
   const { caseInformation } = useCase();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => 
@@ -248,6 +250,7 @@ export function WishesAndBlockedForm({
                         value={field.value || undefined}
                         onSelect={handleEmployeeSelect}
                         disabled={!!employee || isSubmitting}
+                        excludedKeys={employee ? [] : excludedEmployeeKeys}
                       />
                     </FormControl>
                     {employee && (

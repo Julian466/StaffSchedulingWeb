@@ -20,9 +20,11 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, CheckCircle, Calendar, Loader2, Check } from "lucide-react";
+import { Trash2, CheckCircle, Calendar, Loader2, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ScheduleSelectorProps {
   schedulesMetadata: SchedulesMetadata;
@@ -32,6 +34,7 @@ interface ScheduleSelectorProps {
   selectedScheduleIds?: string[];
   onMultipleSchedulesSelect?: (scheduleIds: string[]) => void;
   compareMode?: boolean;
+  onDescriptionUpdate?: (scheduleId: string, description: string) => Promise<void>;
 }
 
 export function ScheduleSelector({
@@ -42,9 +45,12 @@ export function ScheduleSelector({
   selectedScheduleIds = [],
   onMultipleSchedulesSelect,
   compareMode = false,
+  onDescriptionUpdate,
 }: ScheduleSelectorProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedScheduleIds);
+  const [editingDescriptionId, setEditingDescriptionId] = useState<string | null>(null);
+  const [editingDescription, setEditingDescription] = useState<string>("");
 
   const handleSelect = async (scheduleId: string) => {
     try {
@@ -72,6 +78,34 @@ export function ScheduleSelector({
       await onRefresh();
     } catch (error) {
       toast.error("Fehler beim Löschen des Dienstplans");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startEditingDescription = (scheduleId: string, currentDescription?: string) => {
+    setEditingDescriptionId(scheduleId);
+    setEditingDescription(currentDescription || "");
+  };
+
+  const cancelEditingDescription = () => {
+    setEditingDescriptionId(null);
+    setEditingDescription("");
+  };
+
+  const saveDescription = async (scheduleId: string) => {
+    if (!onDescriptionUpdate) return;
+    
+    try {
+      setIsLoading(true);
+      await onDescriptionUpdate(scheduleId, editingDescription);
+      toast.success("Beschreibung aktualisiert");
+      setEditingDescriptionId(null);
+      setEditingDescription("");
+      await onRefresh();
+    } catch (error) {
+      toast.error("Fehler beim Aktualisieren der Beschreibung");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -139,7 +173,7 @@ export function ScheduleSelector({
                       <div className="flex items-center gap-2">
                         {schedule.isSelected && <CheckCircle className="h-4 w-4" />}
                         <span>
-                          Seed: {schedule.seed} - {formatDate(schedule.generatedAt)}
+                          {schedule.description ? (schedule.description!.length > 30 ? schedule.description!.slice(0, 30) + "..." : schedule.description || "Ohne Beschreibung") : "Ohne Beschreibung"} - {formatDate(schedule.generatedAt)}
                         </span>
                       </div>
                     </SelectItem>
@@ -159,7 +193,7 @@ export function ScheduleSelector({
             if (!selected) return null;
             return (
               <span>
-                Aktuell: Seed {selected.seed} - {formatDate(selected.generatedAt)}
+                Aktuell: { selected.description ? (selected.description!.length > 30 ? selected.description!.slice(0, 30) + "..." : selected.description) : "Ohne Beschreibung"} - {formatDate(selected.generatedAt)}
               </span>
             );
           })()}
@@ -218,12 +252,72 @@ export function ScheduleSelector({
                                 <Badge variant="default">Zum Vergleich</Badge>
                               )}
                             </div>
-                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-4 w-4" />
                                 {formatDate(schedule.generatedAt)}
                               </span>
-                              <span>Seed: {schedule.seed}</span>
+                              {editingDescriptionId === schedule.scheduleId ? (
+                                <div className="flex items-start gap-2 flex-1 mt-1">
+                                  <Textarea
+                                    value={editingDescription}
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditingDescription(e.target.value)}
+                                    placeholder="Beschreibung hinzufügen..."
+                                    className="text-sm min-h-[60px]"
+                                    autoFocus
+                                    maxLength={500}
+                                    rows={2}
+                                  />
+                                  <div className="flex flex-col gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => saveDescription(schedule.scheduleId)}
+                                      disabled={isLoading}
+                                      className="h-8"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={cancelEditingDescription}
+                                      disabled={isLoading}
+                                      className="h-8 text-xs px-2"
+                                    >
+                                      ×
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {schedule.description ? (
+                                    <span className="flex items-start gap-2">
+                                      <span className="whitespace-pre-wrap wrap-break-word">{schedule.description}</span>
+                                      {!compareMode && onDescriptionUpdate && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 w-6 p-0 shrink-0"
+                                          onClick={() => startEditingDescription(schedule.scheduleId, schedule.description)}
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                    </span>
+                                  ) : !compareMode && onDescriptionUpdate ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 text-xs"
+                                      onClick={() => startEditingDescription(schedule.scheduleId)}
+                                    >
+                                      <Pencil className="h-3 w-3 mr-1" />
+                                      Beschreibung hinzufügen
+                                    </Button>
+                                  ) : null}
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>

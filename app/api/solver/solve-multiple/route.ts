@@ -13,7 +13,7 @@ const apiLogger = createApiLogger('/api/solver/solve-multiple');
  * POST /api/solver/solve-multiple
  * Solves the scheduling problem for multiple solutions.
  * 
- * @body { unit: number, start: string (ISO 8601), end: string (ISO 8601), maxSolutions: number, timeout?: number }
+ * @body { unit: number, start: string (ISO 8601), end: string (ISO 8601), timeout?: number }
  * @returns Job result with execution details and generated schedule information
  */
 export async function POST(request: NextRequest) {
@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       unit: body.unit ?? caseId,
       start: body.start,
       end: body.end,
-      maxSolutions: body.maxSolutions,
       timeout: body.timeout,
     };
 
@@ -57,20 +56,21 @@ export async function POST(request: NextRequest) {
       scheduleFiles: [] as string[],
     };
 
-    // Try to parse stdout for solution information
-    if (result.success && result.stdout) {
-      // Look for patterns like "Generated X solutions" or similar
-      const lines = result.stdout.split('\n');
+    // Try to parse stderr/stdout for solution information
+    if (result.success) {
+      const output = result.stderr + '\n' + result.stdout;
+      
+      // Count number of "Solving completed" messages (1 per solution)
+      const completionMatches = output.match(/Solving completed in \d+\.\d+ seconds/g);
+      if (completionMatches) {
+        scheduleInfo.solutionsGenerated = completionMatches.length;
+      }
+      
+      // Look for schedule file references
+      const lines = output.split('\n');
       for (const line of lines) {
-        // This is a placeholder - adjust based on actual Python output format
-        const matchCount = line.match(/generated\s+(\d+)\s+solution/i);
-        if (matchCount) {
-          scheduleInfo.solutionsGenerated = parseInt(matchCount[1], 10);
-        }
-        
-        // Look for schedule file references
-        const matchFile = line.match(/schedule[_-](\d+)\.json/i);
-        if (matchFile) {
+        const matchFile = line.match(/solution[_-]\d+[_-].+?\.json/i);
+        if (matchFile && !scheduleInfo.scheduleFiles.includes(matchFile[0])) {
           scheduleInfo.scheduleFiles.push(matchFile[0]);
         }
       }

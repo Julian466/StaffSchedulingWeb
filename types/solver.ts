@@ -11,8 +11,7 @@ export type SolverCommandType =
   | 'solve'           // Solve scheduling problem (single solution)
   | 'solve-multiple'  // Solve scheduling problem (multiple solutions)
   | 'insert'          // Insert data from JSON solution files to DB
-  | 'delete'          // Delete/reset data in DB
-  | 'process-solution'; // Process and export solution as JSON
+  | 'delete';          // Delete/reset data in DB
 
 /**
  * Job status (only completed or failed for synchronous execution).
@@ -60,11 +59,6 @@ export interface SolveParams extends BaseSolverParams {
  */
 export interface SolveMultipleParams extends BaseSolverParams {
   /**
-   * Maximum number of solutions to generate.
-   */
-  maxSolutions: number;
-  
-  /**
    * Timeout in seconds for the solver.
    * @default 300
    */
@@ -82,33 +76,6 @@ export type InsertParams = BaseSolverParams
 export type DeleteParams = BaseSolverParams
 
 /**
- * Parameters for the 'process-solution' command.
- */
-export interface ProcessSolutionParams {
-  /**
-   * Case number.
-   */
-  case: number;
-  
-  /**
-   * Solution filename (optional).
-   */
-  filename?: string;
-  
-  /**
-   * Output filename.
-   * @default 'processed_solution.json'
-   */
-  output?: string;
-  
-  /**
-   * Enable debug output.
-   * @default false
-   */
-  debug?: boolean;
-}
-
-/**
  * Union type of all possible solver parameters.
  */
 export type SolverParams = 
@@ -116,8 +83,7 @@ export type SolverParams =
   | SolveParams 
   | SolveMultipleParams 
   | InsertParams 
-  | DeleteParams 
-  | ProcessSolutionParams;
+  | DeleteParams;
 
 /**
  * Result from executing a Python command.

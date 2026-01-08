@@ -8,7 +8,6 @@ import {
   SolveMultipleParams,
   InsertParams,
   DeleteParams,
-  ProcessSolutionParams,
 } from '@/types/solver';
 
 const logger = createApiLogger('python-cli-service');
@@ -63,10 +62,29 @@ function executePythonCommand(
 
     const duration = Date.now() - startTime;
     const exitCode = result.status ?? -1;
-    const success = exitCode === 0;
+    
+    // Check if command actually succeeded by analyzing output
+    // For solve commands, look for "Solving completed" messages in stderr
+    let actualSuccess = exitCode === 0;
+    
+    if (!actualSuccess && (command === 'solve' || command === 'solve-multiple') && result.stderr) {
+      // Count how many times "Solving completed" appears
+      const completionMatches = result.stderr.match(/Solving completed in \d+\.\d+ seconds/g);
+      const expectedCompletions = command === 'solve-multiple' ? 3 : 1;
+      
+      if (completionMatches && completionMatches.length >= expectedCompletions) {
+        // All solves completed successfully, ignore the exit code
+        actualSuccess = true;
+        logger.info(`${command} completed successfully despite non-zero exit code`, {
+          exitCode,
+          completedRuns: completionMatches.length,
+          expectedRuns: expectedCompletions,
+        });
+      }
+    }
 
     const commandResult: PythonCommandResult = {
-      success,
+      success: actualSuccess,
       stdout: result.stdout || '',
       stderr: result.stderr || '',
       exitCode,
@@ -89,7 +107,7 @@ function executePythonCommand(
       };
     }
 
-    if (!success) {
+    if (!actualSuccess) {
       logger.warn('Python command failed', {
         command,
         exitCode,
@@ -159,7 +177,7 @@ export function executeSolve(params: SolveParams): PythonCommandResult {
 
 /**
  * Builds and executes the 'solve-multiple' command.
- * Solves the scheduling problem for multiple solutions.
+ * Solves the scheduling problem with 3 different weight sets (runs solve 3 times).
  */
 export function executeSolveMultiple(
   params: SolveMultipleParams
@@ -168,7 +186,6 @@ export function executeSolveMultiple(
     String(params.unit),
     formatDateForPython(params.start),
     formatDateForPython(params.end),
-    String(params.maxSolutions),
   ];
 
   if (params.timeout) {
@@ -176,7 +193,8 @@ export function executeSolveMultiple(
   }
 
   // Convert timeout to milliseconds, add buffer for process overhead
-  const timeoutMs = params.timeout ? (params.timeout + 10) * 1000 : undefined;
+  // solve-multiple runs 3 times with different weight sets, so multiply by 3
+  const timeoutMs = params.timeout ? (params.timeout * 3 + 30) * 1000 : undefined;
 
   return executePythonCommand('solve-multiple', args, timeoutMs);
 }
@@ -207,30 +225,6 @@ export function executeDelete(params: DeleteParams): PythonCommandResult {
   ];
 
   return executePythonCommand('delete', args);
-}
-
-/**
- * Builds and executes the 'process-solution' command.
- * Processes a solution and exports it as JSON.
- */
-export function executeProcessSolution(
-  params: ProcessSolutionParams
-): PythonCommandResult {
-  const args = [String(params.case)];
-
-  if (params.filename) {
-    args.push('--filename', params.filename);
-  }
-
-  if (params.output) {
-    args.push('--output', params.output);
-  }
-
-  if (params.debug) {
-    args.push('--debug');
-  }
-
-  return executePythonCommand('process-solution', args);
 }
 
 /**

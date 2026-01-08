@@ -29,7 +29,6 @@ function JobRow({ job }: { job: SolverJob }) {
       'solve-multiple': 'Mehrfach lösen',
       insert: 'Einfügen',
       delete: 'Löschen',
-      'process-solution': 'Lösung verarbeiten',
     };
     return labels[type] || type;
   };
