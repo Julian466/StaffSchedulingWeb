@@ -44,13 +44,13 @@ function executePythonCommand(
   // log exactly what I am executing
   logger.debug('Spawning process', {
     command: pythonConfig.pythonExecutable,
-    fullArgs: ['run', '--env-file .env','staff-scheduling', command, ...args],
+    fullArgs: ['run', '--env-file','.env','staff-scheduling', command, ...args],
   });
 
   try {
     const result: SpawnSyncReturns<string> = spawnSync(
       pythonConfig.pythonExecutable,
-      ['run', 'staff-scheduling', command, ...args],
+      ['run', '--env-file','.env', 'staff-scheduling', command, ...args],
       {
         cwd: pythonConfig.path,
         encoding: 'utf-8',
