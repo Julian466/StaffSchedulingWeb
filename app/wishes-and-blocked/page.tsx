@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
@@ -20,10 +20,15 @@ export default function WishesAndBlockedPage() {
   const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
 
   // TanStack Query Hooks
-  const { data: employees = [], isLoading } = useWishesAndBlocked();
+  const { data: employees = [], isLoading, refetch } = useWishesAndBlocked();
   const createMutation = useCreateWishesAndBlocked();
   const updateMutation = useUpdateWishesAndBlocked();
   const deleteMutation = useDeleteWishesAndBlocked();
+
+  // refresh data on site render
+  useEffect(() => {
+    refetch?.();
+  }, [refetch]);
 
   const handleCreate = () => {
     setEditingEmployee(undefined);
