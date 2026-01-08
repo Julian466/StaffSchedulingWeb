@@ -44,7 +44,7 @@ function executePythonCommand(
   // log exactly what I am executing
   logger.debug('Spawning process', {
     command: pythonConfig.pythonExecutable,
-    fullArgs: ['run', 'staff-scheduling', command, ...args],
+    fullArgs: ['run', '--env-file .env','staff-scheduling', command, ...args],
   });
 
   try {
