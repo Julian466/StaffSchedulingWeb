@@ -1,9 +1,9 @@
 import { getWishesAndBlockedDb as getDb } from '@/lib/data/wishes-and-blocked/db-wishes-and-blocked';
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
 import {getEmployeeDb} from "@/lib/data/employees/db-employee";
-import {useCase} from "@/components/case-provider";
 import {generateMonthlyDataFromWeeklyData} from "@/lib/services/global-to-current-wishes-converter";
 import {getCaseInformationDb} from "@/lib/data/case/db-case";
+import {getGlobalWishesAndBlockedDb} from "@/lib/data/global-wishes-and-blocked/db-global-wishes-and-blocked";
 
 /**
  * Repository for managing wishes and blocked data.
@@ -28,6 +28,20 @@ export const wishesAndBlockedRepository = {
   async getAll(caseId: number): Promise<WishesAndBlockedEmployee[]> {
     const db = await getDb(caseId);
     await db.read();
+
+    // check for missing employees in wishes and blocked db which are present in the global wishes and blocked db
+    const globalWishesAndBlockedDb = await getGlobalWishesAndBlockedDb(caseId);
+    await globalWishesAndBlockedDb.read();
+
+    for (const globalEmp of globalWishesAndBlockedDb.data.employees) {
+      const exists = db.data.employees.find(e => e.key === globalEmp.key);
+      if (!exists) {
+        // create new entry in wishes and blocked db
+        await this.updateGeneralWishes(globalEmp.key, globalEmp, caseId);
+      }
+    }
+
+
     return db.data.employees;
   },
 
