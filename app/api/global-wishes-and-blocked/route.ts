@@ -3,10 +3,10 @@ import { globalWishesAndBlockedRepository} from "@/features/global_wishes_and_bl
 import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
-const apiLogger = createApiLogger('/api/wishes-and-blocked');
+const apiLogger = createApiLogger('/api/global-wishes-and-blocked');
 
 /**
- * GET /api/wishes-and-blocked
+ * GET /api/global-wishes-and-blocked
  * Retrieves all employees with their wishes and blocked data for the current case.
  *
  * This includes information about:
@@ -37,7 +37,7 @@ export async function GET() {
 }
 
 /**
- * POST /api/wishes-and-blocked
+ * POST /api/global-wishes-and-blocked
  * Creates a new wishes and blocked employee entry for the current case.
  *
  * Note: This is typically called automatically when creating a new employee.

@@ -33,15 +33,20 @@ export const wishesAndBlockedRepository = {
     const globalWishesAndBlockedDb = await getGlobalWishesAndBlockedDb(caseId);
     await globalWishesAndBlockedDb.read();
 
+    let changed = false;
+
     for (const globalEmp of globalWishesAndBlockedDb.data.employees) {
       const exists = db.data.employees.find(e => e.key === globalEmp.key);
       if (!exists) {
         // create new entry in wishes and blocked db
         await this.updateGeneralWishes(globalEmp.key, globalEmp, caseId);
+        changed = true;
       }
     }
 
-
+    if (changed) {
+      await db.read(); // re-read the db if changes were made
+    }
     return db.data.employees;
   },
 
@@ -140,7 +145,9 @@ export const wishesAndBlockedRepository = {
 
 
     const index = db.data.employees.findIndex(emp => emp.key === key);
-    if (index === -1) await this.create(monthlyWishesAndBlockedEmployee, caseId);
+    if (index === -1) {
+      return await this.create(monthlyWishesAndBlockedEmployee, caseId);
+    }
 
     // Merge existing data with updates
     db.data.employees[index] = {

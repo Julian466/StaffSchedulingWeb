@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {Users, Calendar, ArrowRight, ClockFading, CalendarRangeIcon} from 'lucide-react';
-import {CalendarWeek} from "react-day-picker";
 
 export default function HomePage() {
   const databases = [

@@ -29,7 +29,7 @@ export function getDaysByWeekday(year?: number, month?: number): number[][] {
  * @param year
  * @param month
  */
-export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlockedEmployee, year?: number, month?: number): Omit<WishesAndBlockedEmployee, 'key'> {
+export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlockedEmployee, year?: number, month?: number): WishesAndBlockedEmployee {
     const daysByWeekday = getDaysByWeekday(year, month);
     const monthlyEmployee: WishesAndBlockedEmployee = {
         key: weeklyEmployee.key,

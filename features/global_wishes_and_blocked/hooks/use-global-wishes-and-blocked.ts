@@ -50,7 +50,10 @@ export function useCreateGlobalWishesAndBlocked() {
         if (!res.ok) throw new Error('Failed to create wishes and blocked employee');
         return res.json();
     },
-        onSuccess: () => qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCaseId]}),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCaseId] });
+            qc.invalidateQueries({ queryKey: ['wishes-and-blocked',     currentCaseId] });
+        },
     });
 }
 
@@ -68,10 +71,13 @@ export function useUpdateGlobalWishesAndBlocked() {
                 },
                 body: JSON.stringify(data),
             });
-            if (!res.ok) throw new Error('Fehler beim Aktualisieren');
+            if (!res.ok) throw new Error('Failed to update wishes and blocked employee');
             return res.json();
         },
-            onSuccess: () => qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', currentCaseId]}),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCaseId] });
+            qc.invalidateQueries({ queryKey: ['wishes-and-blocked',     currentCaseId] });
+        },
 });
 }
 
@@ -82,8 +88,10 @@ export function useDeleteGlobalWishesAndBlocked() {
         mutationFn: async (id: number) => {
             const res = await fetch(`${API_BASE}/${id}`, {
                 method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-case-id': currentCaseId.toString(),
+                },
             });
             if (!res.ok) throw new Error('Failed to delete wishes and blocked employee');
             return res.json();
