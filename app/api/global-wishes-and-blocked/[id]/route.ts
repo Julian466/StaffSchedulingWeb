@@ -126,7 +126,7 @@ export async function DELETE(
         }
 
         apiLogger.info('Deleted wishes-and-blocked employee', { method, caseId, key });
-        return new NextResponse(null, { status: 204 });
+        return NextResponse.json( { message: 'Deleted wishes-and-blocked employee'}, { status: 200 });
     } catch (error) {
         apiLogger.error('Failed to delete wishes-and-blocked employee', { method, caseId, error });
         return NextResponse.json(
