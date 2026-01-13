@@ -1,0 +1,29 @@
+{
+  "employees": [
+    {
+      "key": 1,
+      "firstname": "Adriane",
+      "name": "Mccomas",
+      "wish_days": [
+        2
+      ],
+      "wish_shifts": [],
+      "blocked_days": [],
+      "blocked_shifts": [
+        [
+          1,
+          "N"
+        ]
+      ]
+    },
+    {
+      "key": 2,
+      "firstname": "Silvia",
+      "name": "Harkins",
+      "wish_days": [],
+      "wish_shifts": [],
+      "blocked_days": [],
+      "blocked_shifts": []
+    }
+  ]
+}

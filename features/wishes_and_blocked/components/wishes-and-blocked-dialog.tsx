@@ -17,6 +17,7 @@ interface WishesAndBlockedDialogProps {
   employee?: WishesAndBlockedEmployee;
   onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
   isSubmitting?: boolean;
+  isGlobal?: boolean;
 }
 
 export function WishesAndBlockedDialog({
@@ -25,6 +26,7 @@ export function WishesAndBlockedDialog({
   employee,
   onSubmit,
   isSubmitting,
+  isGlobal,
 }: WishesAndBlockedDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -46,6 +48,7 @@ export function WishesAndBlockedDialog({
               onSubmit={onSubmit}
               onCancel={() => onOpenChange(false)}
               isSubmitting={isSubmitting}
+              isGlobal={isGlobal}
             />
           </div>
         </ScrollArea>

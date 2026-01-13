@@ -1,6 +1,9 @@
 import { getWishesAndBlockedDb as getDb } from '@/lib/data/wishes-and-blocked/db-wishes-and-blocked';
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
 import {getEmployeeDb} from "@/lib/data/employees/db-employee";
+import {generateMonthlyDataFromWeeklyData} from "@/lib/services/global-to-current-wishes-converter";
+import {getCaseInformationDb} from "@/lib/data/case/db-case";
+import {getGlobalWishesAndBlockedDb} from "@/lib/data/global-wishes-and-blocked/db-global-wishes-and-blocked";
 
 /**
  * Repository for managing wishes and blocked data.
@@ -25,6 +28,25 @@ export const wishesAndBlockedRepository = {
   async getAll(caseId: number): Promise<WishesAndBlockedEmployee[]> {
     const db = await getDb(caseId);
     await db.read();
+
+    // check for missing employees in wishes and blocked db which are present in the global wishes and blocked db
+    const globalWishesAndBlockedDb = await getGlobalWishesAndBlockedDb(caseId);
+    await globalWishesAndBlockedDb.read();
+
+    let changed = false;
+
+    for (const globalEmp of globalWishesAndBlockedDb.data.employees) {
+      const exists = db.data.employees.find(e => e.key === globalEmp.key);
+      if (!exists) {
+        // create new entry in wishes and blocked db
+        await this.updateGeneralWishes(globalEmp.key, globalEmp, caseId);
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await db.read(); // re-read the db if changes were made
+    }
     return db.data.employees;
   },
 
@@ -68,7 +90,7 @@ export const wishesAndBlockedRepository = {
       key: existingEmployee.key ,
       ...data
     };
-    
+
     db.data.employees.push(newEmployee);
     await db.write();
     return newEmployee;
@@ -96,6 +118,46 @@ export const wishesAndBlockedRepository = {
       ...data
     };
     
+    await db.write();
+    return db.data.employees[index];
+  },
+
+  /**
+   * Updates an employee's wishes and blocked data based on weekly data.
+   * The weekly wishes and blocked data are expanded to monthly data
+   * based on the current case's month and year.
+   * This method should be always used when updating from global wishes.
+   * @param key
+   * @param data
+   * @param caseId
+   */
+  async updateGeneralWishes(key: number, data: WishesAndBlockedEmployee, caseId: number): Promise<WishesAndBlockedEmployee | null> {
+    const db = await getDb(caseId);
+    await db.read();
+
+    const caseInformation = await getCaseInformationDb(caseId);
+
+    // Get the current month and year
+    const year = caseInformation.data.information.year;
+    const month = caseInformation.data.information.month;
+
+    const monthlyWishesAndBlockedEmployee: Omit<WishesAndBlockedEmployee, 'key'> = generateMonthlyDataFromWeeklyData(data, year, month);
+
+
+    const index = db.data.employees.findIndex(emp => emp.key === key);
+    if (index === -1) {
+      return await this.create(monthlyWishesAndBlockedEmployee, caseId);
+    }
+
+    // Merge existing data with updates
+    db.data.employees[index] = {
+        ...db.data.employees[index],
+        wish_days: monthlyWishesAndBlockedEmployee.wish_days,
+        wish_shifts: monthlyWishesAndBlockedEmployee.wish_shifts,
+        blocked_days: monthlyWishesAndBlockedEmployee.blocked_days,
+        blocked_shifts: monthlyWishesAndBlockedEmployee.blocked_shifts,
+    };
+
     await db.write();
     return db.data.employees[index];
   },
