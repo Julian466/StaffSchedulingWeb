@@ -189,15 +189,16 @@ export function getEmployeeStats(
   days.forEach((day) => {
     const shiftsForDay = getShiftsForCell(employee.id, day, shifts, variables);
     shiftsForDay.forEach((shift) => {
-      if(!(shift.name == "F2_" || shift.name == "S2_" || shift.name == "N5")){
         totalMinutes += shift.duration;
         totalShifts++;
-      }
+      
     });
   });
 
-  const actualHours = totalMinutes / 60;
-  const targetHours = employee.target_working_time / 60;
+  const actualHours = (totalMinutes + employee.hidden_actual_working_time) / 60;
+
+  var targetHours = (employee.target_working_time)/ 60;
+  targetHours = (1 - employee.vacation_days.length / days.length) * targetHours 
   const hasOvertime = Math.abs(actualHours - targetHours) > 7.67;
 
   return { actualHours, targetHours, totalShifts, hasOvertime };
