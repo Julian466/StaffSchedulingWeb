@@ -86,7 +86,7 @@ export function useFetch() {
         toast.success('Daten erfolgreich von der Datenbank abgerufen');
       } else {
         toast.error('Fehler beim Abrufen der Daten', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
@@ -134,7 +134,7 @@ export function useSolve() {
         toast.success('Dienstplan erfolgreich erstellt');
       } else {
         toast.error('Fehler beim Erstellen des Dienstplans', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
@@ -213,7 +213,7 @@ export function useSolveMultiple() {
         }
       } else {
         toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
@@ -259,7 +259,7 @@ export function useInsert() {
         toast.success('Daten erfolgreich in die Datenbank eingefügt');
       } else {
         toast.error('Fehler beim Einfügen der Daten', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
@@ -305,7 +305,7 @@ export function useDelete() {
         toast.success('Daten erfolgreich aus der Datenbank gelöscht');
       } else {
         toast.error('Fehler beim Löschen der Daten', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },

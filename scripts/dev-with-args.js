@@ -8,8 +8,7 @@
  * npm run dev -- --WORKFLOW_MODE=true --WORKFLOW_CASE=77 --WORKFLOW_START=01.11.2024 --WORKFLOW_END=30.11.2024
  */
 
-const { spawn } = require('child_process');
-const path = require('path');
+import { spawn } from 'child_process';
 
 // Parse command line arguments
 const args = process.argv.slice(2);

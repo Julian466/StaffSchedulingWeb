@@ -197,7 +197,7 @@ export function getEmployeeStats(
 
   const actualHours = (totalMinutes + employee.hidden_actual_working_time) / 60;
 
-  var targetHours = (employee.target_working_time)/ 60;
+  let targetHours = (employee.target_working_time)/ 60;
   targetHours = (1 - employee.vacation_days.length / days.length) * targetHours 
   const hasOvertime = Math.abs(actualHours - targetHours) > 7.67;
 
