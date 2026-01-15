@@ -22,6 +22,7 @@ interface ImportMultipleSolutionsDialogProps {
   start: string;
   end: string;
   solutionCount: number;
+  feasibleSolutions?: number[]; // Indices of feasible solutions (e.g., [0, 1, 2] or [0, 2] if w1 failed)
   onImport: (params: {
     caseId: number;
     start: string;
@@ -41,11 +42,15 @@ export function ImportMultipleSolutionsDialog({
   start,
   end,
   solutionCount,
+  feasibleSolutions,
   onImport,
   isImporting,
 }: ImportMultipleSolutionsDialogProps) {
+  // Use feasibleSolutions if provided, otherwise default to all solutions (backward compatibility)
+  const availableSolutions = feasibleSolutions || Array.from({ length: solutionCount }, (_, i) => i);
+  
   const [selectedSolutions, setSelectedSolutions] = useState<Set<number>>(
-    new Set(Array.from({ length: solutionCount }, (_, i) => i))
+    new Set(availableSolutions)
   );
   const [error, setError] = useState<string | null>(null);
   const [importProgress, setImportProgress] = useState<{
@@ -53,14 +58,14 @@ export function ImportMultipleSolutionsDialog({
     total: number;
   } | null>(null);
 
-  // Reset state when dialog is closed
+  // Reset state when dialog is closed or when feasible solutions change
   React.useEffect(() => {
     if (!open) {
       setError(null);
       setImportProgress(null);
-      setSelectedSolutions(new Set(Array.from({ length: solutionCount }, (_, i) => i)));
+      setSelectedSolutions(new Set(availableSolutions));
     }
-  }, [open, solutionCount]);
+  }, [open, availableSolutions]);
 
   const handleToggle = (index: number) => {
     const newSelected = new Set(selectedSolutions);
@@ -73,7 +78,7 @@ export function ImportMultipleSolutionsDialog({
   };
 
   const handleSelectAll = () => {
-    setSelectedSolutions(new Set(Array.from({ length: solutionCount }, (_, i) => i)));
+    setSelectedSolutions(new Set(availableSolutions));
   };
 
   const handleSelectNone = () => {
@@ -133,7 +138,10 @@ export function ImportMultipleSolutionsDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Lösungen importieren</AlertDialogTitle>
           <AlertDialogDescription>
-            Der Solver hat {solutionCount} Lösungen erstellt. Wählen Sie aus, welche Sie importieren möchten.
+            {availableSolutions.length === 3 
+              ? 'Der Solver hat 3 Lösungen erfolgreich erstellt. Wählen Sie aus, welche Sie importieren möchten.'
+              : `Der Solver konnte nur ${availableSolutions.length} von 3 Lösungen erfolgreich erstellen. Wählen Sie aus, welche Sie importieren möchten.`
+            }
           </AlertDialogDescription>
         </AlertDialogHeader>
         <div className="space-y-4">
@@ -143,6 +151,19 @@ export function ImportMultipleSolutionsDialog({
               <div>Zeitraum: {formatDate(start)} - {formatDate(end)}</div>
             </div>
           </div>
+
+          {availableSolutions.length < 3 && (
+            <div className="rounded-md bg-yellow-500/10 border border-yellow-500/20 p-3 text-sm">
+              <div className="font-medium text-yellow-600 dark:text-yellow-500 mb-1">⚠️ Nicht alle Lösungen erfolgreich</div>
+              <div className="text-yellow-700 dark:text-yellow-400 text-xs">
+                {3 - availableSolutions.length} von 3 Lösungen konnten nicht generiert werden (kein FEASIBLE Status).
+                {availableSolutions.length > 0 
+                  ? ' Die verfügbaren Lösungen können trotzdem importiert werden.'
+                  : ' Es können keine Lösungen importiert werden.'
+                }
+              </div>
+            </div>
+          )}
 
           <div className="space-y-3">
             <div className="flex justify-between items-center">
@@ -169,7 +190,7 @@ export function ImportMultipleSolutionsDialog({
             </div>
 
             <div className="space-y-2">
-              {Array.from({ length: solutionCount }, (_, i) => (
+              {availableSolutions.map((i) => (
                 <div
                   key={i}
                   className="flex items-center space-x-3 rounded-md border p-3 hover:bg-muted/50"

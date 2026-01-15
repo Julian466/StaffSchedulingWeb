@@ -67,6 +67,7 @@ export function SolverControlPanel() {
         start: string;
         end: string;
         solutionCount: number;
+        feasibleSolutions?: number[];
     } | null>(null);
 
     const fetchMutation = useFetch();
@@ -95,7 +96,7 @@ export function SolverControlPanel() {
         if (command === 'solve') {
             currentTimeout = parseInt(timeout, 10) * 1000 + 10000; // timeout + 10s buffer
         } else if (command === 'solve-multiple') {
-            currentTimeout = parseInt(timeout, 10) * 3 * 1000 + 10000; // 3x timeout for 3 runs + 10s buffer
+            currentTimeout = parseInt(timeout, 10) * 3 * 1000 + 20000; // 3x timeout for 3 runs + 20s buffer
         }
 
         const interval = setInterval(() => {
@@ -189,6 +190,7 @@ export function SolverControlPanel() {
                                     start: baseParams.start,
                                     end: baseParams.end,
                                     solutionCount: data.scheduleInfo.solutionsGenerated || 3,
+                                    feasibleSolutions: data.scheduleInfo.feasibleSolutions,
                                 });
                                 setShowMultipleImportDialog(true);
                             }
@@ -431,6 +433,7 @@ export function SolverControlPanel() {
                     start={multipleImportParams.start}
                     end={multipleImportParams.end}
                     solutionCount={multipleImportParams.solutionCount}
+                    feasibleSolutions={multipleImportParams.feasibleSolutions}
                     onImport={async (params) => {
                         await importSolutionMutation.mutateAsync(params);
                     }}

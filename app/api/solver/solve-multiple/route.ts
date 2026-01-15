@@ -54,16 +54,20 @@ export async function POST(request: NextRequest) {
     const scheduleInfo = {
       solutionsGenerated: 0,
       scheduleFiles: [] as string[],
+      feasibleSolutions: [] as number[], // Indices of feasible solutions (0, 1, 2)
     };
 
     // Try to parse output for solution information
     if (result.success) {
       const output = result.consoleOutput;
       
-      // Count number of "Solving completed" messages (1 per solution)
-      const completionMatches = output.match(/Solving completed in \d+\.\d+ seconds/g);
-      if (completionMatches) {
-        scheduleInfo.solutionsGenerated = completionMatches.length;
+      // Count number of "- status         : FEASIBLE" lines (1 per successful solution)
+      // This is the reliable indicator that a solution was actually generated
+      const feasibleMatches = output.match(/- status\s+:\s+FEASIBLE/g);
+      if (feasibleMatches) {
+        scheduleInfo.solutionsGenerated = feasibleMatches.length;
+        // solve-multiple generates w0, w1, w2 in order
+        scheduleInfo.feasibleSolutions = Array.from({ length: feasibleMatches.length }, (_, i) => i);
       }
       
       // Look for schedule file references
@@ -88,6 +92,11 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(startTime).toISOString(),
       completedAt: new Date().toISOString(),
       duration,
+      metadata: {
+        solutionsGenerated: scheduleInfo.solutionsGenerated,
+        expectedSolutions: 3,
+        feasibleSolutions: scheduleInfo.feasibleSolutions,
+      },
     };
 
     // Save to job history

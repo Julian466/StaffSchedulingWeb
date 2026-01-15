@@ -41,10 +41,25 @@ function JobRow({ job }: { job: SolverJob }) {
         </TableCell>
         <TableCell>
           {job.status === 'completed' ? (
-            <Badge variant="default" className="bg-green-500">
-              <CheckCircle2 className="h-3 w-3 mr-1" />
-              Erfolgreich
-            </Badge>
+            job.type === 'solve-multiple' && job.metadata?.solutionsGenerated !== undefined && job.metadata?.expectedSolutions !== undefined ? (
+              // Check if solve-multiple was only partially successful
+              job.metadata.solutionsGenerated < job.metadata.expectedSolutions ? (
+                <Badge variant="default" className="bg-yellow-600 dark:bg-yellow-600 hover:bg-yellow-700 dark:hover:bg-yellow-700">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Teilweise ({job.metadata.solutionsGenerated}/{job.metadata.expectedSolutions})
+                </Badge>
+              ) : (
+                <Badge variant="default" className="bg-green-600 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700">
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Erfolgreich
+                </Badge>
+              )
+            ) : (
+              <Badge variant="default" className="bg-green-600 dark:bg-green-600 hover:bg-green-700 dark:hover:bg-green-700">
+                <CheckCircle2 className="h-3 w-3 mr-1" />
+                Erfolgreich
+              </Badge>
+            )
           ) : (
             <Badge variant="destructive">
               <XCircle className="h-3 w-3 mr-1" />

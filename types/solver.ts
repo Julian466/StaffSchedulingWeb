@@ -163,6 +163,15 @@ export interface SolverJob {
    * Execution duration in milliseconds.
    */
   duration: number;
+  
+  /**
+   * Optional metadata for solve-multiple jobs.
+   */
+  metadata?: {
+    solutionsGenerated?: number;      // Number of successful solutions (with FEASIBLE status)
+    expectedSolutions?: number;        // Expected number of solutions (usually 3)
+    feasibleSolutions?: number[];     // Indices of feasible solutions (e.g., [0, 1, 2])
+  };
 }
 
 /**

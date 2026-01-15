@@ -162,6 +162,7 @@ export function useSolveMultiple() {
       scheduleInfo: {
         solutionsGenerated: number;
         scheduleFiles: string[];
+        feasibleSolutions?: number[];
       };
       params: SolveMultipleParams;
     }> => {
@@ -188,12 +189,28 @@ export function useSolveMultiple() {
       queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
       
       if (data.job.status === 'completed') {
-        toast.success(
-          `${data.scheduleInfo.solutionsGenerated} Dienstpläne erfolgreich erstellt`,
-          {
-            description: 'Die Lösungen können nun importiert werden',
-          }
-        );
+        const successCount = data.scheduleInfo.solutionsGenerated;
+        const expectedCount = 3;
+        
+        if (successCount === expectedCount) {
+          toast.success(
+            `${successCount} Dienstpläne erfolgreich erstellt`,
+            {
+              description: 'Alle Lösungen können nun importiert werden',
+            }
+          );
+        } else if (successCount > 0) {
+          toast.warning(
+            `Nur ${successCount} von ${expectedCount} Dienstplänen erstellt`,
+            {
+              description: 'Einige Lösungen konnten nicht generiert werden (kein FEASIBLE Status)',
+            }
+          );
+        } else {
+          toast.error('Keine Dienstpläne erstellt', {
+            description: 'Der Solver konnte keine FEASIBLE Lösungen finden',
+          });
+        }
       } else {
         toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {
           description: data.job.error,
