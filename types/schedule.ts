@@ -44,6 +44,7 @@ export interface ScheduleEmployee {
   vacation_shifts: [number, string][];
   /** Shifts employee cannot work on specific days */
   forbidden_shifts: [number, string][];
+  hidden_actual_working_time: number;
 }
 
 /**
