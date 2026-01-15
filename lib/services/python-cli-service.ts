@@ -64,6 +64,10 @@ function executePythonCommand(
                 timeout: timeoutMs,
                 maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large outputs
                 shell: process.platform === 'win32', // Use shell on Windows for proper command resolution
+                env: {
+                    ...process.env,
+                    PYTHONUNBUFFERED: '1', // Disable Python output buffering
+                },
             }
         );
 
@@ -71,6 +75,7 @@ function executePythonCommand(
         const exitCode = result.status ?? -1;
 
         // Combine stdout and stderr into single console output
+        // Note: Python's logging module writes to stderr by default, which is expected behavior
         const consoleOutput = (result.stdout || '') + (result.stderr || '');
 
         // Check if command actually succeeded by analyzing output
