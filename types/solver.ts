@@ -95,14 +95,9 @@ export interface PythonCommandResult {
   success: boolean;
   
   /**
-   * Standard output from the command.
+   * Combined console output (stdout + stderr).
    */
-  stdout: string;
-  
-  /**
-   * Standard error output from the command.
-   */
-  stderr: string;
+  consoleOutput: string;
   
   /**
    * Exit code from the process.
@@ -145,14 +140,14 @@ export interface SolverJob {
   params: SolverParams;
   
   /**
-   * Execution result (only present if status is 'completed').
+   * Combined console output from command execution.
    */
-  result?: PythonCommandResult;
+  consoleOutput: string;
   
   /**
-   * Error message (only present if status is 'failed').
+   * Exit code from the process.
    */
-  error?: string;
+  exitCode: number;
   
   /**
    * ISO 8601 timestamp when job was created.

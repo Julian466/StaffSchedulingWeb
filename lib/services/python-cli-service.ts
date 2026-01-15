@@ -70,30 +70,33 @@ function executePythonCommand(
         const duration = Date.now() - startTime;
         const exitCode = result.status ?? -1;
 
+        // Combine stdout and stderr into single console output
+        const consoleOutput = (result.stdout || '') + (result.stderr || '');
+
         // Check if command actually succeeded by analyzing output
-        // For solve commands, look for "Solving completed" messages in stderr
+        // For solve commands, check if "- status         : FEASIBLE" appears in output
         let actualSuccess = exitCode === 0;
 
-        if (!actualSuccess && (command === 'solve' || command === 'solve-multiple') && result.stderr) {
-            // Count how many times "Solving completed" appears
-            const completionMatches = result.stderr.match(/Solving completed in \d+\.\d+ seconds/g);
-            const expectedCompletions = command === 'solve-multiple' ? 3 : 1;
-
-            if (completionMatches && completionMatches.length >= expectedCompletions) {
-                // All solves completed successfully, ignore the exit code
+        if (command === 'solve' || command === 'solve-multiple') {
+            // Check if the output contains "- status         : FEASIBLE"
+            // This is the only indicator of a successful solve
+            if (consoleOutput.includes('- status         : FEASIBLE')) {
                 actualSuccess = true;
-                logger.info(`${command} completed successfully despite non-zero exit code`, {
+                logger.info(`${command} completed successfully with FEASIBLE status`, {
                     exitCode,
-                    completedRuns: completionMatches.length,
-                    expectedRuns: expectedCompletions,
+                });
+            } else {
+                // If FEASIBLE status is not found, the solve was not successful
+                actualSuccess = false;
+                logger.warn(`${command} did not produce FEASIBLE status`, {
+                    exitCode,
                 });
             }
         }
 
         const commandResult: PythonCommandResult = {
             success: actualSuccess,
-            stdout: result.stdout || '',
-            stderr: result.stderr || '',
+            consoleOutput,
             exitCode,
             duration,
         };
@@ -107,8 +110,7 @@ function executePythonCommand(
 
             return {
                 success: false,
-                stdout: result.stdout || '',
-                stderr: result.stderr || result.error.message,
+                consoleOutput: result.stderr || result.error.message,
                 exitCode: -1,
                 duration,
             };
@@ -118,7 +120,6 @@ function executePythonCommand(
             logger.warn('Python command failed', {
                 command,
                 exitCode,
-                stderr: result.stderr,
                 duration,
             });
         } else {
@@ -139,8 +140,7 @@ function executePythonCommand(
 
         return {
             success: false,
-            stdout: '',
-            stderr: error instanceof Error ? error.message : String(error),
+            consoleOutput: error instanceof Error ? error.message : String(error),
             exitCode: -1,
             duration,
         };

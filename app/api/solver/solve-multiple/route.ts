@@ -56,9 +56,9 @@ export async function POST(request: NextRequest) {
       scheduleFiles: [] as string[],
     };
 
-    // Try to parse stderr/stdout for solution information
+    // Try to parse output for solution information
     if (result.success) {
-      const output = result.stderr + '\n' + result.stdout;
+      const output = result.consoleOutput;
       
       // Count number of "Solving completed" messages (1 per solution)
       const completionMatches = output.match(/Solving completed in \d+\.\d+ seconds/g);
@@ -83,8 +83,8 @@ export async function POST(request: NextRequest) {
       status: result.success ? 'completed' : 'failed',
       caseId,
       params,
-      result: result.success ? result : undefined,
-      error: result.success ? undefined : result.stderr || 'Command failed',
+      consoleOutput: result.consoleOutput,
+      exitCode: result.exitCode,
       createdAt: new Date(startTime).toISOString(),
       completedAt: new Date().toISOString(),
       duration,

@@ -73,20 +73,11 @@ function JobRow({ job }: { job: SolverJob }) {
                 </pre>
               </div>
 
-              {job.result && job.result.stdout && (
+              {job.consoleOutput && (
                 <div>
-                  <p className="text-sm font-medium mb-1">Ausgabe:</p>
-                  <pre className="text-xs bg-background p-2 rounded overflow-auto max-h-40 wrap-break-word whitespace-pre-wrap">
-                    {job.result.stdout}
-                  </pre>
-                </div>
-              )}
-              
-              {(job.error || (job.result && job.result.stderr)) && (
-                <div>
-                  <p className="text-sm font-medium mb-1 text-destructive">Fehler:</p>
-                  <pre className="text-xs bg-destructive/10 p-2 rounded overflow-auto max-h-40 text-destructive wrap-break-word whitespace-pre-wrap">
-                    {job.error || job.result?.stderr}
+                  <p className="text-sm font-medium mb-1">Konsolen-Output:</p>
+                  <pre className="text-xs bg-background p-2 rounded overflow-auto max-h-40 e wrap-break-word whitespace-pre-wrap">
+                    {job.consoleOutput}
                   </pre>
                 </div>
               )}
