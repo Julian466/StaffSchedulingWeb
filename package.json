@@ -6,7 +6,8 @@
     "dev": "node scripts/dev-with-args.js",
     "dev:default": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node scripts/start-with-args.js",
+    "start:default": "next start",
     "lint": "eslint"
   },
   "dependencies": {
