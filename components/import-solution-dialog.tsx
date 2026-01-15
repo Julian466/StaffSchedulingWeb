@@ -45,6 +45,13 @@ export function ImportSolutionDialog({
 }: ImportSolutionDialogProps) {
   const [error, setError] = useState<string | null>(null);
 
+  // Reset state when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      setError(null);
+    }
+  }, [open]);
+
   const handleImport = async () => {
     setError(null);
     try {

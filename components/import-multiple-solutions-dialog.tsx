@@ -53,6 +53,15 @@ export function ImportMultipleSolutionsDialog({
     total: number;
   } | null>(null);
 
+  // Reset state when dialog is closed
+  React.useEffect(() => {
+    if (!open) {
+      setError(null);
+      setImportProgress(null);
+      setSelectedSolutions(new Set(Array.from({ length: solutionCount }, (_, i) => i)));
+    }
+  }, [open, solutionCount]);
+
   const handleToggle = (index: number) => {
     const newSelected = new Set(selectedSolutions);
     if (newSelected.has(index)) {
