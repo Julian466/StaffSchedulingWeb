@@ -93,9 +93,9 @@ export function SolverControlPanel() {
         // Calculate timeout: solve-multiple runs 3 times, so multiply by 3
         let currentTimeout = 60000; // Default 60s for other commands
         if (command === 'solve') {
-            currentTimeout = parseInt(timeout, 10) * 1000;
+            currentTimeout = parseInt(timeout, 10) * 1000 + 10000; // timeout + 10s buffer
         } else if (command === 'solve-multiple') {
-            currentTimeout = parseInt(timeout, 10) * 3 * 1000; // 3x timeout for 3 runs
+            currentTimeout = parseInt(timeout, 10) * 3 * 1000 + 10000; // 3x timeout for 3 runs + 10s buffer
         }
 
         const interval = setInterval(() => {
