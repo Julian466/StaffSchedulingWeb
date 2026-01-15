@@ -25,19 +25,26 @@ interface EmployeeSelectorProps {
   value?: number; // employee key
   onSelect: (employee: Employee | null) => void;
   disabled?: boolean;
+  excludedKeys?: number[]; // employee keys to exclude from the list
 }
 
 export function EmployeeSelector({
   value,
   onSelect,
   disabled,
+  excludedKeys = [],
 }: EmployeeSelectorProps) {
   const [open, setOpen] = React.useState(false);
   const { data: employees = [], isLoading } = useEmployees();
+  
+  // Filter out excluded employees
+  const availableEmployees = employees.filter(emp => !excludedKeys.includes(emp.key));
 
   const selectedEmployee = value 
     ? employees.find(emp => emp.key === value)
     : null;
+  
+  const displayEmployees = availableEmployees;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -72,7 +79,7 @@ export function EmployeeSelector({
           <CommandList>
             <CommandEmpty>Keine Mitarbeiter gefunden.</CommandEmpty>
             <CommandGroup>
-              {employees.map((employee) => (
+              {displayEmployees.map((employee) => (
                 <CommandItem
                   key={employee.key}
                   value={`${employee.firstname} ${employee.name} ${employee.key}`}

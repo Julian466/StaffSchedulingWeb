@@ -21,6 +21,9 @@ export default function WishesAndBlockedPage() {
 
   // TanStack Query Hooks
   const { data: employees = [], isLoading } = useWishesAndBlocked();
+  
+  // Get list of employee keys that already have wishes
+  const existingEmployeeKeys = employees.map(emp => emp.key);
   const createMutation = useCreateWishesAndBlocked();
   const updateMutation = useUpdateWishesAndBlocked();
   const deleteMutation = useDeleteWishesAndBlocked();
@@ -95,6 +98,7 @@ export default function WishesAndBlockedPage() {
         employee={editingEmployee}
         onSubmit={handleSubmit}
         isSubmitting={isSubmitting}
+        excludedEmployeeKeys={existingEmployeeKeys}
       />
     </div>
   );

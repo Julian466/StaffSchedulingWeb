@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validatePythonConfig } from '@/lib/config/app-config';
+import { validatePythonConfig, getPythonConfig } from '@/lib/config/app-config';
 import { createApiLogger } from '@/lib/logging/logger';
 import { testPythonConfiguration } from '@/lib/services/python-cli-service';
 
@@ -17,6 +17,7 @@ export async function GET(request: NextRequest) {
 
     // Validate configuration
     const configValidation = validatePythonConfig();
+    const pythonConfig = getPythonConfig();
 
     // If config is valid and enabled, test actual Python execution
     let executionTest = null;
@@ -26,6 +27,8 @@ export async function GET(request: NextRequest) {
 
     const response = {
       ...configValidation,
+      pythonExecutable: pythonConfig.pythonExecutable,
+      staffSchedulingPath: pythonConfig.path,
       executionTest,
     };
 

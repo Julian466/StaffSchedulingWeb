@@ -85,7 +85,7 @@ export function useScheduleById(scheduleId: string | null) {
 }
 
 /**
- * Hook to save a new schedule solution with seed.
+ * Hook to save a new schedule solution with optional description.
  * Invalidates relevant query caches on success.
  * 
  * @returns Mutation function to save schedule
@@ -97,7 +97,7 @@ export function useSaveSchedule() {
   return useMutation({
     mutationFn: async (params: {
       scheduleId: string;
-      seed: number;
+      description?: string;
       solution: ScheduleSolutionRaw;
       autoSelect?: boolean;
     }) => {
@@ -175,7 +175,7 @@ export function useDeleteSchedule() {
 }
 
 /**
- * Hook to update schedule metadata (e.g., comment).
+ * Hook to update schedule metadata (e.g., description).
  * Invalidates relevant query caches on success.
  * 
  * @returns Mutation function to update schedule
@@ -185,14 +185,14 @@ export function useUpdateSchedule() {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (params: { scheduleId: string; comment?: string }) => {
+    mutationFn: async (params: { scheduleId: string; description?: string; comment?: string }) => {
       const res = await fetch(`${API_URL}/${params.scheduleId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'x-case-id': currentCaseId.toString(),
         },
-        body: JSON.stringify({ comment: params.comment }),
+        body: JSON.stringify({ description: params.description, comment: params.comment }),
       });
       
       if (!res.ok) throw new Error('Failed to update schedule');
@@ -216,7 +216,7 @@ export function useMultipleSchedules(scheduleIds: string[]) {
   
   return useQuery({
     queryKey: ['schedules', 'multiple', scheduleIds.sort(), currentCaseId],
-    queryFn: async (): Promise<(ScheduleSolution & { scheduleId: string; seed: number })[]> => {
+    queryFn: async (): Promise<(ScheduleSolution & { scheduleId: string; description?: string })[]> => {
       if (scheduleIds.length === 0) return [];
       
       const schedulePromises = scheduleIds.map(async (scheduleId) => {
@@ -232,7 +232,7 @@ export function useMultipleSchedules(scheduleIds: string[]) {
         return {
           ...parsedSolution,
           scheduleId,
-          seed: data.seed,
+          description: data.description,
         };
       });
       

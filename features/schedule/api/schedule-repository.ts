@@ -69,7 +69,7 @@ export class ScheduleRepository {
    * 
    * @param caseId - The case ID
    * @param scheduleId - Unique ID for this schedule (e.g., timestamp or UUID)
-   * @param seed - The seed used to generate this schedule
+   * @param description - Optional description for this schedule
    * @param solution - The schedule solution to save
    * @param autoSelect - Whether to automatically select this schedule (default: false)
    * @throws RepositoryError if the data cannot be written
@@ -77,7 +77,7 @@ export class ScheduleRepository {
   static async saveSchedule(
     caseId: number,
     scheduleId: string,
-    seed: number,
+    description: string | undefined,
     solution: ScheduleSolutionRaw,
     autoSelect: boolean = false
   ): Promise<void> {
@@ -95,7 +95,7 @@ export class ScheduleRepository {
       
       const scheduleMetadata: ScheduleMetadata = {
         scheduleId,
-        seed,
+        description,
         generatedAt: new Date().toISOString(),
         isSelected: autoSelect,
         stats: solution.stats,
@@ -124,7 +124,7 @@ export class ScheduleRepository {
       }
 
       await metadataDb.write();
-      logger.info('Schedule saved successfully', { caseId, scheduleId, seed, autoSelect });
+      logger.info('Schedule saved successfully', { caseId, scheduleId, description, autoSelect });
     } catch (error) {
       logger.error('Failed to save schedule', { caseId, scheduleId, error });
       throw new RepositoryError('Failed to save schedule');
@@ -212,5 +212,31 @@ export class ScheduleRepository {
       throw new RepositoryError('Failed to update schedule comment');
     }
   }
-}
 
+  /**
+   * Updates the description for a schedule.
+   * 
+   * @param caseId - The case ID
+   * @param scheduleId - The schedule ID
+   * @param description - The description to set
+   * @throws RepositoryError if the data cannot be updated
+   */
+  static async updateScheduleDescription(caseId: number, scheduleId: string, description: string): Promise<void> {
+    try {
+      const db = await getSchedulesMetadataDb(caseId);
+      const schedule = db.data.schedules.find(s => s.scheduleId === scheduleId);
+      
+      if (!schedule) {
+        throw new Error('Schedule not found');
+      }
+      
+      schedule.description = description;
+      await db.write();
+      
+      logger.info('Schedule description updated', { caseId, scheduleId });
+    } catch (error) {
+      logger.error('Failed to update schedule description', { caseId, scheduleId, error });
+      throw new RepositoryError('Failed to update schedule description');
+    }
+  }
+}

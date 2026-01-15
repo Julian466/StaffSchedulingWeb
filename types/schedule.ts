@@ -110,8 +110,8 @@ export interface ScheduleSolutionRaw {
 export interface ScheduleMetadata {
   /** Unique identifier for this schedule instance */
   scheduleId: string;
-  /** Seed used to generate this schedule */
-  seed: number;
+  /** Optional description for this schedule */
+  description?: string;
   /** ISO timestamp when the schedule was generated */
   generatedAt: string;
   /** Whether this schedule is selected as the best/active one */

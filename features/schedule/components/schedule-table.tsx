@@ -28,7 +28,7 @@ interface SingleScheduleTableProps {
 }
 
 interface CompareScheduleTableProps {
-  schedules: (ScheduleSolution & { scheduleId: string; seed: number })[];
+  schedules: (ScheduleSolution & { scheduleId: string; description?: string })[];
   compareMode: true;
   isFullscreen?: boolean;
 }
@@ -154,7 +154,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
     const employeeMap = new Map<number, ScheduleEmployee[]>();
     
     // Group all employees by their ID
-    schedules.forEach((schedule: ScheduleSolution & { scheduleId: string; seed: number }) => {
+    schedules.forEach((schedule: ScheduleSolution & { scheduleId: string; description?: string }) => {
       schedule.employees.forEach((employee: ScheduleEmployee) => {
         if (!employeeMap.has(employee.id)) {
           employeeMap.set(employee.id, []);
@@ -164,7 +164,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
     });
     
     // Convert to array of groups, filtering by search
-    const groups: { employee: ScheduleEmployee; scheduleId: string; seed: number; scheduleData: ScheduleSolution & { scheduleId: string; seed: number } }[][] = [];
+    const groups: { employee: ScheduleEmployee; scheduleId: string; description?: string; scheduleData: ScheduleSolution & { scheduleId: string; description?: string } }[][] = [];
     
     employeeMap.forEach((employees, employeeId) => {
       const firstEmployee = employees[0];
@@ -173,15 +173,15 @@ export function ScheduleTable(props: ScheduleTableProps) {
           firstEmployee.level.toLowerCase().includes(searchTerm.toLowerCase()) ||
           firstEmployee.id.toString().includes(searchTerm)) {
         
-        const group = schedules.map((schedule: ScheduleSolution & { scheduleId: string; seed: number }, _idx: number) => {
+        const group = schedules.map((schedule: ScheduleSolution & { scheduleId: string; description?: string }, _idx: number) => {
           const employee = schedule.employees.find((e: ScheduleEmployee) => e.id === employeeId);
           return {
             employee: employee!,
             scheduleId: schedule.scheduleId,
-            seed: schedule.seed,
+            description: schedule.description,
             scheduleData: schedule,
           };
-        }).filter((item: { employee: ScheduleEmployee; scheduleId: string; seed: number; scheduleData: ScheduleSolution & { scheduleId: string; seed: number } }) => item.employee);
+        }).filter((item: { employee: ScheduleEmployee; scheduleId: string; description?: string; scheduleData: ScheduleSolution & { scheduleId: string; description?: string } }) => item.employee);
         
         groups.push(group);
       }
@@ -251,7 +251,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
                   {groupedEmployees.map((group, groupIdx) => (
                     <React.Fragment key={`group-${group[0]?.employee.id || groupIdx}`}>
                       {group.map((item, itemIdx) => {
-                        const { employee, scheduleId, seed, scheduleData } = item;
+                        const { employee, scheduleId, description, scheduleData } = item;
                         const stats = getEmployeeStats(employee, scheduleData.days, scheduleData.shifts, scheduleData.variables);
                         const isFirstInGroup = itemIdx === 0;
                         const isLastInGroup = itemIdx === group.length - 1;
@@ -289,7 +289,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                   </>
                                 )}
                                 <div className={cn("text-xs font-semibold", isFirstInGroup && "mt-2", "text-blue-600 dark:text-blue-400")}>
-                                  Seed {seed}
+                                  {description || "Ohne Beschreibung"}
                                 </div>
                                 <div className="text-xs">
                                   <div className="text-muted-foreground">{stats.totalShifts} Schichten</div>
