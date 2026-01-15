@@ -35,7 +35,11 @@ import { toast } from 'sonner';
 import { useWorkflow } from '@/contexts/workflow-context';
 import { useCase } from '@/components/case-provider';
 import { ImportSolutionDialog } from '@/components/import-solution-dialog';
+import { ImportMultipleSolutionsDialog } from '@/components/import-multiple-solutions-dialog';
 import { useImportSolution } from '@/features/solver/hooks/use-solver';
+import { TimeoutConfigDialog } from '@/components/timeout-config-dialog';
+import { JobHistoryTable } from '@/features/solver/components/job-history-table';
+import { useQueryClient } from '@tanstack/react-query';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -53,7 +57,8 @@ interface ConfigCheck {
 export default function WorkflowPage() {
   const router = useRouter();
   const { workflowData, isLoading: workflowLoading } = useWorkflow();
-  const { switchCase } = useCase();
+  const { switchCase, currentCaseId } = useCase();
+  const queryClient = useQueryClient();
   
   // Use workflow data from server environment
   const caseId = workflowData?.caseId;
@@ -83,6 +88,20 @@ export default function WorkflowPage() {
     solutionType: string;
   } | null>(null);
   const importSolutionMutation = useImportSolution();
+
+  // Multiple import dialog state
+  const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
+  const [multipleImportParams, setMultipleImportParams] = useState<{
+    caseId: number;
+    start: string;
+    end: string;
+    solutionCount: number;
+    feasibleSolutions?: number[];
+  } | null>(null);
+
+  // Timeout dialog state
+  const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'solve' | 'multi-solve' | null>(null);
 
   // Check configuration on mount
   useEffect(() => {
@@ -169,10 +188,17 @@ export default function WorkflowPage() {
       return;
     }
 
+    // Show timeout dialog for solve and multi-solve
+    if (action === 'solve' || action === 'multi-solve') {
+      setPendingAction(action);
+      setShowTimeoutDialog(true);
+      return;
+    }
+
     await executeAPIAction(action);
   };
 
-  const executeAPIAction = async (action: WorkflowAction) => {
+  const executeAPIAction = async (action: WorkflowAction, timeout?: number) => {
     setActionStates(prev => ({ ...prev, [action]: { status: 'running' } }));
 
     try {
@@ -200,11 +226,11 @@ export default function WorkflowPage() {
           break;
         case 'solve':
           endpoint = '/api/solver/solve';
-          body.timeout = 30;
+          body.timeout = timeout || 60;
           break;
         case 'multi-solve':
           endpoint = '/api/solver/solve-multiple';
-          body.timeout = 30;
+          body.timeout = timeout || 60;
           break;
         case 'insert':
           // First, save the currently selected schedule before exporting
@@ -246,7 +272,33 @@ export default function WorkflowPage() {
 
       const result = await response.json();
 
+      // Invalidate job history to refresh the table (even on errors to show failed jobs)
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCaseId] });
+
       if (!response.ok) {
+        // If the job failed but we have job details, extract more information
+        if (result.job && result.job.status === 'failed') {
+          // Extract error details from console output if available
+          let errorDetail = 'Der Solver konnte keine FEASIBLE Lösung finden';
+          
+          if (result.job.consoleOutput) {
+            // Try to extract meaningful error from console output
+            const outputLines = result.job.consoleOutput.split('\n');
+            const errorLines = outputLines.filter((line: string) => 
+              line.includes('ERROR') || 
+              line.includes('UNKNOWN') ||
+              line.includes('INFEASIBLE') ||
+              line.includes('status')
+            );
+            
+            if (errorLines.length > 0) {
+              errorDetail = errorLines.slice(0, 3).join('\n');
+            }
+          }
+          
+          throw new Error(errorDetail);
+        }
+        
         throw new Error(result.error || 'Fehler bei der Ausführung');
       }
 
@@ -258,17 +310,71 @@ export default function WorkflowPage() {
         } 
       }));
 
-      toast.success(`${getActionLabel(action)} erfolgreich abgeschlossen`);
+      // Handle successful solve - check if solution is FEASIBLE
+      if (action === 'solve' && result.job) {
+        if (result.job.status === 'completed') {
+          toast.success('Dienstplan erfolgreich berechnet');
+          setImportParams({
+            caseId: parseInt(caseId!),
+            start: isoStart,
+            end: isoEnd,
+            solutionType: 'wdefault',
+          });
+          setShowImportDialog(true);
+        } else {
+          toast.error('Fehler beim Berechnen des Dienstplans', {
+            description: 'Der Solver konnte keine FEASIBLE Lösung finden',
+          });
+        }
+      }
       
-      // Show import dialog after successful solve or multi-solve
-      if (action === 'solve' || action === 'multi-solve') {
-        setImportParams({
-          caseId: parseInt(caseId!),
-          start: isoStart,
-          end: isoEnd,
-          solutionType: action === 'solve' ? 'wdefault' : 'w0',
-        });
-        setShowImportDialog(true);
+      // Handle successful multi-solve - check how many solutions are FEASIBLE
+      if (action === 'multi-solve' && result.job && result.scheduleInfo) {
+        if (result.job.status === 'completed') {
+          const successCount = result.scheduleInfo.solutionsGenerated || 0;
+          const expectedCount = 3;
+          
+          if (successCount === expectedCount) {
+            toast.success(
+              `${successCount} Dienstpläne erfolgreich berechnet`,
+              {
+                description: 'Alle Lösungen können nun importiert werden',
+              }
+            );
+          } else if (successCount > 0) {
+            toast.warning(
+              `Nur ${successCount} von ${expectedCount} Dienstplänen berechnet`,
+              {
+                description: 'Einige Lösungen konnten nicht generiert werden (kein FEASIBLE Status)',
+              }
+            );
+          } else {
+            toast.error('Keine Dienstpläne berechnet', {
+              description: 'Der Solver konnte keine FEASIBLE Lösungen finden',
+            });
+          }
+          
+          // Show import dialog only if at least one solution was generated
+          if (successCount > 0) {
+            setMultipleImportParams({
+              caseId: parseInt(caseId!),
+              start: isoStart,
+              end: isoEnd,
+              solutionCount: successCount,
+              feasibleSolutions: result.scheduleInfo.feasibleSolutions,
+            });
+            setShowMultipleImportDialog(true);
+          }
+        } else {
+          toast.error('Fehler beim Berechnen mehrerer Dienstpläne', {
+            description: 'Der Solver konnte den Vorgang nicht abschließen',
+          });
+        }
+      }
+      
+      // Show generic success toast for other actions
+      if (action !== 'solve' && action !== 'multi-solve') {
+        toast.success(`${getActionLabel(action)} erfolgreich abgeschlossen`);
       }
       
       // Refresh solution exists check after delete
@@ -276,6 +382,9 @@ export default function WorkflowPage() {
         setSolutionExists(false);
       }
     } catch (error) {
+      // Invalidate job history to show failed jobs
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCaseId] });
+      
       const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
       setActionStates(prev => ({ 
         ...prev, 
@@ -284,8 +393,22 @@ export default function WorkflowPage() {
           message: errorMessage 
         } 
       }));
-      toast.error(`Fehler bei ${getActionLabel(action)}: ${errorMessage}`);
+      
+      // Show detailed error toast
+      toast.error(`Fehler bei ${getActionLabel(action)}`, {
+        description: errorMessage,
+      });
     }
+  };
+
+  const handleTimeoutConfirm = async (timeout: number) => {
+    if (!pendingAction) return;
+    
+    const action = pendingAction;
+    setPendingAction(null);
+    setShowTimeoutDialog(false);
+    
+    await executeAPIAction(action, timeout);
   };
 
   const getActionLabel = (action: WorkflowAction): string => {
@@ -479,6 +602,11 @@ export default function WorkflowPage() {
         })}
       </div>
 
+      {/* Job History Table */}
+      <div className="mt-8">
+        <JobHistoryTable />
+      </div>
+
       {/* Delete Warning Dialog */}
       <AlertDialog open={showDeleteWarning} onOpenChange={setShowDeleteWarning}>
         <AlertDialogContent>
@@ -546,6 +674,32 @@ export default function WorkflowPage() {
           isImporting={importSolutionMutation.isPending}
         />
       )}
+
+      {/* Import Multiple Solutions Dialog */}
+      {multipleImportParams && (
+        <ImportMultipleSolutionsDialog
+          open={showMultipleImportDialog}
+          onOpenChange={setShowMultipleImportDialog}
+          caseId={multipleImportParams.caseId}
+          start={multipleImportParams.start}
+          end={multipleImportParams.end}
+          solutionCount={multipleImportParams.solutionCount}
+          feasibleSolutions={multipleImportParams.feasibleSolutions}
+          onImport={async (params) => {
+            await importSolutionMutation.mutateAsync(params);
+          }}
+          isImporting={importSolutionMutation.isPending}
+        />
+      )}
+
+      {/* Timeout Configuration Dialog */}
+      <TimeoutConfigDialog
+        open={showTimeoutDialog}
+        onOpenChange={setShowTimeoutDialog}
+        onConfirm={handleTimeoutConfirm}
+        isExecuting={pendingAction ? actionStates[pendingAction].status === 'running' : false}
+        actionTitle={pendingAction ? getActionLabel(pendingAction) : ''}
+      />
     </div>
   );
 }
