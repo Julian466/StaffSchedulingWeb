@@ -20,4 +20,4 @@ else
 fi
 
 echo "Starten des Prozesses"
-echo "Aenderung"
+./workflow.sh
