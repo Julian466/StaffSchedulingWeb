@@ -8,8 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Save, Sunrise, Sun, Moon, Info } from 'lucide-react';
+import { Save, Sunrise, Sun, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MinimalStaffEditorProps {
@@ -179,7 +178,7 @@ export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalSt
                           </TableCell>
                         </TableRow>
                       ))}
-                      <TableRow key="saldo" className={cn("bg-muted/30")}>
+                      <TableRow key="total" className={cn("bg-muted/30")}>
                         <TableCell className="font-medium">
                           <div className="flex items-center gap-2">
                             <span>Gesamt</span>
