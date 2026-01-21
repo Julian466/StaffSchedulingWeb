@@ -68,9 +68,11 @@ export async function PUT(
         const { id } = await params;
         const key = parseInt(id, 10);
         const body = await request.json();
+        const skipHeader = request.headers.get('x-skip-sync-to-monthly');
+        const skipSyncToMonthly = skipHeader === '1' || skipHeader === 'true';
 
-        apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, key });
-        const employee = await globalWishesAndBlockedRepository.update(key, body, caseId);
+        apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, key, skipSyncToMonthly });
+        const employee = await globalWishesAndBlockedRepository.update(key, body, caseId, { skipSyncToMonthly });
 
         if (!employee) {
             apiLogger.warn('Wishes-and-blocked employee not found for update', { method, caseId, key });
@@ -80,7 +82,7 @@ export async function PUT(
             );
         }
 
-        apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, key });
+        apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, key, skipSyncToMonthly });
         return NextResponse.json(employee);
     } catch (error) {
         apiLogger.error('Failed to update wishes-and-blocked employee', { method, caseId, error });

@@ -37,14 +37,19 @@ export function useCreateGlobalWishesAndBlocked() {
     const qc = useQueryClient();
     const { currentCaseId } = useCase();
     return useMutation({
-        mutationFn: async(data: Omit<WishesAndBlockedEmployee, 'key'>) =>
+        mutationFn: async(payload: { data: Omit<WishesAndBlockedEmployee, 'key'>; options?: { skipSyncToMonthly?: boolean } }) =>
     {
+        const { data, options } = payload;
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            'x-case-id': currentCaseId.toString(),
+        };
+        if (options?.skipSyncToMonthly) {
+            headers['x-skip-sync-to-monthly'] = '1';
+        }
         const res = await fetch(API_BASE, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-case-id': currentCaseId.toString(),
-            },
+            headers,
             body: JSON.stringify(data),
         });
         if (!res.ok) throw new Error('Failed to create wishes and blocked employee');
@@ -62,13 +67,16 @@ export function useUpdateGlobalWishesAndBlocked() {
     const { currentCaseId } = useCase();
 
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>> }): Promise<WishesAndBlockedEmployee> => {
+        mutationFn: async ({ id, data, options }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>; options?: { skipSyncToMonthly?: boolean } }): Promise<WishesAndBlockedEmployee> => {
+            const headers: Record<string,string> = {
+                'Content-Type': 'application/json',
+                'x-case-id': currentCaseId.toString(),
+            };
+            if (options?.skipSyncToMonthly) headers['x-skip-sync-to-monthly'] = '1';
+
             const res = await fetch(`${API_BASE}/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-case-id': currentCaseId.toString(),
-                },
+                headers,
                 body: JSON.stringify(data),
             });
             if (!res.ok) throw new Error('Failed to update wishes and blocked employee');

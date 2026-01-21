@@ -52,7 +52,7 @@ export const globalWishesAndBlockedRepository = {
      * @param caseId - The case ID to create the entry in
      * @returns Promise resolving to the newly created employee wishes and blocked data
      */
-    async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number): Promise<WishesAndBlockedEmployee> {
+    async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number, options?: { skipSyncToMonthly?: boolean }): Promise<WishesAndBlockedEmployee> {
         const db = await getDb(caseId);
         const employeeDb = await getEmployeeDb(caseId);
         await db.read();
@@ -73,7 +73,10 @@ export const globalWishesAndBlockedRepository = {
         db.data.employees.push(newEmployee);
         await db.write();
 
-        await wishesAndBlockedRepository.updateGeneralWishes(existingEmployee.key, newEmployee, caseId);
+        // Only sync to monthly wishes if not explicitly skipped
+        if (!options?.skipSyncToMonthly) {
+            await wishesAndBlockedRepository.updateGeneralWishes(existingEmployee.key, newEmployee, caseId);
+        }
         return newEmployee;
     },
 
@@ -86,7 +89,7 @@ export const globalWishesAndBlockedRepository = {
      * @param caseId - The case ID where the employee exists
      * @returns Promise resolving to the updated employee data, or null if not found
      */
-    async update(key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>, caseId: number): Promise<WishesAndBlockedEmployee | null> {
+    async update(key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>, caseId: number, options?: { skipSyncToMonthly?: boolean }): Promise<WishesAndBlockedEmployee | null> {
         const db = await getDb(caseId);
         await db.read();
 
@@ -101,7 +104,10 @@ export const globalWishesAndBlockedRepository = {
 
         await db.write();
 
-        await wishesAndBlockedRepository.updateGeneralWishes(key, db.data.employees[index], caseId);
+        // Only sync to monthly wishes if not explicitly skipped
+        if (!options?.skipSyncToMonthly) {
+            await wishesAndBlockedRepository.updateGeneralWishes(key, db.data.employees[index], caseId);
+        }
         return db.data.employees[index];
     },
 

@@ -52,9 +52,11 @@ export async function POST(request: Request) {
     try {
         caseId = await getCaseIdFromHeaders();
         const body = await request.json();
-        apiLogger.info('Creating wishes-and-blocked employee', { method, caseId });
-        const employee = await globalWishesAndBlockedRepository.create(body, caseId);
-        apiLogger.info('Created wishes-and-blocked employee', { method, caseId, employeeKey: employee?.key });
+        const skipHeader = request.headers.get('x-skip-sync-to-monthly');
+        const skipSyncToMonthly = skipHeader === '1' || skipHeader === 'true';
+        apiLogger.info('Creating wishes-and-blocked employee', { method, caseId, skipSyncToMonthly });
+        const employee = await globalWishesAndBlockedRepository.create(body, caseId, { skipSyncToMonthly });
+        apiLogger.info('Created wishes-and-blocked employee', { method, caseId, employeeKey: employee?.key, skipSyncToMonthly });
         return NextResponse.json(employee, { status: 201 });
     } catch (error) {
         apiLogger.error('Failed to create wishes and blocked employee', { method, caseId, error });
