@@ -58,11 +58,16 @@ const categories: { key: EmployeeCategory; label: string; color: string; descrip
 export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalStaffEditorProps) {
   const [localRequirements, setLocalRequirements] = useState<MinimalStaffRequirements>(requirements);
   const [hasChanges, setHasChanges] = useState(false);
-
   useEffect(() => {
-    setLocalRequirements(requirements);
-    setHasChanges(false);
-  }, [requirements]);
+    if (!hasChanges) {
+      const reqStr = JSON.stringify(requirements);
+      const localStr = JSON.stringify(localRequirements);
+      if (reqStr !== localStr) {
+        // Schedule update asynchronously to avoid synchronous setState in effect body
+        Promise.resolve().then(() => setLocalRequirements(requirements));
+      }
+    }
+  }, [requirements, hasChanges, localRequirements]);
 
   const handleValueChange = (
     category: EmployeeCategory,
