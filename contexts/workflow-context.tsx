@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 
 interface WorkflowData {
   caseId: string;
+  monthYear: string;
   startDate: string;
   endDate: string;
   isWorkflowMode: boolean;
@@ -19,6 +20,19 @@ interface WorkflowContextType {
 
 const WorkflowContext = createContext<WorkflowContextType | undefined>(undefined);
 
+/**
+ * Derives monthYear in MM_YYYY format from a date string.
+ * 
+ * @param dateStr - Date string (e.g., "2024-11-01")
+ * @returns MonthYear string (e.g., "11_2024")
+ */
+function deriveMonthYearFromDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+  const year = date.getFullYear();
+  return `${month}_${year}`;
+}
+
 export function WorkflowProvider({ children }: { children: ReactNode }) {
   const [workflowData, setWorkflowDataState] = useState<WorkflowData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,8 +45,12 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
         const data = await response.json();
         
         if (data.isWorkflowMode && data.caseId && data.startDate && data.endDate) {
+          // Derive monthYear from startDate
+          const monthYear = deriveMonthYearFromDate(data.startDate);
+          
           setWorkflowDataState({
             caseId: data.caseId,
+            monthYear,
             startDate: data.startDate,
             endDate: data.endDate,
             isWorkflowMode: true

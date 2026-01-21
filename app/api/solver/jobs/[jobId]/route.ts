@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 import { jobRepository } from '@/features/solver/api/job-repository';
 
@@ -15,23 +15,30 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ jobId: string }> }
 ) {
+  let caseId: number | undefined;
+  let monthYear: string | undefined;
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { jobId } = await params;
 
-    apiLogger.info('Fetching job', { caseId, jobId });
+    apiLogger.info('Fetching job', { caseId, monthYear, jobId });
 
-    const job = await jobRepository.getByKey(jobId, caseId);
+    const job = await jobRepository.getByKey(jobId, caseId, monthYear);
 
     if (!job) {
-      apiLogger.warn('Job not found', { caseId, jobId });
+      apiLogger.warn('Job not found', { caseId, monthYear, jobId });
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
       );
     }
 
-    apiLogger.info('Job retrieved', { caseId, jobId, status: job.status });
+    apiLogger.info('Job retrieved', { caseId, monthYear, jobId, status: job.status });
 
     return NextResponse.json({ job });
   } catch (error) {

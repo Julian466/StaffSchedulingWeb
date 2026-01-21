@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 import { validatePythonConfig } from '@/lib/config/app-config';
 import { executeSolveMultiple } from '@/lib/services/python-cli-service';
@@ -18,7 +18,10 @@ const apiLogger = createApiLogger('/api/solver/solve-multiple');
  */
 export async function POST(request: NextRequest) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const body = await request.json();
 
     const params: SolveMultipleParams = {
@@ -28,7 +31,7 @@ export async function POST(request: NextRequest) {
       timeout: body.timeout,
     };
 
-    apiLogger.info('Executing solve-multiple command', { caseId, params });
+    apiLogger.info('Executing solve-multiple command', { caseId, monthYear, params });
 
     // Validate Python configuration
     const configValidation = validatePythonConfig();
@@ -100,10 +103,11 @@ export async function POST(request: NextRequest) {
     };
 
     // Save to job history
-    await jobRepository.create(job, caseId);
+    await jobRepository.create(job, caseId, monthYear);
 
     apiLogger.info('Solve-multiple command completed', {
       caseId,
+      monthYear,
       jobId: job.id,
       success: result.success,
       duration,

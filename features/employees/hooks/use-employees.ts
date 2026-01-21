@@ -13,17 +13,21 @@ const API_URL = '/api/employees';
  * @returns React Query result with employee data
  */
 export function useEmployees() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   
   return useQuery({
-    queryKey: ['employees', currentCaseId],
+    queryKey: ['employees', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<Employee[]> => {
+      if (!currentCase) throw new Error('No case selected');
       const res = await fetch(API_URL, {
-        headers: { 'x-case-id': currentCaseId.toString() },
+        headers: {
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear,},
       });
       if (!res.ok) throw new Error('Failed to fetch employees');
       return res.json();
     },
+    enabled: !!currentCase,
   });
 }
 

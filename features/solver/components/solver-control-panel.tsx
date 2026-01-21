@@ -31,7 +31,7 @@ import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-soluti
 const COMMANDS_WITHOUT_DATE: SolverCommandType[] = [];
 
 export function SolverControlPanel() {
-    const {currentCaseId: selectedCase, caseInformation, updateCaseInformation} = useCase();
+    const {currentCaseId: selectedCase, currentCase, switchCase} = useCase();
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [timeout, setTimeout] = useState('300');
 
@@ -45,11 +45,11 @@ export function SolverControlPanel() {
 
     // Set default month and year from case information
     React.useEffect(() => {
-        if (caseInformation && selectedMonth === null && selectedYear === null) {
-            setSelectedMonth(caseInformation.month);
-            setSelectedYear(caseInformation.year);
+        if (currentCase && selectedMonth === null && selectedYear === null) {
+            setSelectedMonth(currentCase.month);
+            setSelectedYear(currentCase.year);
         }
-    }, [caseInformation, selectedMonth, selectedYear]);
+    }, [currentCase, selectedMonth, selectedYear]);
 
     // Import dialog state
     const [showImportDialog, setShowImportDialog] = useState(false);
@@ -146,9 +146,12 @@ export function SolverControlPanel() {
             case 'fetch':
                 fetchMutation.mutate(baseParams, {
                     onSuccess: async () => {
-                        // Update case information with selected month and year after successful fetch
+                        // Update case information with selected month and year after successful fetch -
                         if (selectedMonth !== null && selectedYear !== null) {
-                            await updateCaseInformation(selectedMonth, selectedYear);
+                            // Be sure that selectedMonth is MM format
+                            const monthStr = String(selectedMonth).padStart(2, '0');
+                            const monthYear = `${monthStr}_${selectedYear}`;
+                            await switchCase(selectedCase, monthYear);
                         }
                     }
                 });

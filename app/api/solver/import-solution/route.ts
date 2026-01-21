@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 import { getPythonConfig } from '@/lib/config/app-config';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
@@ -17,12 +17,19 @@ const apiLogger = createApiLogger('/api/solver/import-solution');
  * @returns Success confirmation with schedule ID
  */
 export async function POST(request: NextRequest) {
+  let caseId: number | undefined;
+  let monthYear: string | undefined;
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const body = await request.json();
-    
+
     const { start, end, solutionType } = body;
-    
+
     if (!start || !end || !solutionType) {
       return NextResponse.json(
         {
@@ -34,6 +41,7 @@ export async function POST(request: NextRequest) {
 
     apiLogger.info('Importing processed solution', {
       caseId,
+      monthYear,
       start,
       end,
       solutionType,
@@ -62,7 +70,7 @@ export async function POST(request: NextRequest) {
 
     const startFormatted = formatDateForFilename(start);
     const endFormatted = formatDateForFilename(end);
-    
+
     // Construct expected filename: solution_{caseId}_{start}-{end}_{solutionType}_processed.json
     const filename = `solution_${caseId}_${startFormatted}-${endFormatted}_${solutionType}_processed.json`;
     const filePath = join(pythonConfig.path, 'processed_solutions', filename);
@@ -107,6 +115,7 @@ export async function POST(request: NextRequest) {
     try {
       await ScheduleRepository.saveSchedule(
         caseId,
+        monthYear,
         scheduleId,
         description,
         solution,
@@ -115,6 +124,7 @@ export async function POST(request: NextRequest) {
 
       apiLogger.info('Solution imported successfully', {
         caseId,
+        monthYear,
         scheduleId,
         filename,
       });
