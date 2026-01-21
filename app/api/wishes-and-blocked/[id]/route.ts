@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { wishesAndBlockedRepository } from '@/features/wishes_and_blocked/api/wishes-and-blocked-repository';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
 const apiLogger = createApiLogger('/api/wishes-and-blocked/[id]');
@@ -21,25 +21,31 @@ export async function GET(
 ) {
   const method = 'GET';
   let caseId: number | undefined;
+  let monthYear: string | undefined;
   try {
-    caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { id } = await params;
     const key = parseInt(id, 10);
-    apiLogger.info('Fetching wishes-and-blocked employee by key', { method, caseId, key });
+    apiLogger.info('Fetching wishes-and-blocked employee by key', { method, caseId, monthYear, key });
     
-    const employee = await wishesAndBlockedRepository.getByKey(key, caseId);
+    const employee = await wishesAndBlockedRepository.getByKey(key, caseId, monthYear);
     if (!employee) {
-      apiLogger.warn('Wishes-and-blocked employee not found', { method, caseId, key });
+      apiLogger.warn('Wishes-and-blocked employee not found', { method, caseId, monthYear, key });
       return NextResponse.json(
         { error: 'Employee not found' }, 
         { status: 404 }
       );
     }
     
-    apiLogger.info('Fetched wishes-and-blocked employee', { method, caseId, key });
+    apiLogger.info('Fetched wishes-and-blocked employee', { method, caseId, monthYear, key });
     return NextResponse.json(employee);
   } catch (error) {
-    apiLogger.error('Failed to fetch wishes-and-blocked employee', { method, caseId, error });
+    apiLogger.error('Failed to fetch wishes-and-blocked employee', { method, caseId, monthYear, error });
     return NextResponse.json(
       { error: 'Failed to fetch employee' }, 
       { status: 500 }
@@ -63,27 +69,33 @@ export async function PUT(
 ) {
   const method = 'PUT';
   let caseId: number | undefined;
+  let monthYear: string | undefined;
   try {
-    caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { id } = await params;
     const key = parseInt(id, 10);
     const body = await request.json();
     
-    apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, key });
-    const employee = await wishesAndBlockedRepository.update(key, body, caseId);
+    apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, monthYear, key });
+    const employee = await wishesAndBlockedRepository.update(key, body, caseId, monthYear);
     
     if (!employee) {
-      apiLogger.warn('Wishes-and-blocked employee not found for update', { method, caseId, key });
+      apiLogger.warn('Wishes-and-blocked employee not found for update', { method, caseId, monthYear, key });
       return NextResponse.json(
         { error: 'Employee not found' }, 
         { status: 404 }
       );
     }
     
-    apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, key });
+    apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, monthYear, key });
     return NextResponse.json(employee);
   } catch (error) {
-    apiLogger.error('Failed to update wishes-and-blocked employee', { method, caseId, error });
+    apiLogger.error('Failed to update wishes-and-blocked employee', { method, caseId, monthYear, error });
     return NextResponse.json(
       { error: 'Failed to update employee' }, 
       { status: 500 }
@@ -109,26 +121,32 @@ export async function DELETE(
 ) {
   const method = 'DELETE';
   let caseId: number | undefined;
+  let monthYear: string | undefined;
   try {
-    caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { id } = await params;
     const key = parseInt(id, 10);
     
-    apiLogger.info('Deleting wishes-and-blocked employee', { method, caseId, key });
-    const deleted = await wishesAndBlockedRepository.delete(key, caseId);
+    apiLogger.info('Deleting wishes-and-blocked employee', { method, caseId, monthYear, key });
+    const deleted = await wishesAndBlockedRepository.delete(key, caseId, monthYear);
     
     if (!deleted) {
-      apiLogger.warn('Wishes-and-blocked employee not found for deletion', { method, caseId, key });
+      apiLogger.warn('Wishes-and-blocked employee not found for deletion', { method, caseId, monthYear, key });
       return NextResponse.json(
         { error: 'Employee not found' }, 
         { status: 404 }
       );
     }
     
-    apiLogger.info('Deleted wishes-and-blocked employee', { method, caseId, key });
+    apiLogger.info('Deleted wishes-and-blocked employee', { method, caseId, monthYear, key });
     return new NextResponse(null, { status: 204 });
   } catch (error) {
-    apiLogger.error('Failed to delete wishes-and-blocked employee', { method, caseId, error });
+    apiLogger.error('Failed to delete wishes-and-blocked employee', { method, caseId, monthYear, error });
     return NextResponse.json(
       { error: 'Failed to delete employee' }, 
       { status: 500 }

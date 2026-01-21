@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
 import { validatePythonConfig, getPythonConfig } from '@/lib/config/app-config';
@@ -18,7 +18,10 @@ const apiLogger = createApiLogger('/api/solver/save-solution');
  */
 export async function POST(request: NextRequest) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const body = await request.json();
 
     const { start, end } = body;
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    apiLogger.info('Saving selected solution', { caseId, start, end });
+    apiLogger.info('Saving selected solution', { caseId, monthYear, start, end });
 
     // Validate Python configuration to get StaffScheduling path
     const configValidation = validatePythonConfig();
@@ -62,10 +65,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the currently selected schedule
-    const selectedSchedule = await ScheduleRepository.getSelectedSchedule(caseId);
+    const selectedSchedule = await ScheduleRepository.getSelectedSchedule(caseId, monthYear);
 
     if (!selectedSchedule) {
-      apiLogger.warn('No schedule selected', { caseId });
+      apiLogger.warn('No schedule selected', { caseId, monthYear });
       return NextResponse.json(
         { error: 'No schedule is currently selected' },
         { status: 404 }

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Maximize2, Upload, Trash2 } from 'lucide-react';
+import { CalendarDays, Maximize2, Upload } from 'lucide-react';
 import { ScheduleTable } from '@/features/schedule/components/schedule-table';
 import { StatsGrid } from '@/features/schedule/components/stats-grid';
 import { ScheduleFileUpload } from '@/features/schedule/components/schedule-file-upload';

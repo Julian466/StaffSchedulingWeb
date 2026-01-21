@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { validatePythonConfig, getPythonConfig } from '@/lib/config/app-config';
 import { createApiLogger } from '@/lib/logging/logger';
 import { testPythonConfiguration } from '@/lib/services/python-cli-service';
@@ -11,7 +11,7 @@ const apiLogger = createApiLogger('/api/solver/validate-config');
  * 
  * @returns Validation result with status and error/warning messages
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     apiLogger.info('Validating Python configuration');
 

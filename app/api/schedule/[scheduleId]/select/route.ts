@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 
 /**
  * POST /api/schedule/[scheduleId]/select
@@ -11,10 +11,13 @@ export async function POST(
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { scheduleId } = await params;
     
-    await ScheduleRepository.selectSchedule(caseId, scheduleId);
+    await ScheduleRepository.selectSchedule(caseId, monthYear, scheduleId);
     
     return NextResponse.json({ success: true });
   } catch (error) {

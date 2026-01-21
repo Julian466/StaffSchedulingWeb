@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 import { validatePythonConfig } from '@/lib/config/app-config';
 import { executeDelete } from '@/lib/services/python-cli-service';
@@ -17,8 +17,16 @@ const apiLogger = createApiLogger('/api/solver/delete');
  * @returns Job result with execution details
  */
 export async function POST(request: NextRequest) {
+  let caseId: number | undefined;
+  let monthYear: string | undefined;
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
+
     const body = await request.json();
 
     const params: DeleteParams = {
@@ -27,8 +35,7 @@ export async function POST(request: NextRequest) {
       end: body.end,
     };
 
-    apiLogger.info('Executing delete command', { caseId, params });
-
+    apiLogger.info('Executing delete command', { caseId, monthYear, params });
     // Validate Python configuration
     const configValidation = validatePythonConfig();
     if (!configValidation.isValid || !configValidation.isEnabled) {
@@ -64,10 +71,11 @@ export async function POST(request: NextRequest) {
     };
 
     // Save to job history
-    await jobRepository.create(job, caseId);
+    await jobRepository.create(job, caseId, monthYear);
 
     apiLogger.info('Delete command completed', {
       caseId,
+      monthYear,
       jobId: job.id,
       success: result.success,
       duration,

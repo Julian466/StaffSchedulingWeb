@@ -1,27 +1,25 @@
 /**
- * Metadata about a shift planning case.
- * Each case represents a specific month and year for which shifts are being planned.
+ * Represents a shift planning case.
+ * Cases are organized by planning unit (caseId) and month/year folder structure.
+ * Example folder structure: cases/77/11_2024/
  */
-export interface CaseInformation {
-  /** Unique identifier for the case */
+export interface Case {
+  /** Unique identifier for the planning unit (e.g., 77 for a hospital ward) */
   caseId: number;
+  /** Month and year in MM_YYYY format (e.g., "11_2024" for November 2024) */
+  monthYear: string;
   /** Month of the year (1-12) */
   month: number;
-  /** Year (e.g., 2025) */
+  /** Year (e.g., 2024) */
   year: number;
-  /** ISO timestamp when the case was created */
-  createdAt?: string;
-  /** ISO timestamp when the case was last updated */
-  updatedAt?: string;
 }
 
 /**
- * Represents a shift planning case.
- * Cases are used to organize and manage shift data for specific time periods.
+ * Represents available cases grouped by planning unit with their months.
  */
-export interface Case {
-  /** Unique identifier for the case */
-  id: number;
-  /** Optional metadata about the case */
-  information?: CaseInformation;
+export interface CaseUnit {
+  /** Planning unit ID */
+  unitId: number;
+  /** Available month folders in MM_YYYY format */
+  months: string[];
 }

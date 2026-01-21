@@ -149,7 +149,7 @@ export function WishesAndBlockedForm({
   excludedEmployeeKeys = [],
   isGlobal,
 }: WishesAndBlockedFormProps) {
-  const { caseInformation } = useCase();
+  const { currentCase } = useCase();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => 
     employee ? {
       key: employee.key,
@@ -166,9 +166,9 @@ export function WishesAndBlockedForm({
     },
   });
 
-  // Get year and month from case information or use current date
-  const year = caseInformation?.year || new Date().getFullYear();
-  const month = caseInformation?.month || new Date().getMonth() + 1;
+  // Get year and month from currentCase or use current date
+  const year = currentCase?.year || new Date().getFullYear();
+  const month = currentCase?.month || new Date().getMonth() + 1;
 
   // State for calendar data
   const [calendarData, setCalendarData] = useState<DayData[]>(() => 

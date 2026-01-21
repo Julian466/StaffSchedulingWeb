@@ -15,11 +15,12 @@ const CASES_DIR = getCasesDirectory();
  * Gets or creates a database connection for schedule metadata.
  * Manages the list of all schedules for a case.
  * 
- * @param caseId - The ID of the case
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
  * @returns Promise resolving to the schedules metadata database instance
  */
-export async function getSchedulesMetadataDb(caseId: number) {
-  const caseDir = join(CASES_DIR, caseId.toString());
+export async function getSchedulesMetadataDb(caseId: number, monthYear: string) {
+  const caseDir = join(CASES_DIR, caseId.toString(), monthYear);
   const webDir = join(caseDir, 'web');
   const file = join(webDir, 'schedules.json');
   
@@ -46,12 +47,13 @@ export async function getSchedulesMetadataDb(caseId: number) {
  * Gets or creates a database connection for a specific schedule solution.
  * Each schedule is stored in its own file named schedule_{scheduleId}.json
  * 
- * @param caseId - The ID of the case
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
  * @param scheduleId - The ID of the specific schedule
  * @returns Promise resolving to the schedule database instance
  */
-export async function getScheduleDb(caseId: number, scheduleId: string) {
-  const caseDir = join(CASES_DIR, caseId.toString());
+export async function getScheduleDb(caseId: number, monthYear: string, scheduleId: string) {
+  const caseDir = join(CASES_DIR, caseId.toString(), monthYear);
   const webDir = join(caseDir, 'web');
   const file = join(webDir, `schedule_${scheduleId}.json`);
   
@@ -76,12 +78,13 @@ export async function getScheduleDb(caseId: number, scheduleId: string) {
 /**
  * Lists all schedule files for a given case.
  * 
- * @param caseId - The ID of the case
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
  * @returns Promise resolving to an array of schedule IDs
  */
-export async function listScheduleIds(caseId: number): Promise<string[]> {
+export async function listScheduleIds(caseId: number, monthYear: string): Promise<string[]> {
   try {
-    const caseDir = join(CASES_DIR, caseId.toString());
+    const caseDir = join(CASES_DIR, caseId.toString(), monthYear);
     const webDir = join(caseDir, 'web');
     await fs.mkdir(webDir, { recursive: true });
     const files = await fs.readdir(webDir);
@@ -98,11 +101,12 @@ export async function listScheduleIds(caseId: number): Promise<string[]> {
 /**
  * Deletes a specific schedule file.
  * 
- * @param caseId - The ID of the case
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
  * @param scheduleId - The ID of the schedule to delete
  */
-export async function deleteSchedule(caseId: number, scheduleId: string): Promise<void> {
-  const caseDir = join(CASES_DIR, caseId.toString());
+export async function deleteSchedule(caseId: number, monthYear: string, scheduleId: string): Promise<void> {
+  const caseDir = join(CASES_DIR, caseId.toString(), monthYear);
   const webDir = join(caseDir, 'web');
   const file = join(webDir, `schedule_${scheduleId}.json`);
   
