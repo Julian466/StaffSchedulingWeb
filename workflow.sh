@@ -25,7 +25,7 @@ fi
 # 3. Run the npm command
 echo "Starting workflow for Case $planungseinheit from $von to $bis..."
 
-npm run start -- \
+npm run dev start -- \
   --WORKFLOW_MODE=true \
   --WORKFLOW_CASE="$planungseinheit" \
   --WORKFLOW_START="$von" \
