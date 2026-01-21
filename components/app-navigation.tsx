@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/navigation-menu';
 import { CaseSelector } from '@/components/case-selector';
 import { Separator } from '@/components/ui/separator';
-import { Users, Briefcase, Heart, Calendar, Cog } from 'lucide-react';
+import { Users, Briefcase, Heart, Calendar, Cog, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -79,6 +79,22 @@ export function AppNavigation() {
                   >
                     <Users className="h-4 w-4 mr-2" />
                     Mitarbeiter
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/minimal-staff"
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      isActive('/minimal-staff') && 'bg-accent text-accent-foreground'
+                    )}
+                  >
+                    <UserCog className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Mindestbesetzung</span>
+                    <span className="sm:hidden">Min.</span>
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
