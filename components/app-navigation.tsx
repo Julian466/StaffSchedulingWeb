@@ -8,10 +8,12 @@ import {
   NavigationMenuLink,
   NavigationMenuList,
   navigationMenuTriggerStyle,
+  NavigationMenuContent,
+  NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
 import { CaseSelector } from '@/components/case-selector';
 import { Separator } from '@/components/ui/separator';
-import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale } from 'lucide-react';
+import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -113,6 +115,56 @@ export function AppNavigation() {
                     <span className="sm:hidden">Gew.</span>
                   </Link>
                 </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuTrigger
+                  className={cn(
+                    (isActive('/templates/weights') || isActive('/templates')) && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Templates</span>
+                  <span className="sm:hidden">Tmp.</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="w-[200px] p-2">
+                    <li>
+                      <Link
+                        href="/templates"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/templates') && !isActive('/templates/weights') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          <div className="text-sm font-medium">Übersicht</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Alle Template-Kategorien
+                        </p>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/templates/weights"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/templates/weights') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-4 w-4" />
+                          <div className="text-sm font-medium">Gewichtungen</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Gespeicherte Gewichtungskonfigurationen
+                        </p>
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
               </NavigationMenuItem>
 
               <NavigationMenuItem>
