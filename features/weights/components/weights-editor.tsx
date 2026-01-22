@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Weights, WEIGHT_METADATA } from '@/types/weights';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -26,19 +26,16 @@ interface WeightsEditorProps {
  */
 export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps) {
   const [editedWeights, setEditedWeights] = useState<Weights>(weights);
-  const [hasChanges, setHasChanges] = useState(false);
 
-  // Update local state when props change
+  // Update local state when props change (deferred to avoid synchronous setState in effect)
   useEffect(() => {
-    setEditedWeights(weights);
-    setHasChanges(false);
+    if (JSON.stringify(weights) !== JSON.stringify(editedWeights)) {
+      Promise.resolve().then(() => setEditedWeights(weights));
+    }
   }, [weights]);
 
-  // Check if there are unsaved changes
-  useEffect(() => {
-    const changed = JSON.stringify(weights) !== JSON.stringify(editedWeights);
-    setHasChanges(changed);
-  }, [weights, editedWeights]);
+  // Derived flag: are there unsaved changes?
+  const hasChanges = useMemo(() => JSON.stringify(weights) !== JSON.stringify(editedWeights), [weights, editedWeights]);
 
   const handleWeightChange = (key: keyof Weights, value: number) => {
     // Ensure value is within bounds
