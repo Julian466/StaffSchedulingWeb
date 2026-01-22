@@ -19,5 +19,3 @@ else
   echo "Keine Änderungen in Abhängigkeiten erkannt"
 fi
 
-echo "Starten des Prozesses"
-./workflow.sh
