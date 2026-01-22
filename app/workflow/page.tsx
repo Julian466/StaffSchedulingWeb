@@ -213,7 +213,7 @@ export default function WorkflowPage() {
         try {
             const isoStart = convertToISODate(startDate!);
             const isoEnd = convertToISODate(endDate!);
-
+            const folderName = getFolderName(startDate!);
             let endpoint = '';
             const body: {
                 unit: number;
@@ -249,7 +249,8 @@ export default function WorkflowPage() {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'x-case-id': caseId!
+                            'x-case-id': caseId!,
+                            'x-month-year': folderName
                         },
                         body: JSON.stringify({
                             start: isoStart,
@@ -274,7 +275,8 @@ export default function WorkflowPage() {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-case-id': caseId!
+                    'x-case-id': caseId!,
+                    'x-month-year': folderName
                 },
                 body: JSON.stringify(body)
             });

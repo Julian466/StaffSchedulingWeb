@@ -6,13 +6,30 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Info } from 'lucide-react';
+import { Info, Download, Upload, Save } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { SaveTemplateDialog } from '@/components/save-template-dialog';
+import { ImportTemplateDialog } from '@/components/import-template-dialog';
+import {
+  useWeightTemplates,
+  useCreateWeightTemplate,
+  useWeightTemplate,
+} from '@/features/weights/hooks/use-weight-templates';
 
 interface WeightsEditorProps {
   weights: Weights;
@@ -26,6 +43,15 @@ interface WeightsEditorProps {
  */
 export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps) {
   const [editedWeights, setEditedWeights] = useState<Weights>(weights);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+  const [importConfirmed, setImportConfirmed] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const { data: templates = [] } = useWeightTemplates();
+  const { mutate: createTemplate, isPending: isCreating } = useCreateWeightTemplate();
+  const { data: templateToImport } = useWeightTemplate(selectedTemplateId);
 
   // Update local state when props change (deferred to avoid synchronous setState in effect)
   useEffect(() => {
@@ -34,6 +60,19 @@ export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps)
     }
   }, [weights]);
 
+  // Perform import only after user confirmed
+  useEffect(() => {
+    if (templateToImport && importConfirmed) {
+      // Defer state updates to avoid synchronous setState inside effect
+      Promise.resolve().then(() => {
+        setEditedWeights(templateToImport.content);
+        setImportConfirmOpen(false);
+        setImportConfirmed(false);
+        setSelectedTemplateId(null);
+        setImportDialogOpen(false);
+      });
+    }
+  }, [templateToImport, importConfirmed]);
   // Derived flag: are there unsaved changes?
   const hasChanges = useMemo(() => JSON.stringify(weights) !== JSON.stringify(editedWeights), [weights, editedWeights]);
 
@@ -52,6 +91,29 @@ export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps)
 
   const handleReset = () => {
     setEditedWeights(weights);
+  };
+
+  const handleSaveAsTemplate = (description: string) => {
+    createTemplate(
+      { content: editedWeights, description },
+      {
+        onSuccess: () => {
+          setSaveDialogOpen(false);
+        },
+      }
+    );
+  };
+
+  const handleImportTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setImportDialogOpen(false);
+    // Open confirmation dialog but do NOT perform import yet
+    setImportConfirmOpen(true);
+  };
+
+  const confirmImport = () => {
+    // User confirmed: set flag which triggers the actual import in useEffect
+    setImportConfirmed(true);
   };
 
   return (
@@ -98,23 +160,82 @@ export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps)
         );
       })}
 
-      <div className="flex gap-2 justify-end pt-4 border-t sticky bottom-0 bg-background py-3">
-        <Button
-          variant="outline"
-          onClick={handleReset}
-          disabled={!hasChanges || isSaving}
-          size="sm"
-        >
-          Zurücksetzen
-        </Button>
-        <Button
-          onClick={handleSave}
-          disabled={!hasChanges || isSaving}
-          size="sm"
-        >
-          {isSaving ? 'Speichern...' : 'Speichern'}
-        </Button>
+      <div className="flex gap-2 justify-between pt-4 border-t sticky bottom-0 bg-background py-3">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setImportDialogOpen(true)}
+            disabled={isSaving}
+            size="sm"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Template laden
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setSaveDialogOpen(true)}
+            disabled={isSaving}
+            size="sm"
+          >
+            <Save className="mr-2 h-4 w-4" />
+            Als Template speichern
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleReset}
+            disabled={!hasChanges || isSaving}
+            size="sm"
+          >
+            Zurücksetzen
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={!hasChanges || isSaving}
+            size="sm"
+          >
+            {isSaving ? 'Speichern...' : 'Speichern'}
+          </Button>
+        </div>
       </div>
+
+      <SaveTemplateDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        onSave={handleSaveAsTemplate}
+        isSaving={isCreating}
+        title="Gewichtungen als Template speichern"
+        descriptionPlaceholder="z.B. 'Standardkonfiguration für Nachtschichten' oder 'Optimiert für Wochenenden'"
+      />
+
+      <ImportTemplateDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        templates={templates}
+        onImport={handleImportTemplate}
+        title="Gewichtungs-Template laden"
+      />
+
+      <AlertDialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Template laden?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die aktuellen Gewichtungen werden durch das gewählte Template ersetzt.
+              Nicht gespeicherte Änderungen gehen verloren. Möchten Sie fortfahren?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSelectedTemplateId(null)}>
+              Abbrechen
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>
+              Laden
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

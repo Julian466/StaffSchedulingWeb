@@ -2,16 +2,16 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-} from '@/components/ui/navigation-menu';
 import { CaseSelector } from '@/components/case-selector';
 import { Separator } from '@/components/ui/separator';
-import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -34,118 +34,142 @@ export function AppNavigation() {
           </Link>
 
           {/* Navigation Links */}
-          <NavigationMenu className="flex-1 max-w-none justify-start">
-            <NavigationMenuList className="gap-1">
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                      href="/global-wishes-and-blocked"
-                      className={cn(
-                          navigationMenuTriggerStyle(),
-                          isActive('/global-wishes-and-blocked') && 'bg-accent text-accent-foreground'
-                      )}
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Allgemeine Wünsche</span>
-                    <span className="sm:hidden">Wünsche</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+          <div className="flex items-center gap-1 flex-1">
+            {/* Mitarbeiter */}
+            <Button
+                variant="ghost"
+                asChild
+                className={cn(isActive('/employees') && 'bg-accent')}
+            >
+              <Link href="/employees" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Mitarbeiter
+              </Link>
+            </Button>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/wishes-and-blocked"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/wishes-and-blocked') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Wünsche & Blockierungen</span>
-                    <span className="sm:hidden">Wünsche</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/employees"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/employees') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Mitarbeiter
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/minimal-staff"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/minimal-staff') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <UserCog className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Mindestbesetzung</span>
-                    <span className="sm:hidden">Min.</span>
+            {/* Wünsche Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    'gap-1',
+                    (isActive('/global-wishes-and-blocked') || isActive('/wishes-and-blocked')) && 'bg-accent'
+                  )}
+                >
+                  <Heart className="h-4 w-4" />
+                  <span>Wünsche</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/global-wishes-and-blocked" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4" />
+                    Allgemeine Wünsche
                   </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/wishes-and-blocked" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4" />
+                    Wünsche & Blockierungen
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/weights"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/weights') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Scale className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Gewichtungen</span>
-                    <span className="sm:hidden">Gew.</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/schedule"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/schedule') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Dienstplan
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
 
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/solver"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/solver') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Cog className="h-4 w-4 mr-2" />
-                    Solver
+            {/* Konfiguration Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    'gap-1',
+                    (isActive('/weights') || isActive('/minimal-staff') ) && 'bg-accent'
+                  )}
+                >
+                  <Cog className="h-4 w-4" />
+                  <span className="hidden sm:inline">Konfiguration</span>
+                  <span className="sm:hidden">Config</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/weights" className="flex items-center gap-2 cursor-pointer">
+                    <Scale className="h-4 w-4" />
+                    Gewichtungen
                   </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/minimal-staff" className="flex items-center gap-2 cursor-pointer">
+                    <UserCog className="h-4 w-4" />
+                    Mindestbesetzung
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Dienstplan */}
+            <Button
+              variant="ghost"
+              asChild
+              className={cn(isActive('/schedule') && 'bg-accent')}
+            >
+              <Link href="/schedule" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Dienstplan
+              </Link>
+            </Button>
+
+
+            {/* Solver */}
+            <Button
+              variant="ghost"
+              asChild
+              className={cn(isActive('/solver') && 'bg-accent')}
+            >
+              <Link href="/solver" className="gap-2">
+                <Cog className="h-4 w-4" />
+                Solver
+              </Link>
+            </Button>
+
+            {/* Stammdaten Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className={cn(
+                        'gap-1',
+                        (isActive('/templates') || isActive('/templates/weights')) && 'bg-accent'
+                    )}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Templates</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/templates" className="flex items-center gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4" />
+                    Alle Templates
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/templates/weights" className="flex items-center gap-2 cursor-pointer">
+                    <Scale className="h-4 w-4" />
+                    Gewichtungs-Templates
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
 
           <Separator orientation="vertical" className="h-8 hidden lg:block" />
 
