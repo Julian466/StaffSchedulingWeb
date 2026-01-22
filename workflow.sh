@@ -1,5 +1,10 @@
 #!/bin/bash
 
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
 # 1. Get User Input with Examples
 echo "Planungseinheit (z.B., 120):"
 read planungseinheit
@@ -24,6 +29,8 @@ fi
 
 # 3. Run the npm command
 echo "Starting workflow for Case $planungseinheit from $von to $bis..."
+
+cd /home/combi/StaffSchedulingWeb
 
 npm run dev start -- \
   --WORKFLOW_MODE=true \
