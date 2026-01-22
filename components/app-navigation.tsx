@@ -35,37 +35,19 @@ export function AppNavigation() {
 
           {/* Navigation Links */}
           <div className="flex items-center gap-1 flex-1">
-            {/* Stammdaten Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={cn(
-                    'gap-1',
-                    (isActive('/employees') || isActive('/minimal-staff')) && 'bg-accent'
-                  )}
-                >
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Stammdaten</span>
-                  <span className="sm:hidden">Daten</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuItem asChild>
-                  <Link href="/employees" className="flex items-center gap-2 cursor-pointer">
-                    <Users className="h-4 w-4" />
-                    Mitarbeiter
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/minimal-staff" className="flex items-center gap-2 cursor-pointer">
-                    <UserCog className="h-4 w-4" />
-                    Mindestbesetzung
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Mitarbeiter */}
+            <Button
+                variant="ghost"
+                asChild
+                className={cn(isActive('/employees') && 'bg-accent')}
+            >
+              <Link href="/employees" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Mitarbeiter
+              </Link>
+            </Button>
+
+
 
             {/* Wünsche Dropdown */}
             <DropdownMenu>
@@ -98,6 +80,8 @@ export function AppNavigation() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+
+
             {/* Konfiguration Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -105,7 +89,7 @@ export function AppNavigation() {
                   variant="ghost"
                   className={cn(
                     'gap-1',
-                    (isActive('/weights') || isActive('/templates') || isActive('/templates/weights')) && 'bg-accent'
+                    (isActive('/weights') || isActive('/minimal-staff') ) && 'bg-accent'
                   )}
                 >
                   <Cog className="h-4 w-4" />
@@ -122,15 +106,9 @@ export function AppNavigation() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/templates" className="flex items-center gap-2 cursor-pointer">
-                    <FileText className="h-4 w-4" />
-                    Templates
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/templates/weights" className="flex items-center gap-2 cursor-pointer">
-                    <Scale className="h-4 w-4" />
-                    Gewichtungs-Templates
+                  <Link href="/minimal-staff" className="flex items-center gap-2 cursor-pointer">
+                    <UserCog className="h-4 w-4" />
+                    Mindestbesetzung
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -148,6 +126,7 @@ export function AppNavigation() {
               </Link>
             </Button>
 
+
             {/* Solver */}
             <Button
               variant="ghost"
@@ -159,6 +138,37 @@ export function AppNavigation() {
                 Solver
               </Link>
             </Button>
+
+            {/* Stammdaten Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                    variant="ghost"
+                    className={cn(
+                        'gap-1',
+                        (isActive('/templates') || isActive('/templates/weights')) && 'bg-accent'
+                    )}
+                >
+                  <FileText className="h-4 w-4" />
+                  <span className="hidden sm:inline">Templates</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/templates" className="flex items-center gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4" />
+                    Alle Templates
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/templates/weights" className="flex items-center gap-2 cursor-pointer">
+                    <Scale className="h-4 w-4" />
+                    Gewichtungs-Templates
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <Separator orientation="vertical" className="h-8 hidden lg:block" />
