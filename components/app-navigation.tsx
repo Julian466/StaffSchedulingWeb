@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/navigation-menu';
 import { CaseSelector } from '@/components/case-selector';
 import { Separator } from '@/components/ui/separator';
-import { Users, Briefcase, Heart, Calendar, Cog, UserCog } from 'lucide-react';
+import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -95,6 +95,22 @@ export function AppNavigation() {
                     <UserCog className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Mindestbesetzung</span>
                     <span className="sm:hidden">Min.</span>
+                  </Link>
+                </NavigationMenuLink>
+              </NavigationMenuItem>
+
+              <NavigationMenuItem>
+                <NavigationMenuLink asChild>
+                  <Link
+                    href="/weights"
+                    className={cn(
+                      navigationMenuTriggerStyle(),
+                      isActive('/weights') && 'bg-accent text-accent-foreground'
+                    )}
+                  >
+                    <Scale className="h-4 w-4 mr-2" />
+                    <span className="hidden sm:inline">Gewichtungen</span>
+                    <span className="sm:hidden">Gew.</span>
                   </Link>
                 </NavigationMenuLink>
               </NavigationMenuItem>
