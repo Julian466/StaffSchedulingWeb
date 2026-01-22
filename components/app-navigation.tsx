@@ -38,97 +38,141 @@ export function AppNavigation() {
           {/* Navigation Links */}
           <NavigationMenu className="flex-1 max-w-none justify-start">
             <NavigationMenuList className="gap-1">
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                      href="/global-wishes-and-blocked"
-                      className={cn(
-                          navigationMenuTriggerStyle(),
-                          isActive('/global-wishes-and-blocked') && 'bg-accent text-accent-foreground'
-                      )}
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Allgemeine Wünsche</span>
-                    <span className="sm:hidden">Wünsche</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/wishes-and-blocked"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/wishes-and-blocked') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Heart className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Wünsche & Blockierungen</span>
-                    <span className="sm:hidden">Wünsche</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/employees"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/employees') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Users className="h-4 w-4 mr-2" />
-                    Mitarbeiter
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/minimal-staff"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/minimal-staff') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <UserCog className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Mindestbesetzung</span>
-                    <span className="sm:hidden">Min.</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/weights"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/weights') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Scale className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Gewichtungen</span>
-                    <span className="sm:hidden">Gew.</span>
-                  </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
+              {/* Stammdaten Gruppe */}
               <NavigationMenuItem>
                 <NavigationMenuTrigger
                   className={cn(
-                    (isActive('/templates/weights') || isActive('/templates')) && 'bg-accent text-accent-foreground'
+                    navigationMenuTriggerStyle(),
+                    (isActive('/employees') || isActive('/minimal-staff')) && 'bg-accent text-accent-foreground'
                   )}
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Templates</span>
-                  <span className="sm:hidden">Tmp.</span>
+                  <Users className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Stammdaten</span>
+                  <span className="sm:hidden">Daten</span>
                 </NavigationMenuTrigger>
                 <NavigationMenuContent>
-                  <ul className="w-[200px] p-2">
+                  <ul className="w-[240px] p-2">
+                    <li>
+                      <Link
+                        href="/employees"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/employees') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4" />
+                          <div className="text-sm font-medium">Mitarbeiter</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Mitarbeiterverwaltung
+                        </p>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/minimal-staff"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/minimal-staff') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <UserCog className="h-4 w-4" />
+                          <div className="text-sm font-medium">Mindestbesetzung</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Besetzungsanforderungen
+                        </p>
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              {/* Wünsche Gruppe */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger
+                  className={cn(
+                    navigationMenuTriggerStyle(),
+                    (isActive('/global-wishes-and-blocked') || isActive('/wishes-and-blocked')) && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <Heart className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Wünsche</span>
+                  <span className="sm:hidden">Wünsche</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="w-[240px] p-2">
+                    <li>
+                      <Link
+                        href="/global-wishes-and-blocked"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/global-wishes-and-blocked') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4" />
+                          <div className="text-sm font-medium">Allgemeine Wünsche</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Globale Präferenzen
+                        </p>
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/wishes-and-blocked"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/wishes-and-blocked') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4" />
+                          <div className="text-sm font-medium">Wünsche & Blockierungen</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Individuelle Präferenzen
+                        </p>
+                      </Link>
+                    </li>
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+
+              {/* Konfiguration Gruppe */}
+              <NavigationMenuItem>
+                <NavigationMenuTrigger
+                  className={cn(
+                    navigationMenuTriggerStyle(),
+                    (isActive('/weights') || isActive('/templates') || isActive('/templates/weights')) && 'bg-accent text-accent-foreground'
+                  )}
+                >
+                  <Cog className="h-4 w-4 mr-2" />
+                  <span className="hidden sm:inline">Konfiguration</span>
+                  <span className="sm:hidden">Config</span>
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="w-[240px] p-2">
+                    <li>
+                      <Link
+                        href="/weights"
+                        className={cn(
+                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+                          isActive('/weights') && 'bg-accent text-accent-foreground'
+                        )}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Scale className="h-4 w-4" />
+                          <div className="text-sm font-medium">Gewichtungen</div>
+                        </div>
+                        <p className="text-xs leading-snug text-muted-foreground">
+                          Solver-Prioritäten
+                        </p>
+                      </Link>
+                    </li>
                     <li>
                       <Link
                         href="/templates"
@@ -139,10 +183,10 @@ export function AppNavigation() {
                       >
                         <div className="flex items-center gap-2">
                           <FileText className="h-4 w-4" />
-                          <div className="text-sm font-medium">Übersicht</div>
+                          <div className="text-sm font-medium">Templates</div>
                         </div>
                         <p className="text-xs leading-snug text-muted-foreground">
-                          Alle Template-Kategorien
+                          Gespeicherte Vorlagen
                         </p>
                       </Link>
                     </li>
@@ -156,10 +200,10 @@ export function AppNavigation() {
                       >
                         <div className="flex items-center gap-2">
                           <Scale className="h-4 w-4" />
-                          <div className="text-sm font-medium">Gewichtungen</div>
+                          <div className="text-sm font-medium">Gewichtungs-Templates</div>
                         </div>
                         <p className="text-xs leading-snug text-muted-foreground">
-                          Gespeicherte Gewichtungskonfigurationen
+                          Gespeicherte Gewichtungen
                         </p>
                       </Link>
                     </li>
@@ -167,6 +211,7 @@ export function AppNavigation() {
                 </NavigationMenuContent>
               </NavigationMenuItem>
 
+              {/* Dienstplan - direkter Link */}
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
@@ -182,6 +227,7 @@ export function AppNavigation() {
                 </NavigationMenuLink>
               </NavigationMenuItem>
 
+              {/* Solver - direkter Link */}
               <NavigationMenuItem>
                 <NavigationMenuLink asChild>
                   <Link
