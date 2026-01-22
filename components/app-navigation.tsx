@@ -2,18 +2,16 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  navigationMenuTriggerStyle,
-  NavigationMenuContent,
-  NavigationMenuTrigger,
-} from '@/components/ui/navigation-menu';
 import { CaseSelector } from '@/components/case-selector';
 import { Separator } from '@/components/ui/separator';
-import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -36,214 +34,132 @@ export function AppNavigation() {
           </Link>
 
           {/* Navigation Links */}
-          <NavigationMenu className="flex-1 max-w-none justify-start">
-            <NavigationMenuList className="gap-1">
-              {/* Stammdaten Gruppe */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger
+          <div className="flex items-center gap-1 flex-1">
+            {/* Stammdaten Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
                   className={cn(
-                    navigationMenuTriggerStyle(),
-                    (isActive('/employees') || isActive('/minimal-staff')) && 'bg-accent text-accent-foreground'
+                    'gap-1',
+                    (isActive('/employees') || isActive('/minimal-staff')) && 'bg-accent'
                   )}
                 >
-                  <Users className="h-4 w-4 mr-2" />
+                  <Users className="h-4 w-4" />
                   <span className="hidden sm:inline">Stammdaten</span>
                   <span className="sm:hidden">Daten</span>
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="w-[240px] p-2">
-                    <li>
-                      <Link
-                        href="/employees"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/employees') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          <div className="text-sm font-medium">Mitarbeiter</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Mitarbeiterverwaltung
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/minimal-staff"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/minimal-staff') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <UserCog className="h-4 w-4" />
-                          <div className="text-sm font-medium">Mindestbesetzung</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Besetzungsanforderungen
-                        </p>
-                      </Link>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/employees" className="flex items-center gap-2 cursor-pointer">
+                    <Users className="h-4 w-4" />
+                    Mitarbeiter
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/minimal-staff" className="flex items-center gap-2 cursor-pointer">
+                    <UserCog className="h-4 w-4" />
+                    Mindestbesetzung
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Wünsche Gruppe */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger
+            {/* Wünsche Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
                   className={cn(
-                    navigationMenuTriggerStyle(),
-                    (isActive('/global-wishes-and-blocked') || isActive('/wishes-and-blocked')) && 'bg-accent text-accent-foreground'
+                    'gap-1',
+                    (isActive('/global-wishes-and-blocked') || isActive('/wishes-and-blocked')) && 'bg-accent'
                   )}
                 >
-                  <Heart className="h-4 w-4 mr-2" />
-                  <span className="hidden sm:inline">Wünsche</span>
-                  <span className="sm:hidden">Wünsche</span>
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="w-[240px] p-2">
-                    <li>
-                      <Link
-                        href="/global-wishes-and-blocked"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/global-wishes-and-blocked') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Heart className="h-4 w-4" />
-                          <div className="text-sm font-medium">Allgemeine Wünsche</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Globale Präferenzen
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/wishes-and-blocked"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/wishes-and-blocked') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Heart className="h-4 w-4" />
-                          <div className="text-sm font-medium">Wünsche & Blockierungen</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Individuelle Präferenzen
-                        </p>
-                      </Link>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
+                  <Heart className="h-4 w-4" />
+                  <span>Wünsche</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/global-wishes-and-blocked" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4" />
+                    Allgemeine Wünsche
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/wishes-and-blocked" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4" />
+                    Wünsche & Blockierungen
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-              {/* Konfiguration Gruppe */}
-              <NavigationMenuItem>
-                <NavigationMenuTrigger
+            {/* Konfiguration Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
                   className={cn(
-                    navigationMenuTriggerStyle(),
-                    (isActive('/weights') || isActive('/templates') || isActive('/templates/weights')) && 'bg-accent text-accent-foreground'
+                    'gap-1',
+                    (isActive('/weights') || isActive('/templates') || isActive('/templates/weights')) && 'bg-accent'
                   )}
                 >
-                  <Cog className="h-4 w-4 mr-2" />
+                  <Cog className="h-4 w-4" />
                   <span className="hidden sm:inline">Konfiguration</span>
                   <span className="sm:hidden">Config</span>
-                </NavigationMenuTrigger>
-                <NavigationMenuContent>
-                  <ul className="w-[240px] p-2">
-                    <li>
-                      <Link
-                        href="/weights"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/weights') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Scale className="h-4 w-4" />
-                          <div className="text-sm font-medium">Gewichtungen</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Solver-Prioritäten
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/templates"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/templates') && !isActive('/templates/weights') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <FileText className="h-4 w-4" />
-                          <div className="text-sm font-medium">Templates</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Gespeicherte Vorlagen
-                        </p>
-                      </Link>
-                    </li>
-                    <li>
-                      <Link
-                        href="/templates/weights"
-                        className={cn(
-                          'block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
-                          isActive('/templates/weights') && 'bg-accent text-accent-foreground'
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Scale className="h-4 w-4" />
-                          <div className="text-sm font-medium">Gewichtungs-Templates</div>
-                        </div>
-                        <p className="text-xs leading-snug text-muted-foreground">
-                          Gespeicherte Gewichtungen
-                        </p>
-                      </Link>
-                    </li>
-                  </ul>
-                </NavigationMenuContent>
-              </NavigationMenuItem>
-
-              {/* Dienstplan - direkter Link */}
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/schedule"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/schedule') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Dienstplan
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <Link href="/weights" className="flex items-center gap-2 cursor-pointer">
+                    <Scale className="h-4 w-4" />
+                    Gewichtungen
                   </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-
-              {/* Solver - direkter Link */}
-              <NavigationMenuItem>
-                <NavigationMenuLink asChild>
-                  <Link
-                    href="/solver"
-                    className={cn(
-                      navigationMenuTriggerStyle(),
-                      isActive('/solver') && 'bg-accent text-accent-foreground'
-                    )}
-                  >
-                    <Cog className="h-4 w-4 mr-2" />
-                    Solver
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/templates" className="flex items-center gap-2 cursor-pointer">
+                    <FileText className="h-4 w-4" />
+                    Templates
                   </Link>
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            </NavigationMenuList>
-          </NavigationMenu>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/templates/weights" className="flex items-center gap-2 cursor-pointer">
+                    <Scale className="h-4 w-4" />
+                    Gewichtungs-Templates
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Dienstplan */}
+            <Button
+              variant="ghost"
+              asChild
+              className={cn(isActive('/schedule') && 'bg-accent')}
+            >
+              <Link href="/schedule" className="gap-2">
+                <Calendar className="h-4 w-4" />
+                Dienstplan
+              </Link>
+            </Button>
+
+            {/* Solver */}
+            <Button
+              variant="ghost"
+              asChild
+              className={cn(isActive('/solver') && 'bg-accent')}
+            >
+              <Link href="/solver" className="gap-2">
+                <Cog className="h-4 w-4" />
+                Solver
+              </Link>
+            </Button>
+          </div>
 
           <Separator orientation="vertical" className="h-8 hidden lg:block" />
 
