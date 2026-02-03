@@ -14,6 +14,22 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { EmployeeSummaryDialog, EmployeeIdentifier } from '@/components/employee-summary-dialog';
 
+/**
+ * Neue Typen für die Zusammenfassung:
+ * - pro Tag: Gesamtanzahl, pro Schichttyp mit Aufschlüsselung nach Mitarbeitertyp
+ */
+interface ShiftTypeSummary {
+  total: number;
+  byEmployeeType: Record<string, number>;
+}
+
+interface DayShiftSummary {
+  total: number;
+  shifts: Record<string, ShiftTypeSummary>; // key: shift.abbreviation || shift.id
+}
+
+type ShiftSummary = Record<string, DayShiftSummary>; // key: dateStr 'YYYY-MM-DD'
+
 interface SingleScheduleTableProps {
   employees: ScheduleEmployee[];
   days: Date[];
@@ -25,6 +41,7 @@ interface SingleScheduleTableProps {
   allShiftWishColors: Record<string, string[]>;
   isFullscreen?: boolean;
   compareMode?: false;
+  shiftSummary?: ShiftSummary;
 }
 
 interface CompareScheduleTableProps {
@@ -35,11 +52,47 @@ interface CompareScheduleTableProps {
 
 type ScheduleTableProps = SingleScheduleTableProps | CompareScheduleTableProps;
 
+const computeShiftSummary = (
+    employees: ScheduleEmployee[],
+    days: Date[],
+    shifts: Shift[],
+    variables: Record<string, number>
+): ShiftSummary => {
+  const summary: ShiftSummary = {};
+
+  days.forEach((day) => {
+    const dateStr = day.toISOString().split('T')[0];
+    summary[dateStr] = {
+      total: 0,
+      shifts: {},
+    };
+
+    employees.forEach((emp) => {
+      const shiftsForCell = getShiftsForCell(emp.id, day, shifts, variables);
+      const empType = emp.level || 'unknown';
+
+      if (shiftsForCell.length > 0) {
+        summary[dateStr].total += shiftsForCell.length;
+
+        shiftsForCell.forEach((s) => {
+          const key = s.abbreviation || String(s.id);
+          if (!summary[dateStr].shifts[key]) {
+            summary[dateStr].shifts[key] = { total: 0, byEmployeeType: {} };
+          }
+          summary[dateStr].shifts[key].total += 1;
+          summary[dateStr].shifts[key].byEmployeeType[empType] =
+              (summary[dateStr].shifts[key].byEmployeeType[empType] || 0) + 1;
+        });
+      }
+    });
+  });
+  console.log(summary);
+
+  return summary;
+};
+
 /**
  * Displays the complete schedule in a table format.
- * Shows employees in rows, days in columns, with color-coded shift assignments.
- * Includes visual indicators for fulfilled wishes and overtime.
- * In compare mode, groups employees from different schedules.
  */
 export function ScheduleTable(props: ScheduleTableProps) {
   const [openTooltipCell, setOpenTooltipCell] = useState<string | null>(null);
@@ -69,6 +122,32 @@ export function ScheduleTable(props: ScheduleTableProps) {
     };
   };
 
+  const generateSummaryString = (
+      pair: [string, ShiftTypeSummary]
+  ): string => {
+    const [abbr, info] = pair;
+
+    const levelToInitial = (level: string): string => {
+      const l = (level || '').toLowerCase();
+      if (l.includes('fach')) return 'F';
+      if (l.includes('hilf')) return 'H';
+      if (l.includes('azub') || l.includes('ausb')) return 'A';
+      return (level && level[0]) ? level[0].toUpperCase() : '?';
+    };
+
+    const countsByInitial: Record<string, number> = {};
+    Object.entries(info.byEmployeeType || {}).forEach(([level, count]) => {
+      const init = levelToInitial(level);
+      countsByInitial[init] = (countsByInitial[init] || 0) + (count ?? 0);
+    });
+
+    const order = ['F', 'H', 'A'];
+    const allZero = order.every(k => !(countsByInitial[k] > 0));
+    if (allZero) return '—';
+
+    return order.map(k => `${k}${countsByInitial[k] || 0}`).join('|');
+  };
+
   const handleMouseLeave = useCallback(() => {
     setOpenTooltipCell(null);
   }, []);
@@ -81,26 +160,46 @@ export function ScheduleTable(props: ScheduleTableProps) {
   const unavailable = (employee: ScheduleEmployee, day: number, shift?: Shift) => {
     if (!shift) {
       return (
-        employee.vacation_days.includes(day) ||
-        employee.forbidden_days.includes(day)
+          employee.vacation_days.includes(day) ||
+          employee.forbidden_days.includes(day)
       );
     }
     return (
-      employee.vacation_shifts.some(
-        ([d, s]: [number, string]) => d === day && s === shift.abbreviation
-      ) ||
-      employee.forbidden_shifts.some(
-        ([d, s]: [number, string]) => d === day && s === shift.abbreviation
-      )
+        employee.vacation_shifts.some(
+            ([d, s]: [number, string]) => d === day && s === shift.abbreviation
+        ) ||
+        employee.forbidden_shifts.some(
+            ([d, s]: [number, string]) => d === day && s === shift.abbreviation
+        )
     );
   };
 
-  // Extract common data based on mode
-  const { employees, days, shifts, variables, fulfilledDayOffCells, fulfilledShiftWishCells, allDayOffWishCells, allShiftWishColors } = useMemo(() => {
+  // Extract common data based on mode and compute shiftSummary
+  const {
+    employees,
+    days,
+    shifts,
+    variables,
+    fulfilledDayOffCells,
+    fulfilledShiftWishCells,
+    allDayOffWishCells,
+    allShiftWishColors,
+    shiftSummary
+  } = useMemo(() => {
+    let base: {
+      employees: ScheduleEmployee[];
+      days: Date[];
+      shifts: Shift[];
+      variables: Record<string, number>;
+      fulfilledDayOffCells: Set<string>;
+      fulfilledShiftWishCells: Set<string>;
+      allDayOffWishCells: Set<string>;
+      allShiftWishColors: Record<string, string[]>;
+    };
+
     if (compareMode && 'schedules' in props) {
-      // In compare mode, use data from first schedule for structure
       const firstSchedule = props.schedules[0];
-      return {
+      base = {
         employees: firstSchedule.employees,
         days: firstSchedule.days,
         shifts: firstSchedule.shifts,
@@ -111,7 +210,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
         allShiftWishColors: firstSchedule.allShiftWishColors,
       };
     } else if (!compareMode && 'employees' in props) {
-      return {
+      base = {
         employees: props.employees,
         days: props.days,
         shifts: props.shifts,
@@ -121,17 +220,25 @@ export function ScheduleTable(props: ScheduleTableProps) {
         allDayOffWishCells: props.allDayOffWishCells,
         allShiftWishColors: props.allShiftWishColors,
       };
+    } else {
+      // Fallback (should never happen)
+      base = {
+        employees: [],
+        days: [],
+        shifts: [],
+        variables: {},
+        fulfilledDayOffCells: new Set<string>(),
+        fulfilledShiftWishCells: new Set<string>(),
+        allDayOffWishCells: new Set<string>(),
+        allShiftWishColors: {},
+      };
     }
-    // Fallback (should never happen)
+
+    const summary = computeShiftSummary(base.employees, base.days, base.shifts, base.variables);
+
     return {
-      employees: [],
-      days: [],
-      shifts: [],
-      variables: {},
-      fulfilledDayOffCells: new Set<string>(),
-      fulfilledShiftWishCells: new Set<string>(),
-      allDayOffWishCells: new Set<string>(),
-      allShiftWishColors: {},
+      ...base,
+      shiftSummary: summary,
     };
   }, [compareMode, props]);
 
@@ -417,6 +524,32 @@ export function ScheduleTable(props: ScheduleTableProps) {
                     </div>
                   </th>
                 ))}
+              </tr>
+              {/* Neue Zeile: Gesamtbelegung pro Tag */}
+              <tr>
+                <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
+                  Gesamtbelegung
+                </th>
+                {days.map((day: Date, idx: number) => {
+                  const dateStr = day.toISOString().split('T')[0];
+                  const dateShifts = shiftSummary?.[dateStr]?.shifts ?? {};
+                  const dayEntries = Object.entries(dateShifts); // [abbreviation, ShiftTypeSummary][]
+
+                  const fruehStr = dayEntries.find(([abbr, _]) => abbr === 'F') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'F')!, 'F') : '';
+                  const spaetStr = dayEntries.find(([abbr, _]) => abbr === 'S') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'S')!) : 'S';
+                  const nachtStr = dayEntries.find(([abbr, _]) => abbr === 'N') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'N')!) : 'N';
+
+                  return (
+                      <th
+                          key={`total-single-${idx}`}
+                          className={cn('border-b border-border p-2 text-center text-sm min-w-[100px]', isWeekend(day) && 'bg-muted/30')}
+                      >
+                        <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
+                        <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
+                        <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
+                      </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
