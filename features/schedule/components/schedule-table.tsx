@@ -535,7 +535,8 @@ export function ScheduleTable(props: ScheduleTableProps) {
                   const dateShifts = shiftSummary?.[dateStr]?.shifts ?? {};
                   const dayEntries = Object.entries(dateShifts); // [abbreviation, ShiftTypeSummary][]
 
-                  const fruehStr = dayEntries.find(([abbr, _]) => abbr === 'F') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'F')!, 'F') : '';
+                  const fruehStr = dayEntries.find(([abbr, _]) => abbr === 'F') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'F')!) : 'F';
+                  const zwischenStr = dayEntries.find(([abbr, _]) => abbr === 'Z') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'Z')!) : 'Z';
                   const spaetStr = dayEntries.find(([abbr, _]) => abbr === 'S') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'S')!) : 'S';
                   const nachtStr = dayEntries.find(([abbr, _]) => abbr === 'N') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'N')!) : 'N';
 
@@ -545,6 +546,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
                           className={cn('border-b border-border p-2 text-center text-sm min-w-[100px]', isWeekend(day) && 'bg-muted/30')}
                       >
                         <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
+                        <div className="text-xs text-muted-foreground">Z: {zwischenStr || '—'}</div>
                         <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
                         <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
                       </th>
