@@ -244,6 +244,17 @@ export function ScheduleTable(props: ScheduleTableProps) {
     };
   }, [compareMode, props]);
 
+  // Compute shift summaries for each schedule when in compare mode
+  const scheduleSummaries = useMemo(() => {
+    if (!compareMode || !('schedules' in props)) return {} as Record<string, ReturnType<typeof computeShiftSummary>>;
+    const schedules = (props as CompareScheduleTableProps).schedules;
+    const map: Record<string, ReturnType<typeof computeShiftSummary>> = {};
+    schedules.forEach((s) => {
+      map[s.scheduleId] = computeShiftSummary(s.employees, s.days, s.shifts, s.variables);
+    });
+    return map;
+  }, [compareMode, props]);
+
   const filteredEmployees = useMemo(() => {
     if (!searchTerm) return employees;
     
@@ -291,11 +302,11 @@ export function ScheduleTable(props: ScheduleTableProps) {
             scheduleData: schedule,
           };
         }).filter((item: { employee: ScheduleEmployee; scheduleId: string; description?: string; scheduleData: ScheduleSolution & { scheduleId: string; description?: string } }) => item.employee);
-        
+
         groups.push(group);
       }
     });
-    
+
     return groups;
   }, [compareMode, props, searchTerm]);
 
@@ -488,6 +499,46 @@ export function ScheduleTable(props: ScheduleTableProps) {
                     </React.Fragment>
                   ))}
                 </tbody>
+                <tfoot className="sticky bottom-0 bg-card z-30">
+                  {/* Per-Plan summary rows: render one summary row per schedule (stacked) */}
+                  {(props as CompareScheduleTableProps).schedules.map((schedule) => {
+                    const summary = scheduleSummaries[schedule.scheduleId] || {};
+                    return (
+                        <tr key={`summary-${schedule.scheduleId}`} className="border-t">
+                          <td className="sticky bottom-0 left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
+                            {schedule.description || `Plan ${schedule.scheduleId}`}
+                          </td>
+                          {schedule.days.map((day: Date, idx: number) => {
+                            const dateStr = day.toISOString().split('T')[0];
+                            const dateShifts = summary[dateStr]?.shifts ?? {};
+                            const dayEntries = Object.entries(dateShifts) as [string, ShiftTypeSummary][];
+
+                            const fruehEntry = dayEntries.find(([abbr]) => abbr === 'F');
+                            const zwischenEntry = dayEntries.find(([abbr]) => abbr === 'Z');
+                            const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
+                            const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
+
+                            const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : '—';
+                            const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : '—';
+                            const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : '—';
+                            const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : '—';
+
+                            return (
+                                <td
+                                    key={`plan-${schedule.scheduleId}-day-${idx}`}
+                                    className={cn('sticky bottom-0 border-b border-border p-2 text-center text-sm min-w-[100px] bg-background')}
+                                >
+                                  <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">Z: {zwischenStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
+                                </td>
+                            );
+                          })}
+                        </tr>
+                    );
+                  })}
+                  </tfoot>
               </table>
             </div>
           </TooltipProvider>
@@ -770,12 +821,17 @@ export function ScheduleTable(props: ScheduleTableProps) {
             {days.map((day: Date, idx: number) => {
               const dateStr = day.toISOString().split('T')[0];
               const dateShifts = shiftSummary?.[dateStr]?.shifts ?? {};
-              const dayEntries = Object.entries(dateShifts); // [abbreviation, ShiftTypeSummary][]
+              const dayEntries = Object.entries(dateShifts) as [string, ShiftTypeSummary][]; // typed entries
 
-              const fruehStr = dayEntries.find(([abbr, _]) => abbr === 'F') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'F')!) : 'F';
-              const zwischenStr = dayEntries.find(([abbr, _]) => abbr === 'Z') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'Z')!) : 'Z';
-              const spaetStr = dayEntries.find(([abbr, _]) => abbr === 'S') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'S')!) : 'S';
-              const nachtStr = dayEntries.find(([abbr, _]) => abbr === 'N') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'N')!) : 'N';
+              const fruehEntry = dayEntries.find(([abbr]) => abbr === 'F');
+              const zwischenEntry = dayEntries.find(([abbr]) => abbr === 'Z');
+              const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
+              const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
+
+              const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F';
+              const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'Z';
+              const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'S';
+              const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'N';
 
               return (
                   <td
