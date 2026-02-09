@@ -75,19 +75,21 @@ const computeShiftSummary = (
         summary[dateStr].total += shiftsForCell.length;
 
         shiftsForCell.forEach((s) => {
-          const key = s.abbreviation || String(s.id);
-          if (!summary[dateStr].shifts[key]) {
-            summary[dateStr].shifts[key] = { total: 0, byEmployeeType: {} };
+          // We only summarize the main shift types and not the special shifts like S2_, F2_, N5 etc.
+          if (s.name === "Nacht" || s.name === "Früh" || s.name === "Spät" || s.name === "Zwischen") {
+            const key = s.abbreviation || String(s.id);
+            console.log(s.color);
+            if (!summary[dateStr].shifts[key]) {
+              summary[dateStr].shifts[key] = {total: 0, byEmployeeType: {}};
+            }
+            summary[dateStr].shifts[key].total += 1;
+            summary[dateStr].shifts[key].byEmployeeType[empType] =
+                (summary[dateStr].shifts[key].byEmployeeType[empType] || 0) + 1;
           }
-          summary[dateStr].shifts[key].total += 1;
-          summary[dateStr].shifts[key].byEmployeeType[empType] =
-              (summary[dateStr].shifts[key].byEmployeeType[empType] || 0) + 1;
         });
       }
     });
   });
-  console.log(summary);
-
   return summary;
 };
 
@@ -525,34 +527,6 @@ export function ScheduleTable(props: ScheduleTableProps) {
                   </th>
                 ))}
               </tr>
-              {/* Neue Zeile: Gesamtbelegung pro Tag */}
-              <tr>
-                <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
-                  Gesamtbelegung
-                </th>
-                {days.map((day: Date, idx: number) => {
-                  const dateStr = day.toISOString().split('T')[0];
-                  const dateShifts = shiftSummary?.[dateStr]?.shifts ?? {};
-                  const dayEntries = Object.entries(dateShifts); // [abbreviation, ShiftTypeSummary][]
-
-                  const fruehStr = dayEntries.find(([abbr, _]) => abbr === 'F') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'F')!) : 'F';
-                  const zwischenStr = dayEntries.find(([abbr, _]) => abbr === 'Z') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'Z')!) : 'Z';
-                  const spaetStr = dayEntries.find(([abbr, _]) => abbr === 'S') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'S')!) : 'S';
-                  const nachtStr = dayEntries.find(([abbr, _]) => abbr === 'N') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'N')!) : 'N';
-
-                  return (
-                      <th
-                          key={`total-single-${idx}`}
-                          className={cn('border-b border-border p-2 text-center text-sm min-w-[100px]', isWeekend(day) && 'bg-muted/30')}
-                      >
-                        <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
-                        <div className="text-xs text-muted-foreground">Z: {zwischenStr || '—'}</div>
-                        <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
-                        <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
-                      </th>
-                  );
-                })}
-              </tr>
             </thead>
             <tbody>
               {filteredEmployees.map((employee: ScheduleEmployee) => {
@@ -789,6 +763,33 @@ export function ScheduleTable(props: ScheduleTableProps) {
               </tr>
             );
           })}
+          <tr>
+            <td className="sticky bottom-0 left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
+              Gesamtbelegung
+            </td>
+            {days.map((day: Date, idx: number) => {
+              const dateStr = day.toISOString().split('T')[0];
+              const dateShifts = shiftSummary?.[dateStr]?.shifts ?? {};
+              const dayEntries = Object.entries(dateShifts); // [abbreviation, ShiftTypeSummary][]
+
+              const fruehStr = dayEntries.find(([abbr, _]) => abbr === 'F') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'F')!) : 'F';
+              const zwischenStr = dayEntries.find(([abbr, _]) => abbr === 'Z') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'Z')!) : 'Z';
+              const spaetStr = dayEntries.find(([abbr, _]) => abbr === 'S') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'S')!) : 'S';
+              const nachtStr = dayEntries.find(([abbr, _]) => abbr === 'N') ? generateSummaryString(dayEntries.find(([abbr, _]) => abbr === 'N')!) : 'N';
+
+              return (
+                  <td
+                      key={`total-single-${idx}`}
+                      className={cn('sticky bottom-0 border-b border-border p-2 text-center text-sm min-w-[100px] bg-background', isWeekend(day))}
+                  >
+                    <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
+                    <div className="text-xs text-muted-foreground">Z: {zwischenStr || '—'}</div>
+                    <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
+                    <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
+                  </td>
+              );
+            })}
+          </tr>
         </tbody>
       </table>
     </div>
