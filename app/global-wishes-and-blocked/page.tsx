@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
+import { Plus, Upload, Save } from 'lucide-react';
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
 import { WishesAndBlockedList } from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
 import { WishesAndBlockedDialog } from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
@@ -16,6 +16,12 @@ import {
 } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-and-blocked';
 import { useWishesAndBlocked } from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
 import { GlobalWishesConflictDialog } from '@/features/global_wishes_and_blocked/components/global-wishes-conflict-dialog';
+import { SaveTemplateDialog } from '@/components/save-template-dialog';
+import { ImportGlobalWishesTemplateDialog } from '@/components/import-global-wishes-template-dialog';
+import { useGlobalWishesTemplates, useGlobalWishesTemplate, useCreateGlobalWishesTemplate } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-templates';
+import { useEmployees } from '@/features/employees/hooks/use-employees';
+import { toast } from 'sonner';
+import { matchTemplateEmployees } from '@/lib/utils/employee-matching';
 
 export default function GlobalWishesAndBlockedPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -25,6 +31,16 @@ export default function GlobalWishesAndBlockedPage() {
     const createMutation = useCreateGlobalWishesAndBlocked();
     const updateMutation = useUpdateGlobalWishesAndBlocked();
     const deleteMutation = useDeleteGlobalWishesAndBlocked();
+
+    // Template functionality
+    const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
+    const [importTemplateDialogOpen, setImportTemplateDialogOpen] = useState(false);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    
+    const { data: templates = [] } = useGlobalWishesTemplates();
+    const { data: selectedTemplate } = useGlobalWishesTemplate(selectedTemplateId);
+    const { mutate: createTemplate, isPending: isCreatingTemplate } = useCreateGlobalWishesTemplate();
+    const { data: currentEmployees = [] } = useEmployees();
 
     const handleCreate = () => {
         setEditingEmployee(undefined);
@@ -83,6 +99,150 @@ export default function GlobalWishesAndBlockedPage() {
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
+    // Template handlers
+    const handleSaveAsTemplate = (description: string) => {
+        const content = {
+            employees: employees.map((emp) => ({
+                key: emp.key,
+                firstname: emp.firstname,
+                name: emp.name,
+                wish_days: emp.wish_days,
+                wish_shifts: emp.wish_shifts,
+                blocked_days: emp.blocked_days,
+                blocked_shifts: emp.blocked_shifts,
+            })),
+        };
+
+        createTemplate(
+            { content, description },
+            {
+                onSuccess: () => {
+                    setSaveTemplateDialogOpen(false);
+                    toast.success(`Template "${description}" wurde erfolgreich gespeichert.`);
+                },
+                onError: (error) => {
+                    toast.error('Das Template konnte nicht gespeichert werden.');
+                },
+            }
+        );
+    };
+
+    const handleSelectTemplate = (templateId: string) => {
+        setSelectedTemplateId(templateId);
+    };
+
+    const handleImportMerge = async (templateId: string) => {
+        if (!selectedTemplate) return;
+
+        const matchResult = matchTemplateEmployees(
+            selectedTemplate.content.employees,
+            currentEmployees
+        );
+
+        if (matchResult.matchCount === 0) {
+            toast.error('Keine passenden Mitarbeiter gefunden. Es wurden keine Mitarbeiter gefunden, die importiert werden können.');
+            setImportTemplateDialogOpen(false);
+            setSelectedTemplateId(null);
+            return;
+        }
+
+        try {
+            // Merge mode: update existing, create new, keep unmatched current employees
+            for (const { templateEmployee, currentEmployee } of matchResult.matched) {
+                const existingGlobal = employees.find((e) => e.key === currentEmployee.key);
+                
+                if (existingGlobal) {
+                    // Update existing
+                    await updateMutation.mutateAsync({
+                        id: currentEmployee.key,
+                        data: {
+                            firstname: templateEmployee.firstname,
+                            name: templateEmployee.name,
+                            wish_days: templateEmployee.wish_days,
+                            wish_shifts: templateEmployee.wish_shifts,
+                            blocked_days: templateEmployee.blocked_days,
+                            blocked_shifts: templateEmployee.blocked_shifts,
+                        },
+                        options: { skipSyncToMonthly: false },
+                    });
+                } else {
+                    // Create new
+                    await createMutation.mutateAsync({
+                        data: {
+                            firstname: templateEmployee.firstname,
+                            name: templateEmployee.name,
+                            wish_days: templateEmployee.wish_days,
+                            wish_shifts: templateEmployee.wish_shifts,
+                            blocked_days: templateEmployee.blocked_days,
+                            blocked_shifts: templateEmployee.blocked_shifts,
+                        },
+                        options: { skipSyncToMonthly: false },
+                    });
+                }
+            }
+
+            toast.success(`Template importiert (Merge): ${matchResult.matchCount} von ${matchResult.totalCount} Mitarbeiter wurden importiert.${
+                matchResult.unmatched.length > 0
+                    ? ` ${matchResult.unmatched.length} Mitarbeiter wurden übersprungen.`
+                    : ''
+            }`);
+
+            setImportTemplateDialogOpen(false);
+            setSelectedTemplateId(null);
+        } catch (error) {
+            toast.error('Fehler beim Importieren: Das Template konnte nicht importiert werden.');
+        }
+    };
+
+    const handleImportOverwrite = async (templateId: string) => {
+        if (!selectedTemplate) return;
+
+        const matchResult = matchTemplateEmployees(
+            selectedTemplate.content.employees,
+            currentEmployees
+        );
+
+        if (matchResult.matchCount === 0) {
+            toast.error('Keine passenden Mitarbeiter gefunden. Es wurden keine Mitarbeiter gefunden, die importiert werden können.');
+            setImportTemplateDialogOpen(false);
+            setSelectedTemplateId(null);
+            return;
+        }
+
+        try {
+            // Overwrite mode: delete all current, then create matched employees
+            for (const employee of employees) {
+                await deleteMutation.mutateAsync(employee.key);
+            }
+
+            for (const { templateEmployee } of matchResult.matched) {
+                await createMutation.mutateAsync({
+                    data: {
+                        firstname: templateEmployee.firstname,
+                        name: templateEmployee.name,
+                        wish_days: templateEmployee.wish_days,
+                        wish_shifts: templateEmployee.wish_shifts,
+                        blocked_days: templateEmployee.blocked_days,
+                        blocked_shifts: templateEmployee.blocked_shifts,
+                    },
+                    options: { skipSyncToMonthly: false },
+                });
+            }
+
+            toast.success(`Template importiert (Überschreiben): ${matchResult.matchCount} von ${matchResult.totalCount} Mitarbeiter wurden importiert.${
+                matchResult.unmatched.length > 0
+                    ? ` ${matchResult.unmatched.length} Mitarbeiter wurden übersprungen.`
+                    : ''
+            }`);
+
+            setImportTemplateDialogOpen(false);
+            setSelectedTemplateId(null);
+        } catch (error) {
+            toast.error('Fehler beim Importieren: Das Template konnte nicht importiert werden.');
+        }
+    };
+
+
     return (
         <div className="py-6">
             <Card>
@@ -94,10 +254,28 @@ export default function GlobalWishesAndBlockedPage() {
                                 Verwalte allgemeine Wunsch-Tage, Wunsch-Schichten, blockierte Tage und blockierte Schichten für Mitarbeiter
                             </CardDescription>
                         </div>
-                        <Button onClick={handleCreate}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Neuer Eintrag
-                        </Button>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setImportTemplateDialogOpen(true)}
+                                disabled={templates.length === 0}
+                            >
+                                <Upload className="mr-2 h-4 w-4" />
+                                Template laden
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => setSaveTemplateDialogOpen(true)}
+                                disabled={employees.length === 0}
+                            >
+                                <Save className="mr-2 h-4 w-4" />
+                                Als Template speichern
+                            </Button>
+                            <Button onClick={handleCreate}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Neuer Eintrag
+                            </Button>
+                        </div>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -151,6 +329,30 @@ export default function GlobalWishesAndBlockedPage() {
                     setEditingEmployee(undefined);
                 }}
                 employeeName={pendingPayload?.employeeName || ''}
+            />
+
+            <SaveTemplateDialog
+                open={saveTemplateDialogOpen}
+                onOpenChange={setSaveTemplateDialogOpen}
+                onSave={handleSaveAsTemplate}
+                isSaving={isCreatingTemplate}
+            />
+
+            <ImportGlobalWishesTemplateDialog
+                open={importTemplateDialogOpen}
+                onOpenChange={(open) => {
+                    setImportTemplateDialogOpen(open);
+                    if (!open) {
+                        setSelectedTemplateId(null);
+                    }
+                }}
+                templates={templates}
+                selectedTemplateContent={selectedTemplate}
+                currentEmployees={currentEmployees}
+                onImportMerge={handleImportMerge}
+                onImportOverwrite={handleImportOverwrite}
+                onSelectTemplate={handleSelectTemplate}
+                isImporting={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
             />
         </div>
     );

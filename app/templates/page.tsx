@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileText, Scale, UserCog, ArrowRight } from 'lucide-react';
+import { FileText, Scale, UserCog, ArrowRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 
 /**
@@ -17,6 +17,14 @@ export default function TemplatesPage() {
       description: 'Verwalten Sie gespeicherte Solver-Gewichtungskonfigurationen',
       icon: Scale,
       href: '/templates/weights',
+      available: true,
+    },
+    {
+      type: 'global-wishes',
+      title: 'Globale Wünsche-Templates',
+      description: 'Wiederverwendbare globale Wunsch- und Blockierungskonfigurationen mit intelligentem Mitarbeiter-Matching',
+      icon: Heart,
+      href: '/templates/global-wishes',
       available: true,
     },
     {
