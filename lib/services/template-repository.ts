@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { Template, TemplateMetadata, TemplateSummary, TemplateType } from '@/types/template';
+import { Template, TemplateMetadata, TemplateSummary, TemplateType, GlobalWishesTemplateContent, GlobalWishesTemplateMetadata } from '@/types/template';
 import { getCasesDirectory } from '@/lib/config/app-config';
 
 /**
@@ -193,3 +193,105 @@ export function createTemplateRepository<T>(
 ): TemplateRepository<T> {
   return new TemplateRepository<T>(templateType);
 }
+
+/**
+ * Global wishes template repository with enhanced metadata support.
+ */
+export class GlobalWishesTemplateRepository extends TemplateRepository<GlobalWishesTemplateContent> {
+  constructor() {
+    super('global-wishes');
+  }
+
+  /**
+   * Creates a new global wishes template with enhanced metadata.
+   * Automatically adds employeeCount and employeeIds to metadata.
+   */
+  async create(
+    caseId: number,
+    content: GlobalWishesTemplateContent,
+    description: string
+  ): Promise<Template<GlobalWishesTemplateContent>> {
+    await this['ensureTemplateDir'](caseId);
+
+    const metadata: GlobalWishesTemplateMetadata = {
+      id: Date.now().toString(),
+      description,
+      last_modified: new Date().toISOString(),
+      employeeCount: content.employees.length,
+      employeeIds: content.employees.map((emp) => emp.key),
+    };
+
+    const template: Template<GlobalWishesTemplateContent> = {
+      content,
+      _metadata: metadata,
+    };
+
+    const filePath = this['getTemplatePath'](caseId, metadata.id);
+    await fs.writeFile(filePath, JSON.stringify(template, null, 2), 'utf-8');
+
+    return template;
+  }
+
+  /**
+   * Updates an existing global wishes template with enhanced metadata.
+   */
+  async update(
+    caseId: number,
+    templateId: string,
+    updates: { content?: GlobalWishesTemplateContent; description?: string }
+  ): Promise<Template<GlobalWishesTemplateContent>> {
+    const existing = await this.get(caseId, templateId);
+
+    const newContent = updates.content ?? existing.content;
+
+    const updated: Template<GlobalWishesTemplateContent> = {
+      content: newContent,
+      _metadata: {
+        ...existing._metadata,
+        description: updates.description ?? existing._metadata.description,
+        last_modified: new Date().toISOString(),
+        employeeCount: newContent.employees.length,
+        employeeIds: newContent.employees.map((emp) => emp.key),
+      } as GlobalWishesTemplateMetadata,
+    };
+
+    const filePath = this['getTemplatePath'](caseId, templateId);
+    await fs.writeFile(filePath, JSON.stringify(updated, null, 2), 'utf-8');
+
+    return updated;
+  }
+
+  /**
+   * Replaces an existing global wishes template with new content.
+   */
+  async replace(
+    caseId: number,
+    templateId: string,
+    content: GlobalWishesTemplateContent,
+    description?: string
+  ): Promise<Template<GlobalWishesTemplateContent>> {
+    const existing = await this.get(caseId, templateId);
+
+    const updated: Template<GlobalWishesTemplateContent> = {
+      content,
+      _metadata: {
+        ...existing._metadata,
+        description: description ?? existing._metadata.description,
+        last_modified: new Date().toISOString(),
+        employeeCount: content.employees.length,
+        employeeIds: content.employees.map((emp) => emp.key),
+      } as GlobalWishesTemplateMetadata,
+    };
+
+    const filePath = this['getTemplatePath'](caseId, templateId);
+    await fs.writeFile(filePath, JSON.stringify(updated, null, 2), 'utf-8');
+
+    return updated;
+  }
+}
+
+/**
+ * Global wishes template repository instance.
+ */
+export const globalWishesTemplateRepository = new GlobalWishesTemplateRepository();
+

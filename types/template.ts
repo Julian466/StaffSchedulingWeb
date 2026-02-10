@@ -6,7 +6,7 @@
 /**
  * Available template types in the system.
  */
-export type TemplateType = 'weights' | 'minimal-staff';
+export type TemplateType = 'weights' | 'minimal-staff' | 'global-wishes';
 
 /**
  * Metadata for a template.
@@ -66,3 +66,32 @@ export interface UpdateTemplateMetadataRequest {
   /** New description for the template */
   description: string;
 }
+
+/**
+ * Enhanced metadata for global wishes templates.
+ * Includes employee count and IDs for quick preview.
+ */
+export interface GlobalWishesTemplateMetadata extends TemplateMetadata {
+  /** Number of employees in the template */
+  employeeCount: number;
+  /** Array of employee IDs included in the template */
+  employeeIds: number[];
+}
+
+/**
+ * Content structure for global wishes templates.
+ * Contains employees with their wishes and blocked data.
+ */
+export interface GlobalWishesTemplateContent {
+  /** Array of employees with their wishes and blocked data */
+  employees: Array<{
+    key: number;
+    firstname: string;
+    name: string;
+    wish_days: number[];
+    wish_shifts: [number, string][];
+    blocked_days: number[];
+    blocked_shifts: [number, string][];
+  }>;
+}
+
