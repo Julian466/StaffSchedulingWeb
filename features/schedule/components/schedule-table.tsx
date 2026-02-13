@@ -47,6 +47,7 @@ interface SingleScheduleTableProps {
 
 interface CompareScheduleTableProps {
   schedules: (ScheduleSolution & { scheduleId: string; description?: string })[];
+  reducedView?: boolean;
   compareMode: true;
   isFullscreen?: boolean;
 }
@@ -106,6 +107,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
 
   const isFullscreen = props.isFullscreen ?? false;
   const compareMode = props.compareMode ?? false;
+  const reducedView = props.reducedView ?? null;
 
   useEffect(() => {
     if (isFullscreen && containerRef.current) {
@@ -548,7 +550,242 @@ export function ScheduleTable(props: ScheduleTableProps) {
         <div className="text-center py-12 text-muted-foreground">
           Keine Mitarbeiter gefunden.
         </div>
-      ) : (
+      ) : reducedView ?
+    (
+        <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+          <div className={cn(
+              "relative overflow-auto",
+              isFullscreen ? "flex-1" : "max-h-[800px]"
+          )}>
+            <table className="w-full border-collapse text-sm">
+              <thead className="sticky top-0 z-20 bg-card">
+              <tr>
+                <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-1 text-left font-semibold text-foreground">
+                  Employee
+                </th>
+                {days.map((day: Date, idx: number) => (
+                    <th
+                        key={idx}
+                        className={cn(
+                            'border-b border-border text-center font-medium text-foreground',
+                            isWeekend(day) && 'bg-muted/30'
+                        )}
+                    >
+                      <div className="font-semibold">
+                        {day.toLocaleDateString('de-DE', { month: 'numeric', day: 'numeric' })}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+                      </div>
+                    </th>
+                ))}
+              </tr>
+              </thead>
+              <tbody>
+              {filteredEmployees.map((employee: ScheduleEmployee) => {
+                const stats = getEmployeeStats(employee, days, shifts, variables);
+                return (
+                    <tr key={employee.id} className="transition-colors">
+                      <td
+                          className={cn(
+                              'sticky left-0 z-20 border-b border-r border-border p-1 cursor-pointer',
+                              stats.hasOvertime
+                                  ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60'
+                                  : 'bg-card'
+                          )}
+                          onClick={() => {
+                            const { firstname, lastname } = parseName(employee.name);
+                            setSelectedEmployee({
+                              id: employee.id,
+                              firstname,
+                              lastname
+                            });
+                          }}
+                      >
+                        <div className="">
+                          <div className="font-medium text-foreground">{employee.name}</div>
+                          <div className="text-xs text-foreground">{employee.level[0]} -
+                            <span
+                                className={cn(
+                                    'font-medium',
+                                    stats.hasOvertime ? 'text-destructive' : 'text-muted-foreground'
+                                )}
+                            >
+                              {stats.actualHours.toFixed(1)}h / {stats.targetHours.toFixed(1)}h
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+                      {days.map((day: Date, dayIdx: number) => {
+                        const shiftsForCell = getShiftsForCell(employee.id, day, shifts, variables);
+                        const dateStr = day.toISOString().split('T')[0];
+                        const cellKey = `${employee.id}-${dateStr}`;
+
+                        const isDayOffFulfilled = fulfilledDayOffCells.has(cellKey);
+                        const isShiftWishFulfilled = fulfilledShiftWishCells.has(cellKey);
+                        const hasDayOffWish = allDayOffWishCells.has(cellKey);
+                        const shiftWishColors = allShiftWishColors[cellKey] || [];
+
+                        const isUnavailable = unavailable(employee, dayIdx + 1);
+
+                        return (
+                            <td
+                                key={dayIdx}
+                                className={cn(
+                                    // Standard-Basis: Wenn keine Farbe aktiv ist, greift dieser graue Hover
+                                    'border-b border-border px-2 text-center relative z-0 cursor-pointer hover:bg-foreground/5',
+
+                                    // Wochenende: Leicht dunkleres Grau beim Hover
+                                    isWeekend(day) && 'bg-muted/30 hover:bg-muted/90',
+
+                                    // Urlaub erfüllt (Amber): Bleibt Amber, wird intensiver
+                                    isDayOffFulfilled && 'bg-amber-400/10 hover:bg-amber-400/25',
+
+                                    // Wunsch erfüllt (Emerald): Bleibt Emerald, wird intensiver
+                                    isShiftWishFulfilled && 'bg-emerald-400/10 hover:bg-emerald-400/25',
+
+                                    // Nicht verfügbar (Rose): Bleibt Rot, wird intensiver
+                                    isUnavailable && 'bg-rose-400/10 hover:bg-rose-400/25',
+
+                                    // Wunsch offen (Rose): Bleibt Rot, wird intensiver
+                                    !shiftsForCell.length && !isDayOffFulfilled && hasDayOffWish && 'bg-rose-400/5 hover:bg-rose-400/20'
+                                )}
+                                onMouseLeave={() => handleMouseLeave()}
+                                onClick={() => handleCellClick(cellKey)}
+                            >
+                              {shiftsForCell.length > 0 || hasDayOffWish || shiftWishColors.length > 0 || shifts.some((s: Shift) => unavailable(employee, dayIdx + 1, s)) ? (
+                                  <>
+                                    <div className="flex flex-col items-center gap-1">
+                                      {/* RENDER ALL SHIFTS FOR THIS CELL */}
+                                      {shiftsForCell.length > 0 ? (
+                                          <div className="flex flex-col w-full gap-1">
+                                            {shiftsForCell.map((shift) => (
+                                                <div
+                                                    key={shift.id}
+                                                    className="rounded-md px-2 py-1.5 font-medium text-white"
+                                                    style={{ backgroundColor: shift.color }}
+                                                >
+                                                  {shift.abbreviation}
+                                                </div>
+                                            ))}
+                                          </div>
+                                      ) : (
+                                          <div className="py-1.5" />
+                                      )}
+                                    </div>
+                                    {openTooltipCell === cellKey && (
+                                        <Tooltip open={true}>
+                                          <TooltipTrigger asChild>
+                                            <div className="absolute inset-0 top-8" />
+                                          </TooltipTrigger>
+                                          <TooltipContent container={portalContainer}>
+                                            <div className="text-sm space-y-1">
+                                              {shiftsForCell.length > 0 && (
+                                                  <div className="space-y-1">
+                                                    {shiftsForCell.map((shift) => (
+                                                        <div key={shift.id}>
+                                                          <p className="font-semibold">{shift.name}</p>
+                                                          <p className="text-xs text-muted-foreground">
+                                                            Dauer: {Math.floor(shift.duration / 60)}h {shift.duration % 60}min
+                                                          </p>
+                                                        </div>
+                                                    ))}
+                                                  </div>
+                                              )}
+                                              {(hasDayOffWish || shiftWishColors.length > 0 || shifts.some((s: Shift) => unavailable(employee, dayIdx + 1, s))) && shiftsForCell.length > 0 && (
+                                                  <div className="border-t border-border pt-1 mt-1" />
+                                              )}
+                                              {shifts.filter((s: Shift) => unavailable(employee, dayIdx + 1, s)).map((s: Shift) => (
+                                                  <p key={s.id} className="text-xs">● Blockiert: {s.name}</p>
+                                              ))}
+                                              {hasDayOffWish && (
+                                                  <p className="text-xs">△ Wunsch: Freier Tag</p>
+                                              )}
+                                              {shiftWishColors.map((color: string, idx: number) => {
+                                                const shiftForColor = shifts.find((s: Shift) => s.color === color);
+                                                return (
+                                                    <p key={idx} className="text-xs">
+                                                      ◆ Schichtwunsch: {shiftForColor?.name || 'Unbekannt'}
+                                                    </p>
+                                                );
+                                              })}
+                                            </div>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                    )}
+                                  </>
+                              ) : (
+                                  <div className="flex flex-col items-center gap-1">
+                                    {/* RENDER ALL SHIFTS FOR THIS CELL */}
+                                    {shiftsForCell.length > 0 ? (
+                                        <div className="flex flex-col w-full gap-1">
+                                          {shiftsForCell.map((shift) => (
+                                              <div
+                                                  key={shift.id}
+                                                  className="rounded-md px-2 py-1.5 font-medium text-white w-full"
+                                                  style={{ backgroundColor: shift.color }}
+                                              >
+                                                {shift.name}
+                                              </div>
+                                          ))}
+                                        </div>
+                                    ) : (
+                                        <div className="py-1.5" />
+                                    )}
+                                  </div>
+                              )}
+                            </td>
+                        );
+                      })}
+                    </tr>
+                );
+              })}
+              <tr>
+                <td className="sticky bottom-0 left-0 z-30 border-b border-r border-border bg-card text-left font-semibold text-foreground">
+                  <div className="flex items-center justify-between">
+                    <div className="whitespace-nowrap">Gesamtbelegung</div>
+                    <div className="text-xs text-muted-foreground flex pr-2 flex-col items-end">
+                      <div>F</div>
+                      <div>Z</div>
+                      <div>S</div>
+                      <div>N</div>
+                    </div>
+                  </div>
+                </td>
+                {days.map((day: Date, idx: number) => {
+                  const dateStr = day.toISOString().split('T')[0];
+                  const dateShifts = shiftSummary?.[dateStr]?.shifts ?? {};
+                  const dayEntries = Object.entries(dateShifts) as [string, ShiftTypeSummary][]; // typed entries
+
+                  const fruehEntry = dayEntries.find(([abbr]) => abbr === 'F');
+                  const zwischenEntry = dayEntries.find(([abbr]) => abbr === 'Z');
+                  const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
+                  const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
+
+                  const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F';
+                  const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'Z';
+                  const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'S';
+                  const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'N';
+
+                  return (
+                      <td
+                          key={`total-single-${idx}`}
+                          className={cn('sticky bottom-0 border-b border-border p-1 text-center text-sm bg-background', isWeekend(day))}
+                      >
+                        <div className="text-xs text-muted-foreground">{fruehStr || '—'}</div>
+                        <div className="text-xs text-muted-foreground">{zwischenStr || '—'}</div>
+                        <div className="text-xs text-muted-foreground">{spaetStr || '—'}</div>
+                        <div className="text-xs text-muted-foreground">{nachtStr || '—'}</div>
+                      </td>
+                  );
+                })}
+              </tr>
+              </tbody>
+            </table>
+          </div>
+        </TooltipProvider>
+    )
+          : (
         <TooltipProvider delayDuration={300} skipDelayDuration={100}>
           <div className={cn(
             "relative overflow-auto",
