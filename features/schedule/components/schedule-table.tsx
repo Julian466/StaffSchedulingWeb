@@ -40,6 +40,7 @@ interface SingleScheduleTableProps {
   allDayOffWishCells: Set<string>;
   allShiftWishColors: Record<string, string[]>;
   isFullscreen?: boolean;
+  reducedView?: boolean;
   compareMode?: false;
   shiftSummary?: ShiftSummary;
 }
