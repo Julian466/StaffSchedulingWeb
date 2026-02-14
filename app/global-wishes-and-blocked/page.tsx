@@ -14,6 +14,8 @@ import {
     useUpdateGlobalWishesAndBlocked,
     useDeleteGlobalWishesAndBlocked,
 } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-and-blocked';
+import { useWishesAndBlocked } from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
+import { GlobalWishesConflictDialog } from '@/features/global_wishes_and_blocked/components/global-wishes-conflict-dialog';
 
 export default function GlobalWishesAndBlockedPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -34,11 +36,40 @@ export default function GlobalWishesAndBlockedPage() {
         setDialogOpen(true);
     };
 
+    // State for conflict dialog
+    const { data: monthlyEmployees = [] } = useWishesAndBlocked();
+    const [conflictOpen, setConflictOpen] = useState(false);
+    const [pendingPayload, setPendingPayload] = useState<{
+        data: Omit<WishesAndBlockedEmployee, 'key'>;
+        isEdit: boolean;
+        employeeKey?: number;
+        employeeName?: string;
+    } | null>(null);
+
     const handleSubmit = async (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
+        // Determine if there are existing monthly wishes for this employee
+        const employeeKey = editingEmployee?.key;
+        const monthlyEntry = employeeKey
+            ? monthlyEmployees?.find((e: WishesAndBlockedEmployee) => e.key === employeeKey)
+            : monthlyEmployees?.find((e: WishesAndBlockedEmployee) => e.firstname === data.firstname && e.name === data.name);
+
+        const hasMonthlyWishes = !!monthlyEntry && (
+            (monthlyEntry.wish_days?.length || 0) > 0 ||
+            (monthlyEntry.wish_shifts?.length || 0) > 0 ||
+            (monthlyEntry.blocked_days?.length || 0) > 0 ||
+            (monthlyEntry.blocked_shifts?.length || 0) > 0
+        );
+
+        if (hasMonthlyWishes) {
+            setPendingPayload({ data, isEdit: !!editingEmployee, employeeKey: editingEmployee?.key, employeeName: `${data.firstname} ${data.name}` });
+            setConflictOpen(true);
+            return;
+        }
+
         if (editingEmployee) {
             await updateMutation.mutateAsync({ id: editingEmployee.key, data });
         } else {
-            await createMutation.mutateAsync(data);
+            await createMutation.mutateAsync({ data, options: {} });
         }
         setDialogOpen(false);
         setEditingEmployee(undefined);
@@ -90,6 +121,36 @@ export default function GlobalWishesAndBlockedPage() {
                 onSubmit={handleSubmit}
                 isSubmitting={isSubmitting}
                 isGlobal={true}
+            />
+
+            <GlobalWishesConflictDialog
+                open={conflictOpen}
+                onOpenChange={setConflictOpen}
+                onChoice={async (choice) => {
+                    if (!pendingPayload) return;
+                    const { data, isEdit, employeeKey } = pendingPayload;
+
+                    if (choice === 'overwrite') {
+                        if (isEdit && employeeKey) {
+                            await updateMutation.mutateAsync({ id: employeeKey, data });
+                        } else {
+                            await createMutation.mutateAsync({ data, options: {} });
+                        }
+                    } else if (choice === 'keep-monthly') {
+                        if (isEdit && employeeKey) {
+                            await updateMutation.mutateAsync({ id: employeeKey, data, options: { skipSyncToMonthly: true } });
+                        } else {
+                            await createMutation.mutateAsync({ data, options: { skipSyncToMonthly: true } });
+                        }
+                    } else {
+                        // cancel -> do nothing
+                    }
+
+                    setPendingPayload(null);
+                    setDialogOpen(false);
+                    setEditingEmployee(undefined);
+                }}
+                employeeName={pendingPayload?.employeeName || ''}
             />
         </div>
     );

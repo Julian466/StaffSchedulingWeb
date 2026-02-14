@@ -8,7 +8,7 @@ import {
     useSolveMultiple,
     useInsert,
     useDelete,
-    useProcessSolution,
+    useImportSolution,
 } from '@/features/solver/hooks/use-solver';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -22,47 +22,67 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {Loader2, Database, Play, Trash2, Upload, ChevronDownIcon} from 'lucide-react';
+import {Loader2, Database, Play, Trash2, Upload} from 'lucide-react';
 import {SolverCommandType} from '@/types/solver';
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {Calendar} from "@/components/ui/calendar";
-import {DateRange} from "react-day-picker";
+import {ImportSolutionDialog} from '@/components/import-solution-dialog';
+import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 
 // Commands that don't require date range
-const COMMANDS_WITHOUT_DATE: SolverCommandType[] = ['process-solution'];
+const COMMANDS_WITHOUT_DATE: SolverCommandType[] = [];
 
 export function SolverControlPanel() {
-    const {currentCaseId: selectedCase} = useCase();
+    const {currentCaseId: selectedCase, currentCase, switchCase} = useCase();
     const [command, setCommand] = useState<SolverCommandType>('solve');
-    const [endDate, setEndDate] = useState('');
     const [timeout, setTimeout] = useState('300');
-    const [maxSolutions, setMaxSolutions] = useState('5');
-    const [filename, setFilename] = useState('');
-    const [output, setOutput] = useState('processed_solution.json');
 
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
-    const [openDateRange, setOpenDateRange] = useState(false)
-
-    const [startDate, setStartDate] = useState('');
+    // Month and year state
+    const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+    const [selectedYear, setSelectedYear] = useState<number | null>(null);
     
     // Progress tracking
     const [progress, setProgress] = useState(0);
     const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
+
+    // Set default month and year from case information
+    React.useEffect(() => {
+        if (currentCase && selectedMonth === null && selectedYear === null) {
+            setSelectedMonth(currentCase.month);
+            setSelectedYear(currentCase.year);
+        }
+    }, [currentCase, selectedMonth, selectedYear]);
+
+    // Import dialog state
+    const [showImportDialog, setShowImportDialog] = useState(false);
+    const [importParams, setImportParams] = useState<{
+        caseId: number;
+        start: string;
+        end: string;
+        solutionType: string;
+    } | null>(null);
+    
+    // Multiple import dialog state
+    const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
+    const [multipleImportParams, setMultipleImportParams] = useState<{
+        caseId: number;
+        start: string;
+        end: string;
+        solutionCount: number;
+        feasibleSolutions?: number[];
+    } | null>(null);
 
     const fetchMutation = useFetch();
     const solveMutation = useSolve();
     const solveMultipleMutation = useSolveMultiple();
     const insertMutation = useInsert();
     const deleteMutation = useDelete();
-    const processSolutionMutation = useProcessSolution();
+    const importSolutionMutation = useImportSolution();
 
     const isExecuting =
         fetchMutation.isPending ||
         solveMutation.isPending ||
         solveMultipleMutation.isPending ||
         insertMutation.isPending ||
-        deleteMutation.isPending ||
-        processSolutionMutation.isPending;
+        deleteMutation.isPending;
 
     // Update progress based on elapsed time vs timeout
     React.useEffect(() => {
@@ -71,9 +91,13 @@ export function SolverControlPanel() {
             return;
         }
 
-        const currentTimeout = (command === 'solve' || command === 'solve-multiple') 
-            ? parseInt(timeout, 10) * 1000 
-            : 60000; // Default 60s for other commands
+        // Calculate timeout: solve-multiple runs 3 times, so multiply by 3
+        let currentTimeout = 60000; // Default 60s for other commands
+        if (command === 'solve') {
+            currentTimeout = parseInt(timeout, 10) * 1000 + 10000; // timeout + 10s buffer
+        } else if (command === 'solve-multiple') {
+            currentTimeout = parseInt(timeout, 10) * 3 * 1000 + 20000; // 3x timeout for 3 runs + 20s buffer
+        }
 
         const interval = setInterval(() => {
             const elapsed = Date.now() - executionStartTime;
@@ -103,55 +127,79 @@ export function SolverControlPanel() {
 
         const requiresDate = !COMMANDS_WITHOUT_DATE.includes(command);
 
-        // Handle commands that don't require dates
-        if (command === 'process-solution') {
-            processSolutionMutation.mutate({
-                case: selectedCase,
-                filename: filename || undefined,
-                output: output || 'processed_solution.json',
-            });
-            return;
-        }
-
         // For all other commands, dates are required
-        if (requiresDate && (!startDate || !endDate)) {
+        if (requiresDate && (selectedMonth === null || selectedYear === null)) {
             return;
         }
 
-        // Validate dates
-        const start = dateRange ? dateRange.from! : new Date("");
-        const end = dateRange ? dateRange.to! : new Date("");
-
-        if (start >= end) {
-            // TODO: Replace with better UI feedback
-            alert('Das Startdatum muss vor dem Enddatum liegen');
-            return;
-        }
-
-                // Get the date in the format YYYY-MM-DD, but beware that we need to ensure the timezone is consistent to avoid off-by-one errors.ne
+        // Calculate first and last day of selected month
+        const firstDay = new Date(selectedYear!, selectedMonth! - 1, 1);
+        const lastDay = new Date(selectedYear!, selectedMonth!, 0);
 
         const baseParams = {
             unit: selectedCase,
-            start: start.getFullYear() + "-" + String(start.getMonth() + 1).padStart(2, '0') + "-" + String(start.getDate()).padStart(2, '0'),
-            end: end.getFullYear() + "-" + String(end.getMonth() + 1).padStart(2, '0') + "-" + String(end.getDate()).padStart(2, '0'),
+            start: firstDay.getFullYear() + "-" + String(firstDay.getMonth() + 1).padStart(2, '0') + "-" + String(firstDay.getDate()).padStart(2, '0'),
+            end: lastDay.getFullYear() + "-" + String(lastDay.getMonth() + 1).padStart(2, '0') + "-" + String(lastDay.getDate()).padStart(2, '0'),
         };
 
         switch (command) {
             case 'fetch':
-                fetchMutation.mutate(baseParams);
+                fetchMutation.mutate(baseParams, {
+                    onSuccess: async () => {
+                        // Update case information with selected month and year after successful fetch -
+                        if (selectedMonth !== null && selectedYear !== null) {
+                            // Be sure that selectedMonth is MM format
+                            const monthStr = String(selectedMonth).padStart(2, '0');
+                            const monthYear = `${monthStr}_${selectedYear}`;
+                            await switchCase(selectedCase, monthYear);
+                        }
+                    }
+                });
                 break;
             case 'solve':
-                solveMutation.mutate({
-                    ...baseParams,
-                    timeout: parseInt(timeout, 10),
-                });
+                solveMutation.mutate(
+                    {
+                        ...baseParams,
+                        timeout: parseInt(timeout, 10),
+                    },
+                    {
+                        onSuccess: (data) => {
+                            if (data.job.status === 'completed') {
+                                // Show import dialog after successful solve
+                                setImportParams({
+                                    caseId: selectedCase,
+                                    start: baseParams.start,
+                                    end: baseParams.end,
+                                    solutionType: 'wdefault',
+                                });
+                                setShowImportDialog(true);
+                            }
+                        },
+                    }
+                );
                 break;
             case 'solve-multiple':
-                solveMultipleMutation.mutate({
-                    ...baseParams,
-                    maxSolutions: parseInt(maxSolutions, 10),
-                    timeout: parseInt(timeout, 10),
-                });
+                solveMultipleMutation.mutate(
+                    {
+                        ...baseParams,
+                        timeout: parseInt(timeout, 10),
+                    },
+                    {
+                        onSuccess: (data) => {
+                            if (data.job.status === 'completed') {
+                                // Show multiple import dialog
+                                setMultipleImportParams({
+                                    caseId: selectedCase,
+                                    start: baseParams.start,
+                                    end: baseParams.end,
+                                    solutionCount: data.scheduleInfo.solutionsGenerated || 3,
+                                    feasibleSolutions: data.scheduleInfo.feasibleSolutions,
+                                });
+                                setShowMultipleImportDialog(true);
+                            }
+                        },
+                    }
+                );
                 break;
             case 'insert':
                 insertMutation.mutate(baseParams);
@@ -192,8 +240,6 @@ export function SolverControlPanel() {
                 return 'Fügt Daten aus JSON-Dateien in die Datenbank ein';
             case 'delete':
                 return 'Löscht Daten aus der Datenbank (Reset)';
-            case 'process-solution':
-                return 'Verarbeitet und exportiert eine Lösung als JSON';
             default:
                 return '';
         }
@@ -248,140 +294,72 @@ export function SolverControlPanel() {
                                     <span>Löschen (delete)</span>
                                 </div>
                             </SelectItem>
-                            <SelectItem value="process-solution">
-                                <div className="flex items-center gap-2">
-                                    <Play className="h-4 w-4"/>
-                                    <span>Lösung verarbeiten (process-solution)</span>
-                                </div>
-                            </SelectItem>
                         </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">{getCommandDescription(command)}</p>
                 </div>
 
-                {/* Date Range TODO: default should be the case month */}
+                {/* Month and Year Selection */}
                 {!COMMANDS_WITHOUT_DATE.includes(command) && (
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="date">Datum</Label>
-                            <Popover open={openDateRange} onOpenChange={setOpenDateRange}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        id="date"
-                                        className="w-48 justify-between font-normal"
-                                    >
-                                        {dateRange ? (dateRange!.from!.toLocaleDateString() + " - " + dateRange!.to!.toLocaleDateString()) : "Select date"}
-                                        <ChevronDownIcon/>
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto overflow-hidden p-0" align="start">
-                                    <Calendar
-                                        mode="range"
-                                        defaultMonth={dateRange?.from || new Date()}
-                                        selected={dateRange}
-                                        captionLayout="dropdown"
-                                        onSelect={(date) => {
-                                            setDateRange(date);
-                                            setStartDate(date?.from ? date.from.toISOString().split('T')[0] : '');
-                                            setEndDate(date?.to ? date.to.toISOString().split('T')[0] : '');
-                                        }}
-                                    />
-                                    <Button className="w-full rounded-t-none" onClick={() => setOpenDateRange(false)}>
-                                        Datum auswählen
-                                    </Button>
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
-                )}
-
-                {/* Command-specific parameters for process-solution */}
-                {command === 'process-solution' && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="filename">Solution Filename (optional)</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    id="filename"
-                                    type="text"
-                                    placeholder="z.B. solution_1_2024-11-01-2024-11-30_0"
-                                    value={filename}
-                                    onChange={(e) => {
-                                        setFilename(e.target.value);
-                                        setOutput(`processed_${e.target.value || 'solution'}.json`)
-                                    }}
-                                    disabled={isExecuting}
-                                    className="flex-1"
-                                />
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => {
-                                        const input = document.createElement('input');
-                                        input.type = 'file';
-                                        input.accept = '.json';
-                                        input.onchange = (e) => {
-                                            const file = (e.target as HTMLInputElement).files?.[0];
-                                            if (file) {
-                                                // Remove .json extension from filename
-                                                const nameWithoutExtension = file.name.replace(/\.json$/, '');
-                                                setFilename(nameWithoutExtension);
-                                                setOutput(`processed_${nameWithoutExtension || 'solution'}.json`)
-                                            }
-                                        };
-                                        input.click();
-                                    }}
-                                    disabled={isExecuting}
-                                >
-                                    Durchsuchen
-                                </Button>
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                Leer lassen für automatische Auswahl der neuesten Lösung
-                            </p>
+                            <Label htmlFor="month">Monat</Label>
+                            <Select 
+                                value={selectedMonth?.toString() || ''} 
+                                onValueChange={(v) => setSelectedMonth(parseInt(v))}
+                            >
+                                <SelectTrigger id="month">
+                                    <SelectValue placeholder="Monat wählen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="1">Januar</SelectItem>
+                                    <SelectItem value="2">Februar</SelectItem>
+                                    <SelectItem value="3">März</SelectItem>
+                                    <SelectItem value="4">April</SelectItem>
+                                    <SelectItem value="5">Mai</SelectItem>
+                                    <SelectItem value="6">Juni</SelectItem>
+                                    <SelectItem value="7">Juli</SelectItem>
+                                    <SelectItem value="8">August</SelectItem>
+                                    <SelectItem value="9">September</SelectItem>
+                                    <SelectItem value="10">Oktober</SelectItem>
+                                    <SelectItem value="11">November</SelectItem>
+                                    <SelectItem value="12">Dezember</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="output">Output Filename</Label>
-                            <Input
-                                id="output"
-                                type="text"
-                                placeholder="processed_solution.json"
-                                value={output}
-                                onChange={(e) => setOutput(e.target.value)}
-                                disabled={isExecuting}
-                            />
+                            <Label htmlFor="year">Jahr</Label>
+                            <Select 
+                                value={selectedYear?.toString() || ''} 
+                                onValueChange={(v) => setSelectedYear(parseInt(v))}
+                            >
+                                <SelectTrigger id="year">
+                                    <SelectValue placeholder="Jahr wählen" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                                        <SelectItem key={year} value={year.toString()}>
+                                            {year}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 )}
 
                 {/* Command-specific parameters */}
                 {(command === 'solve' || command === 'solve-multiple') && (
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="timeout">Timeout (Sekunden)</Label>
-                            <Input
-                                id="timeout"
-                                type="number"
-                                min="1"
-                                value={timeout}
-                                onChange={(e) => setTimeout(e.target.value)}
-                                disabled={isExecuting}
-                            />
-                        </div>
-                        {command === 'solve-multiple' && (
-                            <div className="space-y-2">
-                                <Label htmlFor="max-solutions">Max. Lösungen</Label>
-                                <Input
-                                    id="max-solutions"
-                                    type="number"
-                                    min="1"
-                                    value={maxSolutions}
-                                    onChange={(e) => setMaxSolutions(e.target.value)}
-                                    disabled={isExecuting}
-                                />
-                            </div>
-                        )}
+                    <div className="space-y-2">
+                        <Label htmlFor="timeout">Timeout (Sekunden)</Label>
+                        <Input
+                            id="timeout"
+                            type="number"
+                            min="1"
+                            value={timeout}
+                            onChange={(e) => setTimeout(e.target.value)}
+                            disabled={isExecuting}
+                        />
                     </div>
                 )}
 
@@ -390,7 +368,7 @@ export function SolverControlPanel() {
                     onClick={handleExecute}
                     disabled={
                         !selectedCase ||
-                        (!COMMANDS_WITHOUT_DATE.includes(command) && (!startDate || !endDate)) ||
+                        (!COMMANDS_WITHOUT_DATE.includes(command) && (selectedMonth === null || selectedYear === null)) ||
                         isExecuting
                     }
                     className="w-full"
@@ -422,9 +400,9 @@ export function SolverControlPanel() {
                             <Progress value={progress} className="h-2" />
                         </div>
                         <p className="text-xs text-center text-muted-foreground">
-                            {(command === 'solve' || command === 'solve-multiple') 
-                                ? `Geschätzte Laufzeit: ${timeout}s` 
-                                : 'Der Befehl wird ausgeführt...'}
+                            {command === 'solve' && `Geschätzte Laufzeit: ${timeout}s`}
+                            {command === 'solve-multiple' && `Geschätzte Laufzeit: ${parseInt(timeout, 10) * 3}s (3× ${timeout}s)`}
+                            {command !== 'solve' && command !== 'solve-multiple' && 'Der Befehl wird ausgeführt...'}
                         </p>
                         <p className="text-xs text-center text-muted-foreground">
                             {executionStartTime && `Gestartet: ${new Date(executionStartTime).toLocaleTimeString('de-DE')}`}
@@ -432,6 +410,39 @@ export function SolverControlPanel() {
                     </div>
                 )}
             </CardContent>
+
+            {/* Import Solution Dialog */}
+            {importParams && (
+                <ImportSolutionDialog
+                    open={showImportDialog}
+                    onOpenChange={setShowImportDialog}
+                    caseId={importParams.caseId}
+                    start={importParams.start}
+                    end={importParams.end}
+                    solutionType={importParams.solutionType}
+                    onImport={async (params) => {
+                        await importSolutionMutation.mutateAsync(params);
+                    }}
+                    isImporting={importSolutionMutation.isPending}
+                />
+            )}
+            
+            {/* Import Multiple Solutions Dialog */}
+            {multipleImportParams && (
+                <ImportMultipleSolutionsDialog
+                    open={showMultipleImportDialog}
+                    onOpenChange={setShowMultipleImportDialog}
+                    caseId={multipleImportParams.caseId}
+                    start={multipleImportParams.start}
+                    end={multipleImportParams.end}
+                    solutionCount={multipleImportParams.solutionCount}
+                    feasibleSolutions={multipleImportParams.feasibleSolutions}
+                    onImport={async (params) => {
+                        await importSolutionMutation.mutateAsync(params);
+                    }}
+                    isImporting={importSolutionMutation.isPending}
+                />
+            )}
         </Card>
     );
 }

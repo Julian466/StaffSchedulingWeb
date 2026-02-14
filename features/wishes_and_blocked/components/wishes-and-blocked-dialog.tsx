@@ -17,6 +17,7 @@ interface WishesAndBlockedDialogProps {
   employee?: WishesAndBlockedEmployee;
   onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
   isSubmitting?: boolean;
+  excludedEmployeeKeys?: number[];
   isGlobal?: boolean;
 }
 
@@ -27,6 +28,7 @@ export function WishesAndBlockedDialog({
   onSubmit,
   isSubmitting,
   isGlobal,
+  excludedEmployeeKeys = [],
 }: WishesAndBlockedDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -48,6 +50,7 @@ export function WishesAndBlockedDialog({
               onSubmit={onSubmit}
               onCancel={() => onOpenChange(false)}
               isSubmitting={isSubmitting}
+              excludedEmployeeKeys={excludedEmployeeKeys}
               isGlobal={isGlobal}
             />
           </div>

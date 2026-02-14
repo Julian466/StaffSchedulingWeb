@@ -25,13 +25,13 @@ export function createQueryClient(getCurrentCaseId: () => number) {
 }
 
 /**
- * Custom hook that provides a fetch function with automatic case ID injection.
- * This hook ensures all API requests include the current case ID in the headers.
+ * Custom hook that provides a fetch function with automatic case ID and monthYear injection.
+ * This hook ensures all API requests include the current case ID and monthYear in the headers.
  * 
- * The case ID is automatically added to the 'x-case-id' header for every request,
- * allowing API routes to determine which case data to access.
+ * The case ID is automatically added to the 'x-case-id' header and monthYear to 'x-month-year' header
+ * for every request, allowing API routes to determine which case data to access.
  * 
- * @returns A fetch function that automatically includes the case ID header
+ * @returns A fetch function that automatically includes the case ID and monthYear headers
  * 
  * @example
  * function MyComponent() {
@@ -39,17 +39,20 @@ export function createQueryClient(getCurrentCaseId: () => number) {
  *   
  *   const fetchData = async () => {
  *     const response = await caseFetch('/api/employees');
- *     // The request will include 'x-case-id' header automatically
+ *     // The request will include 'x-case-id' and 'x-month-year' headers automatically
  *   };
  * }
  */
 export function useCaseFetch() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
 
   return async (url: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
-    // Inject the current case ID into the request headers
-    headers.set('x-case-id', currentCaseId.toString());
+    // Inject the current case ID and monthYear into the request headers
+    if (currentCase) {
+      headers.set('x-case-id', currentCase.caseId.toString());
+      headers.set('x-month-year', currentCase.monthYear);
+    }
 
     return fetch(url, {
       ...options,

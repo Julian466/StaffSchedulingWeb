@@ -14,14 +14,17 @@ const API_URL = '/api/schedule';
  * @returns Array of query results with parsed schedule data
  */
 export function useMultipleSchedules(scheduleIds: string[]) {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   
   return useQueries({
     queries: scheduleIds.map((scheduleId) => ({
-      queryKey: ['schedule', scheduleId, currentCaseId],
+      queryKey: ['schedule', scheduleId, currentCase?.caseId, currentCase?.monthYear],
       queryFn: async (): Promise<ScheduleSolution | null> => {
+        if (!currentCase) throw new Error('No case selected');
         const res = await fetch(`${API_URL}/${scheduleId}`, {
-          headers: { 'x-case-id': currentCaseId.toString() },
+          headers: { 
+            'x-case-id': currentCase.caseId.toString(), 
+            'x-month-year': currentCase.monthYear },
         });
         if (!res.ok) throw new Error('Failed to fetch schedule');
         

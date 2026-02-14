@@ -5,12 +5,12 @@ import {
   SolveMultipleParams,
   InsertParams,
   DeleteParams,
-  ProcessSolutionParams,
   SolverJob,
 } from '@/types/solver';
 import { toast } from 'sonner';
 import { useCase } from '@/components/case-provider';
 import { PythonConfigValidation } from '@/lib/config/app-config';
+import { th } from 'date-fns/locale';
 
 /**
  * React Query hooks for solver configuration validation and command execution.
@@ -58,16 +58,18 @@ export function useValidateConfig() {
  * Hook to execute fetch command.
  */
 export function useFetch() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: FetchParams): Promise<{ job: SolverJob }> => {
+      if (!currentCase) throw new Error('No case selected');
       const response = await fetch('/api/solver/fetch', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear,
         },
         body: JSON.stringify(params),
       });
@@ -81,18 +83,21 @@ export function useFetch() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      
+      if (currentCase) {
+        queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      }
       if (data.job.status === 'completed') {
         toast.success('Daten erfolgreich von der Datenbank abgerufen');
       } else {
         toast.error('Fehler beim Abrufen der Daten', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
+      if (currentCase) {
+        queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      }
       toast.error('Fehler beim Ausführen des Fetch-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -102,18 +107,22 @@ export function useFetch() {
 
 /**
  * Hook to execute solve command.
+ * Returns mutation result with success callback that includes solve parameters
+ * for potential automatic import.
  */
 export function useSolve() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: SolveParams): Promise<{ job: SolverJob }> => {
+    mutationFn: async (params: SolveParams): Promise<{ job: SolverJob; params: SolveParams }> => {
+      if (!currentCase) throw new Error('No case selected');
       const response = await fetch('/api/solver/solve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear
         },
         body: JSON.stringify(params),
       });
@@ -124,21 +133,21 @@ export function useSolve() {
         throw new Error(data.error || 'Failed to solve scheduling problem');
       }
 
-      return data;
+      return { ...data, params };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+
       if (data.job.status === 'completed') {
         toast.success('Dienstplan erfolgreich erstellt');
       } else {
         toast.error('Fehler beim Erstellen des Dienstplans', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
       toast.error('Fehler beim Ausführen des Solve-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -148,9 +157,11 @@ export function useSolve() {
 
 /**
  * Hook to execute solve-multiple command.
+ * Returns mutation result with success callback that includes solve parameters
+ * for potential automatic import.
  */
 export function useSolveMultiple() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -159,13 +170,17 @@ export function useSolveMultiple() {
       scheduleInfo: {
         solutionsGenerated: number;
         scheduleFiles: string[];
+        feasibleSolutions?: number[];
       };
+      params: SolveMultipleParams;
     }> => {
+      if (!currentCase) throw new Error('No case selected');
       const response = await fetch('/api/solver/solve-multiple', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear
         },
         body: JSON.stringify(params),
       });
@@ -178,26 +193,42 @@ export function useSolveMultiple() {
         );
       }
 
-      return data;
+      return { ...data, params };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+
       if (data.job.status === 'completed') {
-        toast.success(
-          `${data.scheduleInfo.solutionsGenerated} Dienstpläne erfolgreich erstellt`,
-          {
-            description: 'Die Lösungen können nun importiert werden',
-          }
-        );
+        const successCount = data.scheduleInfo.solutionsGenerated;
+        const expectedCount = 3;
+
+        if (successCount === expectedCount) {
+          toast.success(
+            `${successCount} Dienstpläne erfolgreich erstellt`,
+            {
+              description: 'Alle Lösungen können nun importiert werden',
+            }
+          );
+        } else if (successCount > 0) {
+          toast.warning(
+            `Nur ${successCount} von ${expectedCount} Dienstplänen erstellt`,
+            {
+              description: 'Einige Lösungen konnten nicht generiert werden (kein FEASIBLE Status)',
+            }
+          );
+        } else {
+          toast.error('Keine Dienstpläne erstellt', {
+            description: 'Der Solver konnte keine FEASIBLE Lösungen finden',
+          });
+        }
       } else {
         toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
       toast.error('Fehler beim Ausführen des Solve-Multiple-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -209,16 +240,18 @@ export function useSolveMultiple() {
  * Hook to execute insert command.
  */
 export function useInsert() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: InsertParams): Promise<{ job: SolverJob }> => {
+      if (!currentCase) throw new Error('No case selected');
       const response = await fetch('/api/solver/insert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear
         },
         body: JSON.stringify(params),
       });
@@ -232,18 +265,18 @@ export function useInsert() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+
       if (data.job.status === 'completed') {
         toast.success('Daten erfolgreich in die Datenbank eingefügt');
       } else {
         toast.error('Fehler beim Einfügen der Daten', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
       toast.error('Fehler beim Ausführen des Insert-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -255,16 +288,18 @@ export function useInsert() {
  * Hook to execute delete command.
  */
 export function useDelete() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: DeleteParams): Promise<{ job: SolverJob }> => {
+      if (!currentCase) throw new Error('No case selected');
       const response = await fetch('/api/solver/delete', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear
         },
         body: JSON.stringify(params),
       });
@@ -278,18 +313,18 @@ export function useDelete() {
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+
       if (data.job.status === 'completed') {
         toast.success('Daten erfolgreich aus der Datenbank gelöscht');
       } else {
         toast.error('Fehler beim Löschen der Daten', {
-          description: data.job.error,
+          description: data.job.consoleOutput,
         });
       }
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
+      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
       toast.error('Fehler beim Ausführen des Delete-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -298,19 +333,32 @@ export function useDelete() {
 }
 
 /**
- * Hook to execute process-solution command.
+ * Hook to import a processed solution file.
+ * Reads the solution from StaffScheduling/processed_solutions and saves it as a schedule.
  */
-export function useProcessSolution() {
-  const { currentCaseId } = useCase();
+export function useImportSolution() {
+  const { currentCase } = useCase();
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: ProcessSolutionParams): Promise<{ job: SolverJob }> => {
-      const response = await fetch('/api/solver/process-solution', {
+    mutationFn: async (params: {
+      caseId: number;
+      start: string;
+      end: string;
+      solutionType: string;
+    }): Promise<{
+      success: boolean;
+      scheduleId: string;
+      filename: string;
+      message: string;
+    }> => {
+      if (!currentCase) throw new Error('No case selected');
+      const response = await fetch('/api/solver/import-solution', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear
         },
         body: JSON.stringify(params),
       });
@@ -318,27 +366,25 @@ export function useProcessSolution() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to process solution');
+        throw new Error(data.error || 'Failed to import solution');
       }
 
       return data;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      
-      if (data.job.status === 'completed') {
-        toast.success('Lösung erfolgreich verarbeitet');
-      } else {
-        toast.error('Fehler beim Verarbeiten der Lösung', {
-          description: data.job.error,
-        });
-      }
+      // Invalidate schedules to refresh the list
+      currentCase && queryClient.invalidateQueries({ queryKey: ['schedules', currentCase.caseId, currentCase.monthYear] });
+      currentCase && queryClient.invalidateQueries({ queryKey: ['selectedSchedule', currentCase.caseId, currentCase.monthYear] });
+
+      toast.success('Lösung erfolgreich importiert', {
+        description: `Schedule ID: ${data.scheduleId}`,
+      });
     },
     onError: (error) => {
-      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs'] });
-      toast.error('Fehler beim Ausführen des Process-Solution-Befehls', {
+      toast.error('Fehler beim Importieren der Lösung', {
         description: error instanceof Error ? error.message : String(error),
       });
     },
   });
 }
+

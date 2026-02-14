@@ -12,10 +12,10 @@ const defaultData: GlobalWishesAndBlockedDatabase = {
 };
 
 /**
- * Cache for database instances, keyed by case ID.
+ * Cache for database instances, keyed by composite key (caseId_monthYear).
  * Prevents creating multiple database connections for the same case.
  */
-const dbCache = new Map<number, Awaited<ReturnType<typeof JSONFilePreset<GlobalWishesAndBlockedDatabase>>>>();
+const dbCache = new Map<string, Awaited<ReturnType<typeof JSONFilePreset<GlobalWishesAndBlockedDatabase>>>>();
 
 /**
  * Gets or creates a database connection for global wishes and blocked data for a specific case.
@@ -24,21 +24,24 @@ const dbCache = new Map<number, Awaited<ReturnType<typeof JSONFilePreset<GlobalW
  * The structure is identical to the regular wishes and blocked database and only differs in its intended use case.
  * The file is not intended for a month but instead for one global week with all the wishes and blocked constraints.
  *
- * @param caseId - The case ID to get the wishes and blocked database for (defaults to 1)
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format (e.g., "11_2024")
  * @returns Promise resolving to the wishes and blocked database instance
  *
  * @example
- * const db = await getWishesAndBlockedDb(1);
+ * const db = await getGlobalWishesAndBlockedDb(77, "11_2024");
  * await db.read();
  * console.log(db.data.employees);
  */
-export async function getGlobalWishesAndBlockedDb(caseId: number = 1) {
+export async function getGlobalWishesAndBlockedDb(caseId: number, monthYear: string) {
+    const cacheKey = `${caseId}_${monthYear}`;
+    
     // Check if we already have a cached database connection
-    if (!dbCache.has(caseId)) {
-        const casePath = getCasePath(caseId);
+    if (!dbCache.has(cacheKey)) {
+        const casePath = getCasePath(caseId, monthYear);
         const filePath = path.join(casePath, 'global_wishes_and_blocked.json');
         const db = await JSONFilePreset<GlobalWishesAndBlockedDatabase>(filePath, defaultData);
-        dbCache.set(caseId, db);
+        dbCache.set(cacheKey, db);
     }
-    return dbCache.get(caseId)!;
+    return dbCache.get(cacheKey)!;
 }

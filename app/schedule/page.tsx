@@ -4,21 +4,22 @@ import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Maximize2, Upload, Trash2 } from 'lucide-react';
+import { CalendarDays, Maximize2, Upload } from 'lucide-react';
 import { ScheduleTable } from '@/features/schedule/components/schedule-table';
 import { StatsGrid } from '@/features/schedule/components/stats-grid';
 import { ScheduleFileUpload } from '@/features/schedule/components/schedule-file-upload';
 import { cn } from '@/lib/utils';
 import { ScheduleLegend } from '@/features/schedule/components/schedule-legend';
 import { ScheduleSelector } from '@/components/schedule-selector';
-import { SeedInputDialog } from '@/components/seed-input-dialog';
+import { DescriptionInputDialog } from '@/components/description-input-dialog';
 import { 
   useSchedule, 
   useSaveSchedule, 
   useDeleteSchedule,
   useSchedulesMetadata,
   useSelectSchedule,
-  useMultipleSchedules
+  useMultipleSchedules,
+  useUpdateSchedule
 } from '@/features/schedule/hooks/use-schedule';
 import { ScheduleSolutionRaw } from '@/types/schedule';
 import { toast } from 'sonner';
@@ -29,8 +30,9 @@ export default function SchedulePage() {
   const saveSchedule = useSaveSchedule();
   const deleteSchedule = useDeleteSchedule();
   const selectSchedule = useSelectSchedule();
+  const updateSchedule = useUpdateSchedule();
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [showSeedDialog, setShowSeedDialog] = useState(false);
+  const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
   const [pendingSolution, setPendingSolution] = useState<ScheduleSolutionRaw | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [compareMode, setCompareMode] = useState(false);
@@ -39,10 +41,10 @@ export default function SchedulePage() {
 
   const handleFileLoaded = async (solutionData: ScheduleSolutionRaw) => {
     setPendingSolution(solutionData);
-    setShowSeedDialog(true);
+    setShowDescriptionDialog(true);
   };
 
-  const handleSeedConfirm = async (seed: number) => {
+  const handleDescriptionConfirm = async (description?: string) => {
     if (!pendingSolution) return;
 
     try {
@@ -50,7 +52,7 @@ export default function SchedulePage() {
       
       await saveSchedule.mutateAsync({
         scheduleId,
-        seed,
+        description,
         solution: pendingSolution,
         autoSelect: true,
       });
@@ -58,7 +60,7 @@ export default function SchedulePage() {
       // Refetch metadata and the selected schedule because we added a new schedule
       await refetchMetadata();
       await refetchSchedule();
-      setShowSeedDialog(false);
+      setShowDescriptionDialog(false);
       setPendingSolution(null);
       toast.success('Dienstplan erfolgreich geladen');
     } catch (error) {
@@ -80,6 +82,10 @@ export default function SchedulePage() {
   const handleRefresh = async () => {
     await refetchMetadata();
     await refetchSchedule();
+  };
+
+  const handleDescriptionUpdate = async (scheduleId: string, description: string) => {
+    await updateSchedule.mutateAsync({ scheduleId, description });
   };
 
   const handleMultipleSchedulesSelect = (scheduleIds: string[]) => {
@@ -154,7 +160,9 @@ export default function SchedulePage() {
               compareMode={compareMode}
               selectedScheduleIds={selectedScheduleIds}
               onMultipleSchedulesSelect={handleMultipleSchedulesSelect}
+              onDescriptionUpdate={handleDescriptionUpdate}
             />
+
           )}
 
           {schedulesMetadata && schedulesMetadata.schedules.length >= 2 && (
@@ -269,11 +277,11 @@ export default function SchedulePage() {
         </Card>
       )}
 
-      {/* Seed Input Dialog */}
-      <SeedInputDialog
-        open={showSeedDialog}
-        onOpenChange={setShowSeedDialog}
-        onConfirm={handleSeedConfirm}
+      {/* Description Input Dialog */}
+      <DescriptionInputDialog
+        open={showDescriptionDialog}
+        onOpenChange={setShowDescriptionDialog}
+        onConfirm={handleDescriptionConfirm}
         isLoading={saveSchedule.isPending}
       />
     </div>

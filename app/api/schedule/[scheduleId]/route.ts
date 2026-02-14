@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 
 /**
  * GET /api/schedule/[scheduleId]
@@ -11,10 +11,13 @@ export async function GET(
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { scheduleId } = await params;
     
-    const schedule = await ScheduleRepository.getSchedule(caseId, scheduleId);
+    const schedule = await ScheduleRepository.getSchedule(caseId, monthYear, scheduleId);
     
     if (!schedule) {
       return NextResponse.json(
@@ -23,13 +26,13 @@ export async function GET(
       );
     }
     
-    // Get metadata to include seed
-    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId);
+    // Get metadata to include description
+    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId, monthYear);
     const scheduleMetadata = metadata.schedules.find(s => s.scheduleId === scheduleId);
     
     return NextResponse.json({ 
       solution: schedule,
-      seed: scheduleMetadata?.seed,
+      description: scheduleMetadata?.description,
       generatedAt: scheduleMetadata?.generatedAt,
     });
   } catch (error) {
@@ -50,10 +53,13 @@ export async function DELETE(
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { scheduleId } = await params;
     
-    await ScheduleRepository.deleteSchedule(caseId, scheduleId);
+    await ScheduleRepository.deleteSchedule(caseId, monthYear, scheduleId);
     
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -67,19 +73,26 @@ export async function DELETE(
 
 /**
  * PATCH /api/schedule/[scheduleId]
- * Updates schedule metadata (comment, etc.)
+ * Updates schedule metadata (description, comment, etc.)
  */
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ scheduleId: string }> }
 ) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { scheduleId } = await params;
     const body = await request.json();
     
+    if (body.description !== undefined) {
+      await ScheduleRepository.updateScheduleDescription(caseId, monthYear, scheduleId, body.description);
+    }
+    
     if (body.comment !== undefined) {
-      await ScheduleRepository.updateScheduleComment(caseId, scheduleId, body.comment);
+      await ScheduleRepository.updateScheduleComment(caseId, monthYear, scheduleId, body.comment);
     }
     
     return NextResponse.json({ success: true });

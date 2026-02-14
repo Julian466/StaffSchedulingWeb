@@ -35,6 +35,7 @@ interface WishesAndBlockedFormProps {
   onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  excludedEmployeeKeys?: number[];
   isGlobal?: boolean;
 }
 
@@ -45,7 +46,7 @@ function convertToDayData(
   wishDays: number[],
   wishShifts: [number, string][],
   blockedDays: number[],
-  blockedShifts: [number, string][],
+  blockedShifts: [number, string][]
 ): DayData[] {
   const dayDataMap = new Map<number, DayData>();
 
@@ -145,9 +146,10 @@ export function WishesAndBlockedForm({
   onSubmit,
   onCancel,
   isSubmitting,
+  excludedEmployeeKeys = [],
   isGlobal,
 }: WishesAndBlockedFormProps) {
-  const { caseInformation } = useCase();
+  const { currentCase } = useCase();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => 
     employee ? {
       key: employee.key,
@@ -164,9 +166,9 @@ export function WishesAndBlockedForm({
     },
   });
 
-  // Get year and month from case information or use current date
-  const year = caseInformation?.year || new Date().getFullYear();
-  const month = caseInformation?.month || new Date().getMonth() + 1;
+  // Get year and month from currentCase or use current date
+  const year = currentCase?.year || new Date().getFullYear();
+  const month = currentCase?.month || new Date().getMonth() + 1;
 
   // State for calendar data
   const [calendarData, setCalendarData] = useState<DayData[]>(() => 
@@ -250,6 +252,7 @@ export function WishesAndBlockedForm({
                         value={field.value || undefined}
                         onSelect={handleEmployeeSelect}
                         disabled={!!employee || isSubmitting}
+                        excludedKeys={employee ? [] : excludedEmployeeKeys}
                       />
                     </FormControl>
                     {employee && (

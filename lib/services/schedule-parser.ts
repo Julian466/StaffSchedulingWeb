@@ -1,4 +1,5 @@
 import { ScheduleSolution, ScheduleSolutionRaw, ScheduleEmployee, Shift, ScheduleStats } from '@/types/schedule';
+import { boolean, number } from 'zod';
 
 /**
  * Parses a raw schedule solution from the solver into a structured format
@@ -195,11 +196,33 @@ export function getEmployeeStats(
     });
   });
 
-  const actualHours = (totalMinutes + employee.hidden_actual_working_time) / 60;
+  let factor = (1 - (employee.vacation_days.length + employee.forbidden_days.length) / days.length)
 
-  var targetHours = (employee.target_working_time)/ 60;
-  targetHours = (1 - employee.vacation_days.length / days.length) * targetHours 
-  const hasOvertime = Math.abs(actualHours - targetHours) > 7.67;
 
-  return { actualHours, targetHours, totalShifts, hasOvertime };
+   
+
+
+
+  const a = totalMinutes + employee.hidden_actual_working_time
+  const b = employee.target_working_time * factor
+
+
+   if(employee.is_hidden_employee || employee.actual_working_time > employee.target_working_time * factor){
+      return { actualHours: a/60, targetHours: b/60, totalShifts, hasOvertime: false };
+  }
+
+ 
+  console.log(employee)
+ 
+
+
+  const hasOvertime = Math.abs(a - b) > 460;
+
+
+  
+
+  return { actualHours: a/60, targetHours: b/60, totalShifts, hasOvertime}
+
+
+
 }

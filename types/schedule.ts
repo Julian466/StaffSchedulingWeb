@@ -45,6 +45,9 @@ export interface ScheduleEmployee {
   /** Shifts employee cannot work on specific days */
   forbidden_shifts: [number, string][];
   hidden_actual_working_time: number;
+  actual_working_time: number;
+  is_hidden_employee: boolean;
+
 }
 
 /**
@@ -110,8 +113,8 @@ export interface ScheduleSolutionRaw {
 export interface ScheduleMetadata {
   /** Unique identifier for this schedule instance */
   scheduleId: string;
-  /** Seed used to generate this schedule */
-  seed: number;
+  /** Optional description for this schedule */
+  description?: string;
   /** ISO timestamp when the schedule was generated */
   generatedAt: string;
   /** Whether this schedule is selected as the best/active one */

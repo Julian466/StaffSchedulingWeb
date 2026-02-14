@@ -21,10 +21,11 @@ export const globalWishesAndBlockedRepository = {
      * Retrieves all employees with their wishes and blocked data for a specific case.
      *
      * @param caseId - The case ID to fetch data for
+     * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to an array of all employees with wishes and blocked data
      */
-    async getAll(caseId: number): Promise<WishesAndBlockedEmployee[]> {
-        const db = await getDb(caseId);
+    async getAll(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {
+        const db = await getDb(caseId, monthYear);
         await db.read();
         return db.data.employees;
     },
@@ -34,10 +35,11 @@ export const globalWishesAndBlockedRepository = {
      *
      * @param key - The unique numeric identifier of the employee
      * @param caseId - The case ID where the employee exists
+     * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to the employee's wishes and blocked data if found, undefined otherwise
      */
-    async getByKey(key: number, caseId: number): Promise<WishesAndBlockedEmployee | undefined> {
-        const db = await getDb(caseId);
+    async getByKey(key: number, caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee | undefined> {
+        const db = await getDb(caseId, monthYear);
         await db.read();
         return db.data.employees.find(emp => emp.key === key);
     },
@@ -50,11 +52,12 @@ export const globalWishesAndBlockedRepository = {
      *
      * @param data - The employee wishes and blocked data (without key)
      * @param caseId - The case ID to create the entry in
+     * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to the newly created employee wishes and blocked data
      */
-    async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number): Promise<WishesAndBlockedEmployee> {
-        const db = await getDb(caseId);
-        const employeeDb = await getEmployeeDb(caseId);
+    async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number, monthYear: string, options?: { skipSyncToMonthly?: boolean }): Promise<WishesAndBlockedEmployee> {
+        const db = await getDb(caseId, monthYear);
+        const employeeDb = await getEmployeeDb(caseId, monthYear);
         await db.read();
         await employeeDb.read();
 
@@ -73,7 +76,10 @@ export const globalWishesAndBlockedRepository = {
         db.data.employees.push(newEmployee);
         await db.write();
 
-        await wishesAndBlockedRepository.updateGeneralWishes(existingEmployee.key, newEmployee, caseId);
+        // Only sync to monthly wishes if not explicitly skipped
+        if (!options?.skipSyncToMonthly) {
+            await wishesAndBlockedRepository.updateGeneralWishes(existingEmployee.key, newEmployee, caseId, monthYear);
+        }
         return newEmployee;
     },
 
@@ -84,10 +90,11 @@ export const globalWishesAndBlockedRepository = {
      * @param key - The unique identifier of the employee to update
      * @param data - Partial wishes and blocked data to update
      * @param caseId - The case ID where the employee exists
+     * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to the updated employee data, or null if not found
      */
-    async update(key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>, caseId: number): Promise<WishesAndBlockedEmployee | null> {
-        const db = await getDb(caseId);
+    async update(key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>, caseId: number, monthYear: string, options?: { skipSyncToMonthly?: boolean }): Promise<WishesAndBlockedEmployee | null> {
+        const db = await getDb(caseId, monthYear);
         await db.read();
 
         const index = db.data.employees.findIndex(emp => emp.key === key);
@@ -101,7 +108,10 @@ export const globalWishesAndBlockedRepository = {
 
         await db.write();
 
-        await wishesAndBlockedRepository.updateGeneralWishes(key, db.data.employees[index], caseId);
+        // Only sync to monthly wishes if not explicitly skipped
+        if (!options?.skipSyncToMonthly) {
+            await wishesAndBlockedRepository.updateGeneralWishes(key, db.data.employees[index], caseId, monthYear);
+        }
         return db.data.employees[index];
     },
 
@@ -112,10 +122,11 @@ export const globalWishesAndBlockedRepository = {
      *
      * @param key - The unique identifier of the employee to delete
      * @param caseId - The case ID where the employee exists
+     * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to true if deleted, false if not found
      */
-    async delete(key: number, caseId: number): Promise<boolean> {
-        const db = await getDb(caseId);
+    async delete(key: number, caseId: number, monthYear: string): Promise<boolean> {
+        const db = await getDb(caseId, monthYear);
         await db.read();
 
         const index = db.data.employees.findIndex(emp => emp.key === key);

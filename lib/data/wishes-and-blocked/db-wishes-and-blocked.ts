@@ -12,31 +12,34 @@ const defaultData: WishesAndBlockedDatabase = {
 };
 
 /**
- * Cache for database instances, keyed by case ID.
+ * Cache for database instances, keyed by composite key (caseId_monthYear).
  * Prevents creating multiple database connections for the same case.
  */
-const dbCache = new Map<number, Awaited<ReturnType<typeof JSONFilePreset<WishesAndBlockedDatabase>>>>();
+const dbCache = new Map<string, Awaited<ReturnType<typeof JSONFilePreset<WishesAndBlockedDatabase>>>>();
 
 /**
  * Gets or creates a database connection for wishes and blocked data for a specific case.
  * This database contains employee information with their wish days, wish shifts,
  * blocked days, and blocked shifts.
  * 
- * @param caseId - The case ID to get the wishes and blocked database for (defaults to 1)
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format (e.g., "11_2024")
  * @returns Promise resolving to the wishes and blocked database instance
  * 
  * @example
- * const db = await getWishesAndBlockedDb(1);
+ * const db = await getWishesAndBlockedDb(77, "11_2024");
  * await db.read();
  * console.log(db.data.employees);
  */
-export async function getWishesAndBlockedDb(caseId: number = 1) {
+export async function getWishesAndBlockedDb(caseId: number, monthYear: string) {
+  const cacheKey = `${caseId}_${monthYear}`;
+  
   // Check if we already have a cached database connection
-  if (!dbCache.has(caseId)) {
-    const casePath = getCasePath(caseId);
+  if (!dbCache.has(cacheKey)) {
+    const casePath = getCasePath(caseId, monthYear);
     const filePath = path.join(casePath, 'wishes_and_blocked.json');
     const db = await JSONFilePreset<WishesAndBlockedDatabase>(filePath, defaultData);
-    dbCache.set(caseId, db);
+    dbCache.set(cacheKey, db);
   }
-  return dbCache.get(caseId)!;
+  return dbCache.get(cacheKey)!;
 }

@@ -13,17 +13,22 @@ const API_BASE = '/api/global-wishes-and-blocked';
  * @returns React Query result with wishes and blocked employee data
  */
 export function useGlobalWishesAndBlocked() {
-    const { currentCaseId } = useCase();
+    const { currentCase } = useCase();
 
     return useQuery({
-        queryKey: ['global-wishes-and-blocked', currentCaseId],
+        queryKey: ['global-wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear],
         queryFn: async () => {
-        const res = await fetch(API_BASE, {
-            headers: { 'x-case-id': currentCaseId.toString() },
-        });
-        if (!res.ok) throw new Error('Failed to fetch wishes and blocked employees');
-        return res.json();
+            if (!currentCase) throw new Error('No case selected');
+            const res = await fetch(API_BASE, {
+                headers: {
+                    'x-case-id': currentCase.caseId.toString(),
+                    'x-month-year': currentCase.monthYear
+                },
+            });
+            if (!res.ok) throw new Error('Failed to fetch global wishes and blocked employees');
+            return res.json();
         },
+        enabled: !!currentCase,
     });
 }
 
@@ -35,67 +40,86 @@ export function useGlobalWishesAndBlocked() {
  */
 export function useCreateGlobalWishesAndBlocked() {
     const qc = useQueryClient();
-    const { currentCaseId } = useCase();
+    const { currentCase } = useCase();
     return useMutation({
-        mutationFn: async(data: Omit<WishesAndBlockedEmployee, 'key'>) =>
-    {
-        const res = await fetch(API_BASE, {
-            method: 'POST',
-            headers: {
+        mutationFn: async (payload: { data: Omit<WishesAndBlockedEmployee, 'key'>; options?: { skipSyncToMonthly?: boolean } }) => {
+            if (!currentCase) throw new Error('No case selected');
+            const { data, options } = payload;
+            const headers: Record<string, string> = {
                 'Content-Type': 'application/json',
-                'x-case-id': currentCaseId.toString(),
-            },
-            body: JSON.stringify(data),
-        });
-        if (!res.ok) throw new Error('Failed to create wishes and blocked employee');
-        return res.json();
-    },
+                'x-case-id': currentCase.caseId.toString(),
+                'x-month-year': currentCase.monthYear
+            };
+            if (options?.skipSyncToMonthly) {
+                headers['x-skip-sync-to-monthly'] = '1';
+            }
+            const res = await fetch(API_BASE, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(data),
+            });
+            if (!res.ok) throw new Error('Failed to create wishes and blocked employee');
+            return res.json();
+        },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCaseId] });
-            qc.invalidateQueries({ queryKey: ['wishes-and-blocked',     currentCaseId] });
+            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear] });
+            qc.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear] });
         },
     });
 }
 
 export function useUpdateGlobalWishesAndBlocked() {
     const qc = useQueryClient();
-    const { currentCaseId } = useCase();
+    const { currentCase } = useCase();
 
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>> }): Promise<WishesAndBlockedEmployee> => {
+        mutationFn: async ({ id, data, options }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>; options?: { skipSyncToMonthly?: boolean } }): Promise<WishesAndBlockedEmployee> => {
+            if (!currentCase) throw new Error('No case selected');
+            const headers: Record<string, string> = {
+                'Content-Type': 'application/json',
+                'x-case-id': currentCase.caseId.toString(),
+                'x-month-year': currentCase.monthYear
+            };
+            if (options?.skipSyncToMonthly) headers['x-skip-sync-to-monthly'] = '1';
+
             const res = await fetch(`${API_BASE}/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-case-id': currentCaseId.toString(),
-                },
+                headers,
                 body: JSON.stringify(data),
             });
-            if (!res.ok) throw new Error('Failed to update wishes and blocked employee');
+            if (!res.ok) throw new Error('Failed to update global wishes and blocked employee');
             return res.json();
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCaseId] });
-            qc.invalidateQueries({ queryKey: ['wishes-and-blocked',     currentCaseId] });
+            if (currentCase) {
+                qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
+                qc.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
+            }
         },
-});
+    });
 }
 
 export function useDeleteGlobalWishesAndBlocked() {
     const qc = useQueryClient();
-    const { currentCaseId } = useCase();
+    const { currentCase } = useCase();
     return useMutation({
         mutationFn: async (id: number) => {
+            if (!currentCase) throw new Error('No case selected');
             const res = await fetch(`${API_BASE}/${id}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-case-id': currentCaseId.toString(),
+                    'x-case-id': currentCase.caseId.toString(),
+                    'x-month-year': currentCase.monthYear
                 },
             });
             if (!res.ok) throw new Error('Failed to delete wishes and blocked employee');
             return res.json();
         },
-            onSuccess: () => qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCaseId]}),
-});
+        onSuccess: () => { 
+            if (currentCase) {
+                qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
+            }
+        },
+    });
 }

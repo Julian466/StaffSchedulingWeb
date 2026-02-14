@@ -17,21 +17,24 @@ import { useCase } from '@/components/case-provider';
  * @returns React Query result with jobs array
  */
 export function useJobHistory() {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
 
   return useQuery({
-    queryKey: ['solver', 'jobs', currentCaseId],
+    queryKey: ['solver', 'jobs', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<{ jobs: SolverJob[] }> => {
+      if (!currentCase) throw new Error('No case selected');
       const res = await fetch('/api/solver/jobs', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear
         },
       });
       if (!res.ok) throw new Error('Failed to fetch job history');
       return await res.json();
     },
+    enabled: !!currentCase,
   });
 }
 
@@ -43,16 +46,19 @@ export function useJobHistory() {
  * @returns React Query result with job data
  */
 export function useJob(jobId: string | null) {
-  const { currentCaseId } = useCase();
+  const { currentCase } = useCase();
 
   return useQuery({
-    queryKey: ['solver', 'jobs', jobId, currentCaseId],
+    queryKey: ['solver', 'jobs', jobId, currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<{ job: SolverJob }> => {
+      if (!jobId) throw new Error('No job ID provided');
+      if (!currentCase) throw new Error('No case selected');
       const response = await fetch(`/api/solver/jobs/${jobId}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'x-case-id': currentCaseId.toString(),
+          'x-case-id': currentCase.caseId.toString(),
+          'x-month-year': currentCase.monthYear,
         },
       });
 
