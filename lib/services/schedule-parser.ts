@@ -196,33 +196,15 @@ export function getEmployeeStats(
     });
   });
 
-  let factor = (1 - (employee.vacation_days.length + employee.forbidden_days.length) / days.length)
-
-
-   
-
-
-
+  let factor = (1 - ([...new Set([...employee.vacation_days, ...employee.forbidden_days])].length) / days.length)
   const a = totalMinutes + employee.hidden_actual_working_time
   const b = employee.target_working_time * factor
 
-
-   if(employee.is_hidden_employee || employee.actual_working_time > employee.target_working_time * factor){
+  if(employee.is_hidden_employee || employee.actual_working_time >= employee.target_working_time * factor - 460){
       return { actualHours: a/60, targetHours: b/60, totalShifts, hasOvertime: false };
   }
 
- 
-  console.log(employee)
- 
-
-
   const hasOvertime = Math.abs(a - b) > 460;
 
-
-  
-
   return { actualHours: a/60, targetHours: b/60, totalShifts, hasOvertime}
-
-
-
 }
