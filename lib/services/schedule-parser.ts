@@ -200,7 +200,7 @@ export function getEmployeeStats(
   const a = totalMinutes + employee.hidden_actual_working_time
   const b = employee.target_working_time * factor
 
-  if(employee.is_hidden_employee || employee.actual_working_time >= employee.target_working_time * factor - 460){
+  if(employee.actual_working_time >= employee.target_working_time * factor - 460){
       return { actualHours: a/60, targetHours: b/60, totalShifts, hasOvertime: false };
   }
 
