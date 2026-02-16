@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CalendarDays, Maximize2, Upload } from 'lucide-react';
 import { ScheduleTable } from '@/features/schedule/components/schedule-table';
@@ -23,10 +23,12 @@ import {
 } from '@/features/schedule/hooks/use-schedule';
 import { ScheduleSolutionRaw } from '@/types/schedule';
 import { toast } from 'sonner';
+import { Root as Switch, Thumb as SwitchThumb } from '@radix-ui/react-switch';
 
 export default function SchedulePage() {
   const { data: schedule, isLoading, refetch: refetchSchedule } = useSchedule();
   const { data: schedulesMetadata, isLoading: isMetadataLoading, refetch: refetchMetadata } = useSchedulesMetadata();
+  const [reducedView, setReducedView] = useState(false);
   const saveSchedule = useSaveSchedule();
   const deleteSchedule = useDeleteSchedule();
   const selectSchedule = useSelectSchedule();
@@ -175,6 +177,28 @@ export default function SchedulePage() {
             </Button>
           )}
 
+          <div
+            role="button"
+            tabIndex={0}
+            className={cn(buttonVariants({ variant: 'outline', size: 'default' }), 'inline-flex items-center gap-2')}
+            onClick={() => setReducedView(!reducedView)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setReducedView(!reducedView); } }}
+            aria-pressed={reducedView}
+          >
+            <Switch
+              id="reduced-view-toggle"
+              checked={reducedView}
+              className={"relative inline-flex h-6 w-11 items-center rounded-full p-1 bg-muted/90 data-[state=checked]:bg-primary pointer-events-auto cursor-pointer mr-2" }>
+              <SwitchThumb className={"block h-4 w-4 rounded-full bg-card shadow transform transition-transform data-[state=checked]:translate-x-5 pointer-events-auto"} />
+            </Switch>
+            <span
+              className="text-sm ml-2 select-none pointer-events-auto cursor-pointer"
+              role="button"
+            >
+              Reduzierte Ansicht
+            </span>
+          </div>
+
           <Button onClick={toggleFullscreen} variant="outline" className="gap-2">
             <Maximize2 className="h-4 w-4" />
             {isFullscreen ? 'Exit' : 'Enter'} Fullscreen
@@ -212,6 +236,7 @@ export default function SchedulePage() {
               schedules={multipleSchedules}
               compareMode={true}
               isFullscreen={isFullscreen}
+              reducedView={reducedView}
             />
           </Card>
 
@@ -242,16 +267,17 @@ export default function SchedulePage() {
               </Button>
             )}
             <ScheduleTable
-              employees={schedule.employees}
-              days={schedule.days}
-              shifts={schedule.shifts}
-              variables={schedule.variables}
-              fulfilledDayOffCells={schedule.fulfilledDayOffCells}
-              fulfilledShiftWishCells={schedule.fulfilledShiftWishCells}
-              allDayOffWishCells={schedule.allDayOffWishCells}
-              allShiftWishColors={schedule.allShiftWishColors}
-              isFullscreen={isFullscreen}
-            />
+               employees={schedule.employees}
+               days={schedule.days}
+               shifts={schedule.shifts}
+               variables={schedule.variables}
+               fulfilledDayOffCells={schedule.fulfilledDayOffCells}
+               fulfilledShiftWishCells={schedule.fulfilledShiftWishCells}
+               allDayOffWishCells={schedule.allDayOffWishCells}
+               allShiftWishColors={schedule.allShiftWishColors}
+               isFullscreen={isFullscreen}
+               reducedView={reducedView}
+             />
           </Card>
 
           {/* Legend */}

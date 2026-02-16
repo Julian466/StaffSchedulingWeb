@@ -196,7 +196,7 @@ export function getEmployeeStats(
     });
   });
 
-  let factor = (1 - ([...new Set([...employee.vacation_days, ...employee.forbidden_days])].length) / days.length)
+  const factor = (1 - ([...new Set([...employee.vacation_days, ...employee.forbidden_days])].length) / days.length)
   const a = totalMinutes + employee.hidden_actual_working_time
   const b = employee.target_working_time * factor
 
