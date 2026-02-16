@@ -236,6 +236,7 @@ export default function SchedulePage() {
               schedules={multipleSchedules}
               compareMode={true}
               isFullscreen={isFullscreen}
+              reducedView={reducedView}
             />
           </Card>
 

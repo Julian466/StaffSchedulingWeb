@@ -338,7 +338,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
           <div className="text-center py-12 text-muted-foreground">
             Keine Mitarbeiter gefunden.
           </div>
-        ) : (
+        ) : reducedView ? (
           <TooltipProvider delayDuration={300} skipDelayDuration={100}>
             <div className={cn(
               "relative overflow-auto",
@@ -347,24 +347,22 @@ export function ScheduleTable(props: ScheduleTableProps) {
               <table className="w-full border-collapse text-sm">
                 <thead className="sticky top-0 z-20 bg-card">
                   <tr>
-                    <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
-                      Employee / Dienstplan
+                    <th className="sticky left-0 z-30 border-b border-r border-border bg-card p-1 text-left font-semibold text-foreground">
+                      Employee / <br/> Dienstplan
                     </th>
                     {days.map((day: Date, idx: number) => (
                       <th
                         key={idx}
                         className={cn(
-                          'border-b border-border p-3 text-center font-medium text-foreground min-w-[100px]',
+                          'border-b border-border text-center font-medium text-foreground',
                           isWeekend(day) && 'bg-muted/30'
                         )}
                       >
-                        <div className="space-y-1">
-                          <div className="font-semibold">
-                            {day.toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {day.toLocaleDateString('de-DE', { weekday: 'short' })}
-                          </div>
+                        <div className="font-semibold">
+                          {day.toLocaleDateString('de-DE', { month: 'numeric', day: 'numeric' })}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {day.toLocaleDateString('de-DE', { weekday: 'short' })}
                         </div>
                       </th>
                     ))}
@@ -389,7 +387,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
                           >
                             <td
                               className={cn(
-                                'sticky left-0 z-20 border-r border-border p-3 cursor-pointer',
+                                'sticky left-0 z-20 border-r border-border p-1 cursor-pointer',
                                 stats.hasOvertime
                                   ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60' 
                                   : 'bg-card',
@@ -404,26 +402,22 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                 });
                               }}
                             >
-                              <div className="space-y-1">
-                                {isFirstInGroup && (
-                                  <>
-                                    <div className="font-medium text-foreground">{employee.name}</div>
-                                    <div className="text-xs text-muted-foreground">{employee.level}</div>
-                                  </>
-                                )}
-                                <div className={cn("text-xs font-semibold", isFirstInGroup && "mt-2", "text-blue-600 dark:text-blue-400")}>
-                                  {description || "Ohne Beschreibung"}
-                                </div>
-                                <div className="text-xs">
-                                  <div className="text-muted-foreground">{stats.totalShifts} Schichten</div>
-                                  <div
-                                    className={cn(
-                                      'font-medium',
-                                      stats.hasOvertime ? 'text-destructive' : 'text-muted-foreground'
-                                    )}
-                                  >
-                                    {stats.actualHours.toFixed(1)}h / {stats.targetHours.toFixed(1)}h
-                                  </div>
+                              {isFirstInGroup && (
+                                <>
+                                  <div className="font-medium text-foreground">{employee.name} (<span className="text-xs text-foreground">{employee.level[0]}</span>)</div>
+                                </>
+                              )}
+                              <div className={cn("text-xs font-semibold", isFirstInGroup, "text-blue-600 dark:text-blue-400")}>
+                                {description || "Ohne Beschreibung"}
+                              </div>
+                              <div className="text-xs">
+                                <div
+                                  className={cn(
+                                    'font-medium',
+                                    stats.hasOvertime ? 'text-destructive' : 'text-muted-foreground'
+                                  )}
+                                >
+                                  {stats.actualHours.toFixed(1)}h / {stats.targetHours.toFixed(1)}h
                                 </div>
                               </div>
                             </td>
@@ -435,7 +429,6 @@ export function ScheduleTable(props: ScheduleTableProps) {
                               const isDayOffFulfilled = scheduleData.fulfilledDayOffCells.has(`${employee.id}-${dateStr}`);
                               const isShiftWishFulfilled = scheduleData.fulfilledShiftWishCells.has(`${employee.id}-${dateStr}`);
                               const hasDayOffWish = scheduleData.allDayOffWishCells.has(`${employee.id}-${dateStr}`);
-                              const shiftWishColors = scheduleData.allShiftWishColors[`${employee.id}-${dateStr}`] || [];
 
                               const isUnavailable = unavailable(employee, dayIdx + 1);
 
@@ -443,7 +436,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                 <td
                                   key={dayIdx}
                                   className={cn(
-                                    'p-2 text-center relative z-0 cursor-pointer hover:bg-foreground/5',
+                                    'px-2 text-center relative z-0 cursor-pointer hover:bg-foreground/5',
                                     isWeekend(day) && 'bg-muted/30 hover:bg-muted/90',
                                     isDayOffFulfilled && 'bg-amber-400/10 hover:bg-amber-400/25',
                                     isShiftWishFulfilled && 'bg-emerald-400/10 hover:bg-emerald-400/25',
@@ -459,10 +452,10 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                       {shiftsForCell.map((shift) => (
                                         <div
                                           key={shift.id}
-                                          className="rounded-md px-2 py-1.5 font-medium text-white w-full"
+                                          className="rounded-md py-1.5 font-medium text-white"
                                           style={{ backgroundColor: shift.color }}
                                         >
-                                          {shift.name}
+                                          {shift.abbreviation}
                                         </div>
                                       ))}
                                     </div>
@@ -508,8 +501,16 @@ export function ScheduleTable(props: ScheduleTableProps) {
                     const summary = scheduleSummaries[schedule.scheduleId] || {};
                     return (
                         <tr key={`summary-${schedule.scheduleId}`} className="border-t">
-                          <td className="sticky bottom-0 left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
-                            {schedule.description || `Plan ${schedule.scheduleId}`}
+                          <td className="sticky bottom-0 left-0 z-30 border-b border-r border-border bg-card text-left font-semibold text-foreground">
+                            <div className="flex items-center justify-between">
+                              <div className="whitespace-nowrap">{schedule.description || `Plan ${schedule.scheduleId}`}</div>
+                              <div className="text-xs text-muted-foreground flex pr-2 flex-col items-end">
+                                <div>F</div>
+                                <div>Z</div>
+                                <div>S</div>
+                                <div>N</div>
+                              </div>
+                            </div>
                           </td>
                           {schedule.days.map((day: Date, idx: number) => {
                             const dateStr = day.toISOString().split('T')[0];
@@ -529,12 +530,12 @@ export function ScheduleTable(props: ScheduleTableProps) {
                             return (
                                 <td
                                     key={`plan-${schedule.scheduleId}-day-${idx}`}
-                                    className={cn('sticky bottom-0 border-b border-border p-2 text-center text-sm min-w-[100px] bg-background')}
+                                    className={cn('sticky bottom-0 border-b border-border p-1 text-center text-sm bg-background')}
                                 >
-                                  <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
-                                  <div className="text-xs text-muted-foreground">Z: {zwischenStr || '—'}</div>
-                                  <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
-                                  <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">{fruehStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">{zwischenStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">{spaetStr || '—'}</div>
+                                  <div className="text-xs text-muted-foreground">{nachtStr || '—'}</div>
                                 </td>
                             );
                           })}
@@ -542,6 +543,214 @@ export function ScheduleTable(props: ScheduleTableProps) {
                     );
                   })}
                   </tfoot>
+              </table>
+            </div>
+          </TooltipProvider>
+        ) :
+        (
+          <TooltipProvider delayDuration={300} skipDelayDuration={100}>
+            <div className={cn(
+                "relative overflow-auto",
+                isFullscreen ? "flex-1" : "max-h-[800px]"
+            )}>
+              <table className="w-full border-collapse text-sm">
+                <thead className="sticky top-0 z-20 bg-card">
+                <tr>
+                  <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
+                    Employee / Dienstplan
+                  </th>
+                  {days.map((day: Date, idx: number) => (
+                      <th
+                          key={idx}
+                          className={cn(
+                              'border-b border-border p-3 text-center font-medium text-foreground min-w-[100px]',
+                              isWeekend(day) && 'bg-muted/30'
+                          )}
+                      >
+                        <div className="space-y-1">
+                          <div className="font-semibold">
+                            {day.toLocaleDateString('de-DE', { month: 'short', day: 'numeric' })}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {day.toLocaleDateString('de-DE', { weekday: 'short' })}
+                          </div>
+                        </div>
+                      </th>
+                  ))}
+                </tr>
+                </thead>
+                <tbody>
+                {groupedEmployees.map((group, groupIdx) => (
+                    <React.Fragment key={`group-${group[0]?.employee.id || groupIdx}`}>
+                      {group.map((item, itemIdx) => {
+                        const { employee, scheduleId, description, scheduleData } = item;
+                        const stats = getEmployeeStats(employee, scheduleData.days, scheduleData.shifts, scheduleData.variables);
+                        const isFirstInGroup = itemIdx === 0;
+                        const isLastInGroup = itemIdx === group.length - 1;
+
+                        return (
+                            <tr
+                                key={`${employee.id}-${scheduleId}`}
+                                className={cn(
+                                    "transition-colors",
+                                    !isLastInGroup && "border-b-0"
+                                )}
+                            >
+                              <td
+                                  className={cn(
+                                      'sticky left-0 z-20 border-r border-border p-3 cursor-pointer',
+                                      stats.hasOvertime
+                                          ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60'
+                                          : 'bg-card',
+                                      isLastInGroup ? 'border-b' : 'border-b-0'
+                                  )}
+                                  onClick={() => {
+                                    const { firstname, lastname } = parseName(employee.name);
+                                    setSelectedEmployee({
+                                      id: employee.id,
+                                      firstname,
+                                      lastname
+                                    });
+                                  }}
+                              >
+                                <div className="space-y-1">
+                                  {isFirstInGroup && (
+                                      <>
+                                        <div className="font-medium text-foreground">{employee.name}</div>
+                                        <div className="text-xs text-muted-foreground">{employee.level}</div>
+                                      </>
+                                  )}
+                                  <div className={cn("text-xs font-semibold", isFirstInGroup && "mt-2", "text-blue-600 dark:text-blue-400")}>
+                                    {description || "Ohne Beschreibung"}
+                                  </div>
+                                  <div className="text-xs">
+                                    <div className="text-muted-foreground">{stats.totalShifts} Schichten</div>
+                                    <div
+                                        className={cn(
+                                            'font-medium',
+                                            stats.hasOvertime ? 'text-destructive' : 'text-muted-foreground'
+                                        )}
+                                    >
+                                      {stats.actualHours.toFixed(1)}h / {stats.targetHours.toFixed(1)}h
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              {scheduleData.days.map((day: Date, dayIdx: number) => {
+                                const shiftsForCell = getShiftsForCell(employee.id, day, scheduleData.shifts, scheduleData.variables);
+                                const dateStr = day.toISOString().split('T')[0];
+                                const cellKey = `${employee.id}-${scheduleId}-${dateStr}`;
+
+                                const isDayOffFulfilled = scheduleData.fulfilledDayOffCells.has(`${employee.id}-${dateStr}`);
+                                const isShiftWishFulfilled = scheduleData.fulfilledShiftWishCells.has(`${employee.id}-${dateStr}`);
+                                const hasDayOffWish = scheduleData.allDayOffWishCells.has(`${employee.id}-${dateStr}`);
+                                const shiftWishColors = scheduleData.allShiftWishColors[`${employee.id}-${dateStr}`] || [];
+
+                                const isUnavailable = unavailable(employee, dayIdx + 1);
+
+                                return (
+                                    <td
+                                        key={dayIdx}
+                                        className={cn(
+                                            'p-2 text-center relative z-0 cursor-pointer hover:bg-foreground/5',
+                                            isWeekend(day) && 'bg-muted/30 hover:bg-muted/90',
+                                            isDayOffFulfilled && 'bg-amber-400/10 hover:bg-amber-400/25',
+                                            isShiftWishFulfilled && 'bg-emerald-400/10 hover:bg-emerald-400/25',
+                                            isUnavailable && 'bg-rose-400/10 hover:bg-rose-400/25',
+                                            !shiftsForCell.length && !isDayOffFulfilled && hasDayOffWish && 'bg-rose-400/5 hover:bg-rose-400/20',
+                                            isLastInGroup ? 'border-b border-border' : 'border-b-0'
+                                        )}
+                                        onMouseLeave={() => handleMouseLeave()}
+                                        onClick={() => handleCellClick(cellKey)}
+                                    >
+                                      {shiftsForCell.length > 0 ? (
+                                          <div className="flex flex-col w-full gap-1">
+                                            {shiftsForCell.map((shift) => (
+                                                <div
+                                                    key={shift.id}
+                                                    className="rounded-md px-2 py-1.5 font-medium text-white w-full"
+                                                    style={{ backgroundColor: shift.color }}
+                                                >
+                                                  {shift.name}
+                                                </div>
+                                            ))}
+                                          </div>
+                                      ) : (
+                                          <div className="py-1.5" />
+                                      )}
+
+                                      {openTooltipCell === cellKey && (
+                                          <Tooltip open={true}>
+                                            <TooltipTrigger asChild>
+                                              <div className="absolute inset-0 top-8" />
+                                            </TooltipTrigger>
+                                            <TooltipContent container={portalContainer}>
+                                              <div className="text-sm space-y-1">
+                                                {shiftsForCell.length > 0 && (
+                                                    <div className="space-y-1">
+                                                      {shiftsForCell.map((shift) => (
+                                                          <div key={shift.id}>
+                                                            <p className="font-semibold">{shift.name}</p>
+                                                            <p className="text-xs text-muted-foreground">
+                                                              Dauer: {Math.floor(shift.duration / 60)}h {shift.duration % 60}min
+                                                            </p>
+                                                          </div>
+                                                      ))}
+                                                    </div>
+                                                )}
+                                              </div>
+                                            </TooltipContent>
+                                          </Tooltip>
+                                      )}
+                                    </td>
+                                );
+                              })}
+                            </tr>
+                        );
+                      })}
+                    </React.Fragment>
+                ))}
+                </tbody>
+                <tfoot className="sticky bottom-0 bg-card z-30">
+                {/* Per-Plan summary rows: render one summary row per schedule (stacked) */}
+                {(props as CompareScheduleTableProps).schedules.map((schedule) => {
+                  const summary = scheduleSummaries[schedule.scheduleId] || {};
+                  return (
+                      <tr key={`summary-${schedule.scheduleId}`} className="border-t">
+                        <td className="sticky bottom-0 left-0 z-30 min-w-40 border-b border-r border-border bg-card p-3 text-left font-semibold text-foreground">
+                          {schedule.description || `Plan ${schedule.scheduleId}`}
+                        </td>
+                        {schedule.days.map((day: Date, idx: number) => {
+                          const dateStr = day.toISOString().split('T')[0];
+                          const dateShifts = summary[dateStr]?.shifts ?? {};
+                          const dayEntries = Object.entries(dateShifts) as [string, ShiftTypeSummary][];
+
+                          const fruehEntry = dayEntries.find(([abbr]) => abbr === 'F');
+                          const zwischenEntry = dayEntries.find(([abbr]) => abbr === 'Z');
+                          const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
+                          const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
+
+                          const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : '—';
+                          const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : '—';
+                          const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : '—';
+                          const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : '—';
+
+                          return (
+                              <td
+                                  key={`plan-${schedule.scheduleId}-day-${idx}`}
+                                  className={cn('sticky bottom-0 border-b border-border p-2 text-center text-sm min-w-[100px] bg-background')}
+                              >
+                                <div className="text-xs text-muted-foreground">F: {fruehStr || '—'}</div>
+                                <div className="text-xs text-muted-foreground">Z: {zwischenStr || '—'}</div>
+                                <div className="text-xs text-muted-foreground">S: {spaetStr || '—'}</div>
+                                <div className="text-xs text-muted-foreground">N: {nachtStr || '—'}</div>
+                              </td>
+                          );
+                        })}
+                      </tr>
+                  );
+                })}
+                </tfoot>
               </table>
             </div>
           </TooltipProvider>
@@ -560,7 +769,7 @@ export function ScheduleTable(props: ScheduleTableProps) {
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-20 bg-card">
               <tr>
-                <th className="sticky left-0 z-30 min-w-40 border-b border-r border-border bg-card p-1 text-left font-semibold text-foreground">
+                <th className="sticky left-0 z-30 border-b border-r border-border bg-card p-1 text-left font-semibold text-foreground">
                   Employee
                 </th>
                 {days.map((day: Date, idx: number) => (
@@ -602,18 +811,16 @@ export function ScheduleTable(props: ScheduleTableProps) {
                             });
                           }}
                       >
-                        <div className="">
-                          <div className="font-medium text-foreground">{employee.name}</div>
-                          <div className="text-xs text-foreground">{employee.level[0]} -
-                            <span
-                                className={cn(
-                                    'font-medium',
-                                    stats.hasOvertime ? 'text-destructive' : 'text-muted-foreground'
-                                )}
-                            >
-                              {stats.actualHours.toFixed(1)}h / {stats.targetHours.toFixed(1)}h
-                            </span>
-                          </div>
+                        <div className="font-medium text-foreground">{employee.name}</div>
+                        <div className="text-xs text-foreground">{employee.level[0]} -
+                          <span
+                              className={cn(
+                                  'font-medium',
+                                  stats.hasOvertime ? 'text-destructive' : 'text-muted-foreground'
+                              )}
+                          >
+                            {stats.actualHours.toFixed(1)}h / {stats.targetHours.toFixed(1)}h
+                          </span>
                         </div>
                       </td>
                       {days.map((day: Date, dayIdx: number) => {
