@@ -417,6 +417,7 @@ export function EmployeeSummaryDialog({
                                             showLegend={true}
                                             readOnly={true}
                                             container={container}
+                                            allowedEventTitles={['F', 'S', 'N']}
                                         />
                                         <p className="text-xs text-muted-foreground text-center">
                                             Diese Ansicht ist schreibgeschützt. Änderungen können auf der Wünsche &

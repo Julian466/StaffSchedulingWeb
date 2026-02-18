@@ -45,6 +45,8 @@ export interface InteractiveCalendarProps {
   readOnly?: boolean; // Aktiviert den Read-Only-Modus (Standard: false)
   container?: HTMLElement | null; // Portal container for fullscreen mode
   view?: 'month' | 'week'; // View mode
+  /** If provided, event titles are restricted to these values and shown as toggle buttons */
+  allowedEventTitles?: string[];
 }
 
 export function InteractiveCalendar({
@@ -61,6 +63,7 @@ export function InteractiveCalendar({
   readOnly = false,
   container,
   view = 'month',
+  allowedEventTitles,
 }: InteractiveCalendarProps) {
   const [dayData, setDayData] = useState<DayData[]>(initialDayData);
   const [openPopover, setOpenPopover] = useState<string | null>(null);
@@ -68,6 +71,32 @@ export function InteractiveCalendar({
   const [selectedEventCategory, setSelectedEventCategory] = useState<{ [key: string]: string | null }>({});
   const [popoverMode, setPopoverMode] = useState<{ [key: string]: "overview" | "add-event" }>({});
   const eventIdCounter = useRef(0);
+
+  // Default canonical order for shifts
+  const DEFAULT_SHIFT_ORDER = ['F', 'S', 'N'];
+  const shiftOrder = allowedEventTitles && allowedEventTitles.length > 0 ? allowedEventTitles : DEFAULT_SHIFT_ORDER;
+
+  const sortShiftTitles = (titles: string[]) => {
+    return [...titles].sort((a, b) => {
+      const ia = shiftOrder.indexOf(a);
+      const ib = shiftOrder.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+  };
+
+  const sortEventsByShiftOrder = (events: Event[]) => {
+    return [...events].sort((e1, e2) => {
+      const i1 = shiftOrder.indexOf(e1.title);
+      const i2 = shiftOrder.indexOf(e2.title);
+      if (i1 === -1 && i2 === -1) return e1.title.localeCompare(e2.title);
+      if (i1 === -1) return 1;
+      if (i2 === -1) return -1;
+      return i1 - i2;
+    });
+  };
 
   // Hilfsfunktionen für Datum
   const getDaysInMonth = (month: number, year: number) => {
@@ -236,28 +265,59 @@ export function InteractiveCalendar({
                   >
                     <div className="mb-1">{day}</div>
                   
-                  {/* Termine anzeigen */}
+                  {/* Termine anzeigen – pro Kategorie gruppiert */}
                   <div className="flex-1 flex flex-wrap gap-1 content-start overflow-hidden">
-                    {(maxVisibleEvents !== undefined
-                      ? data.events.slice(0, maxVisibleEvents)
-                      : data.events
-                    ).map((event) => (
-                      <div
-                        key={event.id}
-                        className="text-xs px-1.5 py-0.5 rounded truncate border max-w-full"
-                        style={{ 
-                          backgroundColor: event.categoryId 
-                            ? eventCategories.find((c) => c.id === event.categoryId)?.color 
-                            : "rgba(255, 255, 255, 0.6)",
-                          borderColor: event.categoryId 
-                            ? eventCategories.find((c) => c.id === event.categoryId)?.color 
-                            : "rgb(209, 213, 219)"
-                        }}
-                      >
-                        {event.title}
-                      </div>
-                    ))}
-                    {maxVisibleEvents !== undefined &&
+                    {allowedEventTitles
+                      ? // Grouped mode: one badge per eventCategory
+                        eventCategories.map((eventCat) => {
+                          const titles = data.events
+                            .filter((e) => e.categoryId === eventCat.id)
+                            .map((e) => e.title);
+                          if (titles.length === 0) return null;
+
+                          const sortedTitles = sortShiftTitles(titles);
+                          const uniqueTitles = Array.from(new Set(sortedTitles));
+
+                          return (
+                            <div
+                              key={eventCat.id}
+                              className="text-xs px-1.5 py-0.5 rounded border font-medium"
+                              style={{
+                                backgroundColor: eventCat.color,
+                                borderColor: eventCat.color,
+                              }}
+                            >
+                              {uniqueTitles.join(', ')}
+                            </div>
+                          );
+                        })
+                      : // Free-text mode: individual badges
+                        (allowedEventTitles
+                        ? // when allowedEventTitles is set we want the events sorted by canonical order
+                          sortEventsByShiftOrder(data.events)
+                            .slice(0, maxVisibleEvents ?? undefined)
+                        : (maxVisibleEvents !== undefined
+                          ? data.events.slice(0, maxVisibleEvents)
+                          : data.events
+                        )
+                      ).map((event) => (
+                          <div
+                            key={event.id}
+                            className="text-xs px-1.5 py-0.5 rounded truncate border max-w-full"
+                            style={{
+                              backgroundColor: event.categoryId
+                                ? eventCategories.find((c) => c.id === event.categoryId)?.color
+                                : "rgba(255, 255, 255, 0.6)",
+                              borderColor: event.categoryId
+                                ? eventCategories.find((c) => c.id === event.categoryId)?.color
+                                : "rgb(209, 213, 219)",
+                            }}
+                          >
+                            {event.title}
+                          </div>
+                        ))
+                    }
+                    {!allowedEventTitles && maxVisibleEvents !== undefined &&
                       data.events.length > maxVisibleEvents && (
                         <div className="text-xs text-gray-600 px-1.5">
                           +{data.events.length - maxVisibleEvents} mehr
@@ -316,44 +376,153 @@ export function InteractiveCalendar({
                       </div>
                     </div>
 
-                    {/* Termine */}
-                    <div>
-                      <Label>Termine</Label>
-                      
-                      {/* Termin-Kategorie Buttons - nur anzeigen wenn nicht readOnly */}
-                      {!readOnly && eventCategories.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {eventCategories.map((eventCat) => (
-                            <Button
-                              key={eventCat.id}
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedEventCategory({ 
-                                  ...selectedEventCategory, 
-                                  [date]: eventCat.id 
-                                });
-                                setPopoverMode({ ...popoverMode, [date]: "add-event" });
-                              }}
-                              style={{
-                                borderColor: eventCat.color,
-                                backgroundColor: "transparent",
-                              }}
-                            >
-                              {eventCat.name} hinzufügen
-                            </Button>
-                          ))}
-                        </div>
-                      )}
+                    {/* Schichten – eingeschränkte Auswahl (F/S/N) */}
+                    {allowedEventTitles && !readOnly && eventCategories.length > 0 && (
+                      <div className="space-y-3">
+                        <Label>Schichten</Label>
+                        {eventCategories.map((eventCat) => {
+                          const activeTitles = new Set(
+                            data.events
+                              .filter((e) => e.categoryId === eventCat.id)
+                              .map((e) => e.title)
+                          );
+                          return (
+                            <div key={eventCat.id} className="space-y-1.5">
+                              <span
+                                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                                style={{ backgroundColor: eventCat.color }}
+                              >
+                                {eventCat.name}
+                              </span>
+                              <div className="flex gap-2 mt-1">
+                                {allowedEventTitles.map((title) => {
+                                  const active = activeTitles.has(title);
+                                  return (
+                                    <button
+                                      key={title}
+                                      type="button"
+                                      onClick={() => {
+                                        if (active) {
+                                          // remove
+                                          const current = getDayData(date);
+                                          const idx = current.events.findIndex(
+                                            (e) => e.categoryId === eventCat.id && e.title === title
+                                          );
+                                          if (idx !== -1) {
+                                            const updated = [...current.events];
+                                            updated.splice(idx, 1);
+                                            updateDayData(date, { events: updated });
+                                          }
+                                        } else {
+                                          addEvent(date, title, eventCat.id);
+                                        }
+                                      }}
+                                      className={[
+                                        "w-10 h-10 rounded-lg text-sm font-semibold border-2 transition-all",
+                                        active
+                                          ? "border-transparent text-white shadow-sm"
+                                          : "border-dashed bg-transparent hover:border-solid",
+                                      ].join(" ")}
+                                      style={
+                                        active
+                                          ? { backgroundColor: eventCat.color, borderColor: eventCat.color }
+                                          : { borderColor: eventCat.color, color: eventCat.color }
+                                      }
+                                    >
+                                      {title}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
 
-                      {/* Termine Liste mit ScrollArea */}
-                      {data.events.length > 0 && (
+                    {/* Termine – freie Eingabe (Fallback wenn kein allowedEventTitles) */}
+                    {!allowedEventTitles && (
+                      <div>
+                        <Label>Termine</Label>
+                        
+                        {/* Termin-Kategorie Buttons - nur anzeigen wenn nicht readOnly */}
+                        {!readOnly && eventCategories.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-2">
+                            {eventCategories.map((eventCat) => (
+                              <Button
+                                key={eventCat.id}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedEventCategory({ 
+                                    ...selectedEventCategory, 
+                                    [date]: eventCat.id 
+                                  });
+                                  setPopoverMode({ ...popoverMode, [date]: "add-event" });
+                                }}
+                                style={{
+                                  borderColor: eventCat.color,
+                                  backgroundColor: "transparent",
+                                }}
+                              >
+                                {eventCat.name} hinzufügen
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Termine Liste mit ScrollArea */}
+                        {data.events.length > 0 && (
+                          <ScrollArea 
+                            className="h-[200px] mt-2"
+                            onWheel={(e) => e.stopPropagation()}
+                          >
+                            <div className="space-y-2 pr-4">
+                              {sortEventsByShiftOrder(data.events).map((event) => (
+                                <div
+                                  key={event.id}
+                                  className="flex items-center justify-between p-2 rounded"
+                                  style={{ 
+                                    backgroundColor: event.categoryId 
+                                      ? eventCategories.find((c) => c.id === event.categoryId)?.color 
+                                      : "rgb(243, 244, 246)"
+                                  }}
+                                >
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-sm">{event.title}</span>
+                                    {event.categoryId && (
+                                      <span className="text-xs opacity-70">
+                                        {getEventCategoryName(event.categoryId)}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {!readOnly && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeEvent(date, event.id)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Termine Liste – auch bei allowedEventTitles readOnly zeigen */}
+                    {allowedEventTitles && readOnly && data.events.length > 0 && (
+                      <div>
+                        <Label>Schichten</Label>
                         <ScrollArea 
                           className="h-[200px] mt-2"
                           onWheel={(e) => e.stopPropagation()}
                         >
                           <div className="space-y-2 pr-4">
-                            {data.events.map((event) => (
+                            {sortEventsByShiftOrder(data.events).map((event) => (
                               <div
                                 key={event.id}
                                 className="flex items-center justify-between p-2 rounded"
@@ -371,26 +540,17 @@ export function InteractiveCalendar({
                                     </span>
                                   )}
                                 </div>
-                                {!readOnly && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeEvent(date, event.id)}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                )}
                               </div>
                             ))}
                           </div>
                         </ScrollArea>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Termin hinzufügen Modus */}
-                {popoverMode[date] === "add-event" && selectedEventCategory[date] && (
+                {/* Termin hinzufügen Modus – nur bei freier Eingabe */}
+                {!allowedEventTitles && popoverMode[date] === "add-event" && selectedEventCategory[date] && (
                   <div className="space-y-4">
                     <div className="text-sm text-gray-600">
                       {day}. {monthNames[month - 1]} {year}

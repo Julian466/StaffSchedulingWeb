@@ -120,6 +120,12 @@ function convertFromDayData(dayData: DayData[]): {
   const blockedDays: number[] = [];
   const blockedShifts: [number, string][] = [];
 
+  const SHIFT_ORDER = ['F', 'S', 'N'];
+  const shiftPriority = (s: string) => {
+    const idx = SHIFT_ORDER.indexOf(s);
+    return idx === -1 ? 999 : idx;
+  };
+
   dayData.forEach(data => {
     const day = parseInt(data.date.split('-')[2], 10);
 
@@ -138,7 +144,20 @@ function convertFromDayData(dayData: DayData[]): {
     });
   });
 
-  return { wishDays, wishShifts, blockedDays, blockedShifts };
+  // Sort by day ASC, then by canonical shift order (F, S, N)
+  wishShifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+  blockedShifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+
+  // Remove duplicates (same day + same shift)
+  const dedupePairs = (arr: [number, string][]) => arr.filter((v, i, a) => i === 0 || !(v[0] === a[i - 1][0] && v[1] === a[i - 1][1]));
+  const uniqueWishShifts = dedupePairs(wishShifts);
+  const uniqueBlockedShifts = dedupePairs(blockedShifts);
+
+  // Also sort days uniquely
+  wishDays.sort((a, b) => a - b);
+  blockedDays.sort((a, b) => a - b);
+
+  return { wishDays, wishShifts: uniqueWishShifts, blockedDays, blockedShifts: uniqueBlockedShifts };
 }
 
 export function WishesAndBlockedForm({
@@ -309,6 +328,7 @@ export function WishesAndBlockedForm({
                 maxVisibleEvents={3}
                 showLegend={true}
                 view={isGlobal ? 'week' : 'month'}
+                allowedEventTitles={['F', 'S', 'N']}
               />
             </CardContent>
           </Card>

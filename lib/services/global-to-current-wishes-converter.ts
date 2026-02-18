@@ -69,5 +69,20 @@ export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlock
         }
     });
 
+    // Ensure canonical ordering: by day asc, then by shift (F, S, N)
+    const SHIFT_ORDER = ['F', 'S', 'N'];
+    const shiftPriority = (s: string) => {
+        const idx = SHIFT_ORDER.indexOf(s);
+        return idx === -1 ? 999 : idx;
+    };
+
+    monthlyEmployee.wish_shifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+    monthlyEmployee.blocked_shifts.sort((a, b) => a[0] - b[0] || shiftPriority(a[1]) - shiftPriority(b[1]));
+
+    // dedupe (same day + same shift)
+    const dedupe = (arr: [number, string][]) => arr.filter((v, i, a) => i === 0 || !(v[0] === a[i - 1][0] && v[1] === a[i - 1][1]));
+    monthlyEmployee.wish_shifts = dedupe(monthlyEmployee.wish_shifts);
+    monthlyEmployee.blocked_shifts = dedupe(monthlyEmployee.blocked_shifts);
+
     return monthlyEmployee;
 }
