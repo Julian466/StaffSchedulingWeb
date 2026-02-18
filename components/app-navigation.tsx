@@ -167,6 +167,12 @@ export function AppNavigation() {
                     Gewichtungs-Templates
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/templates/global-wishes" className="flex items-center gap-2 cursor-pointer">
+                    <Heart className="h-4 w-4" />
+                    Wünsche-Templates
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
