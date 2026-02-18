@@ -173,6 +173,12 @@ export function AppNavigation() {
                     Wünsche-Templates
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/templates/minimal-staff" className="flex items-center gap-2 cursor-pointer">
+                    <UserCog className="h-4 w-4" />
+                    Mindestbesetzung-Templates
+                  </Link>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

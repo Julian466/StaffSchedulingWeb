@@ -30,10 +30,10 @@ export default function TemplatesPage() {
     {
       type: 'minimal-staff',
       title: 'Mindestbesetzungs-Templates',
-      description: 'Templates für Mindestbesetzung pro Schichttyp (in Entwicklung)',
+      description: 'Wiederverwendbare Mindestbesetzungskonfigurationen pro Kategorie, Wochentag und Schicht',
       icon: UserCog,
       href: '/templates/minimal-staff',
-      available: false,
+      available: true,
     },
   ];
 
