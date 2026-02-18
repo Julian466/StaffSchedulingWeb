@@ -27,7 +27,7 @@ export default function GlobalWishesAndBlockedPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
 
-    const { data: employees = [], isLoading } = useGlobalWishesAndBlocked();
+    const { data: employees = [] as WishesAndBlockedEmployee[], isLoading } = useGlobalWishesAndBlocked();
     const createMutation = useCreateGlobalWishesAndBlocked();
     const updateMutation = useUpdateGlobalWishesAndBlocked();
     const deleteMutation = useDeleteGlobalWishesAndBlocked();
@@ -102,7 +102,7 @@ export default function GlobalWishesAndBlockedPage() {
     // Template handlers
     const handleSaveAsTemplate = (description: string) => {
         const content = {
-            employees: employees.map((emp) => ({
+            employees: employees.map((emp: WishesAndBlockedEmployee) => ({
                 key: emp.key,
                 firstname: emp.firstname,
                 name: emp.name,
@@ -149,7 +149,7 @@ export default function GlobalWishesAndBlockedPage() {
         try {
             // Merge mode: update existing, create new, keep unmatched current employees
             for (const { templateEmployee, currentEmployee } of matchResult.matched) {
-                const existingGlobal = employees.find((e) => e.key === currentEmployee.key);
+                const existingGlobal = employees.find((e: WishesAndBlockedEmployee) => e.key === currentEmployee.key);
                 
                 if (existingGlobal) {
                     // Update existing

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,11 +19,11 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, FileText, Clock, Users, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { TemplateSummary, GlobalWishesTemplateContent, GlobalWishesTemplateMetadata } from '@/types/template';
+import { Template, TemplateSummary, GlobalWishesTemplateContent } from '@/types/template';
 import { Employee } from '@/types/employee';
 import { formatDistanceToNow, format } from 'date-fns';
 import { de } from 'date-fns/locale';
-import { matchTemplateEmployees, getEmployeeNamesSummary } from '@/lib/utils/employee-matching';
+import { matchTemplateEmployees } from '@/lib/utils/employee-matching';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -31,7 +31,7 @@ interface ImportGlobalWishesTemplateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   templates: TemplateSummary[];
-  selectedTemplateContent?: { content: GlobalWishesTemplateContent; _metadata: GlobalWishesTemplateMetadata } | null;
+  selectedTemplateContent?: Template<GlobalWishesTemplateContent> | null;
   currentEmployees: Employee[];
   onImportMerge: (templateId: string) => void;
   onImportOverwrite: (templateId: string) => void;
