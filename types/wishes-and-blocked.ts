@@ -27,3 +27,13 @@ export interface WishesAndBlockedDatabase {
   /** Array of employees with their wishes and blocked data */
   employees: WishesAndBlockedEmployee[];
 }
+
+/**
+ * Database structure for storing global wishes and blocked data.
+ * Contains employee information with their wishes and blocked constraints.
+ * The structure is identical to WishesAndBlockedDatabase.
+ */
+export interface GlobalWishesAndBlockedDatabase {
+  /** Array of employees with their wishes and blocked data */
+  employees: WishesAndBlockedEmployee[];
+}

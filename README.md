@@ -126,8 +126,7 @@ flowchart TD
     C --> D
     D -->|"provides preferences"| E
     E -->|"generates (multiple runs)"| F
-    F -->|"process-solution"| I
-    I --> G
+    F --> G
     G -->|"selected schedule"| H
     B <-.->|"Case ID (Month/Year)"| A
     E <-.->|"Identifier for schedule"| D
@@ -152,12 +151,7 @@ flowchart TD
    - Soft constraints (wishes, preferences) are optimized but may vary
    - Output: Multiple `solution_[case]_[timestamp]_[variation].json` files
 
-4. **Schedule Processing** (StaffScheduling)
-   - Convert raw solver outputs into human-readable format
-   - Do this by running the process-solution module
-   - Generate `processed_solution_[case]_[timestamp]_[variation].json` files
-
-5. **Schedule Analysis** (StaffSchedulingWeb)
+4. **Schedule Analysis** (StaffSchedulingWeb)
    - Upload all generated schedules to web interface
    - View comparative metrics for each solution
    - Analyze quality indicators:
@@ -167,7 +161,7 @@ flowchart TD
    - Visually inspect shift assignments
    - Mark the best schedule as "selected"
 
-6. **Deployment** (Manual or TimeOffice Integration)
+5. **Deployment** (Manual or TimeOffice Integration)
    - Export selected schedule
    - Import into TimeOffice system
    - Final manual adjustments if needed
@@ -235,7 +229,9 @@ npm --version
 
 3. **Configure case data directory**
    
-   Edit `config.json` to set the path where case data will be stored:
+   The application will automatically look for `config.json` first, and fall back to `config.template.json` if not found.
+   
+   Create a `config.json` file (copy from `config.template.json`) to set the path where case data will be stored:
    ```json
    {
      "casesDirectory": "./cases"
@@ -248,6 +244,8 @@ npm --version
      "casesDirectory": "../StaffScheduling/cases"
    }
    ```
+   
+   **Note**: You can keep `config.template.json` as a template and add `config.json` to `.gitignore` for local configuration.
 
 4. **Create case data structure** (if not using existing StaffScheduling cases)
    
@@ -359,30 +357,21 @@ After defining wishes, generate schedules using the StaffScheduling solver:
 # Navigate to StaffScheduling project
 cd ../StaffScheduling
 
-# Run solver with 5 different variants
-uv run staff-scheduling solve-multiple 77 01.11.2024 30.11.2024 5
+# Run solver to generate multiple variants
+uv run staff-scheduling solve-multiple 77 01.11.2024 30.11.2024
 ```
 
 *For detailed solver usage, see the [StaffScheduling Documentation](https://combirwth.github.io/StaffScheduling/).*
 
 
-### 5. Processing Schedules (StaffScheduling Project)
-After generating schedules, process them into human-readable format:
-
-```bash
-# Repeat for all generated solutions
-uv run staff-scheduling process-solution 77 --filename solution_77_2024-11-01-2024-11-30_0 --output processed_solution_77_2024-11-01-2024-11-30_0
-...
-uv run staff-scheduling process-solution 77 --filename solution_77_2024-11-01-2024-11-30_1 --output processed_solution_77_2024-11-01-2024-11-30_4
-```
-### 6. Uploading & Analyzing Schedules
+### 5. Uploading & Analyzing Schedules
 
 Compare generated schedules to find the optimal solution.
 
 **Upload Schedules:**
 1. Navigate to **"Dienstplan"** (Schedule)
 2. Click **"Upload Schedule"**
-3. Select a `processed_solution_[case]_[timestamp]_[variation].json` file
+3. Select a `solution_[case]_[timestamp]_[variation].json` file
 4. Enter the Variant Number (e.g., 0, 1, 2...) to identify the schedule
 5. Click upload
 

@@ -1,0 +1,11 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "casesDirectory": "/cases",
+  "staffSchedulingProject": {
+    "include": false,
+    "path": "-",
+    "pythonExecutable": "uv"
+  },
+  "_comment_casesDirectory": "Path to the cases directory. Can be absolute (e.g., 'C:\\data\\cases' or '/absolute/path/cases') or relative to the project root (e.g., '/cases' or 'data/cases')",
+  "_comment_staffSchedulingProject": "Python solver configuration. 'include' enables solver integration, 'path' is absolute path to Python project directory, 'pythonExecutable' is command to run Python (e.g., 'uv', 'python', 'python3')"
+}

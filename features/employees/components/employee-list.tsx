@@ -13,6 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
+import { EmployeeSummaryDialog, EmployeeIdentifier } from '@/components/employee-summary-dialog';
 
 interface EmployeeListProps {
   employees: Employee[];
@@ -22,6 +23,7 @@ export function EmployeeList({
   employees
 }: EmployeeListProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
 
   const filteredEmployees = useMemo(() => {
     if (!searchTerm) return employees;
@@ -74,7 +76,15 @@ export function EmployeeList({
             </TableHeader>
             <TableBody>
               {filteredEmployees.map((employee) => (
-                <TableRow key={employee.key}>
+                <TableRow 
+                  key={employee.key}
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => setSelectedEmployee({
+                    id: employee.key,
+                    firstname: employee.firstname,
+                    lastname: employee.name
+                  })}
+                >
                   <TableCell><Badge>{employee.key}</Badge></TableCell>
                   <TableCell className="font-medium">
                     {employee.firstname}
@@ -86,6 +96,20 @@ export function EmployeeList({
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {selectedEmployee && (
+        <EmployeeSummaryDialog
+          employee={selectedEmployee}
+          open={!!selectedEmployee}
+          onOpenChange={(open) => !open && setSelectedEmployee(null)}
+          employeeList={filteredEmployees.map(e => ({
+            id: e.key,
+            firstname: e.firstname,
+            lastname: e.name
+          }))}
+          onNavigate={(emp) => setSelectedEmployee(emp)}
+        />
       )}
     </div>
   );

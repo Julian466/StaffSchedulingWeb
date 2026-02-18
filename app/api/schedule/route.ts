@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
-import { ScheduleSolutionRaw } from '@/types/schedule';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 
 /**
  * GET /api/schedule
  * Retrieves all schedules metadata for the current case.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const caseId = await getCaseIdFromHeaders();
-    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId);
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
+    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId, monthYear);
     
     return NextResponse.json(metadata);
   } catch (error) {
@@ -25,22 +27,25 @@ export async function GET(request: NextRequest) {
 /**
  * POST /api/schedule
  * Saves a new schedule solution for the current case.
- * Body: { scheduleId: string, seed: number, solution: ScheduleSolutionRaw, autoSelect?: boolean }
+ * Body: { scheduleId: string, description?: string, solution: ScheduleSolutionRaw, autoSelect?: boolean }
  */
 export async function POST(request: NextRequest) {
   try {
-    const caseId = await getCaseIdFromHeaders();
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const body = await request.json();
-    const { scheduleId, seed, solution, autoSelect = false } = body;
+    const { scheduleId, description, solution, autoSelect = false } = body;
     
-    if (!scheduleId || seed === undefined || !solution) {
+    if (!scheduleId || !solution) {
       return NextResponse.json(
-        { error: 'Missing required fields: scheduleId, seed, solution' },
+        { error: 'Missing required fields: scheduleId, solution' },
         { status: 400 }
       );
     }
     
-    await ScheduleRepository.saveSchedule(caseId, scheduleId, seed, solution, autoSelect);
+    await ScheduleRepository.saveSchedule(caseId, monthYear, scheduleId, description, solution, autoSelect);
     
     return NextResponse.json({ success: true });
   } catch (error) {

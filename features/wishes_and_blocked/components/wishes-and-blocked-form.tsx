@@ -35,6 +35,8 @@ interface WishesAndBlockedFormProps {
   onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
   onCancel: () => void;
   isSubmitting?: boolean;
+  excludedEmployeeKeys?: number[];
+  isGlobal?: boolean;
 }
 
 // Helper to convert WishesAndBlockedEmployee data to DayData format
@@ -143,9 +145,11 @@ export function WishesAndBlockedForm({
   employee,
   onSubmit,
   onCancel,
-  isSubmitting
+  isSubmitting,
+  excludedEmployeeKeys = [],
+  isGlobal,
 }: WishesAndBlockedFormProps) {
-  const { caseInformation } = useCase();
+  const { currentCase } = useCase();
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => 
     employee ? {
       key: employee.key,
@@ -162,9 +166,9 @@ export function WishesAndBlockedForm({
     },
   });
 
-  // Get year and month from case information or use current date
-  const year = caseInformation?.year || new Date().getFullYear();
-  const month = caseInformation?.month || new Date().getMonth() + 1;
+  // Get year and month from currentCase or use current date
+  const year = currentCase?.year || new Date().getFullYear();
+  const month = currentCase?.month || new Date().getMonth() + 1;
 
   // State for calendar data
   const [calendarData, setCalendarData] = useState<DayData[]>(() => 
@@ -248,6 +252,7 @@ export function WishesAndBlockedForm({
                         value={field.value || undefined}
                         onSelect={handleEmployeeSelect}
                         disabled={!!employee || isSubmitting}
+                        excludedKeys={employee ? [] : excludedEmployeeKeys}
                       />
                     </FormControl>
                     {employee && (
@@ -287,7 +292,7 @@ export function WishesAndBlockedForm({
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <CalendarIcon className="h-5 w-5" />
-                Monatskalender
+                {isGlobal ? `Wochenkalender` : `Monatskalender`}
               </CardTitle>
               <CardDescription>
                 Klicke auf einen Tag, um Wünsche oder Blockierungen zu verwalten
@@ -303,6 +308,7 @@ export function WishesAndBlockedForm({
                 onDayDataChange={handleCalendarDataChange}
                 maxVisibleEvents={3}
                 showLegend={true}
+                view={isGlobal ? 'week' : 'month'}
               />
             </CardContent>
           </Card>

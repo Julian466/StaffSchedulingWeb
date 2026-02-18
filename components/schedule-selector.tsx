@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ScheduleMetadata, SchedulesMetadata } from "@/types/schedule";
+import { SchedulesMetadata } from "@/types/schedule";
 import {
   Select,
   SelectContent,
@@ -20,14 +20,21 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Trash2, CheckCircle, Calendar, Loader2 } from "lucide-react";
+import { Trash2, CheckCircle, Calendar, Loader2, Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface ScheduleSelectorProps {
   schedulesMetadata: SchedulesMetadata;
   onScheduleSelect: (scheduleId: string) => Promise<void>;
   onScheduleDelete: (scheduleId: string) => Promise<void>;
   onRefresh: () => Promise<void>;
+  selectedScheduleIds?: string[];
+  onMultipleSchedulesSelect?: (scheduleIds: string[]) => void;
+  compareMode?: boolean;
+  onDescriptionUpdate?: (scheduleId: string, description: string) => Promise<void>;
 }
 
 export function ScheduleSelector({
@@ -35,8 +42,15 @@ export function ScheduleSelector({
   onScheduleSelect,
   onScheduleDelete,
   onRefresh,
+  selectedScheduleIds = [],
+  onMultipleSchedulesSelect,
+  compareMode = false,
+  onDescriptionUpdate,
 }: ScheduleSelectorProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [localSelectedIds, setLocalSelectedIds] = useState<string[]>(selectedScheduleIds);
+  const [editingDescriptionId, setEditingDescriptionId] = useState<string | null>(null);
+  const [editingDescription, setEditingDescription] = useState<string>("");
 
   const handleSelect = async (scheduleId: string) => {
     try {
@@ -64,6 +78,34 @@ export function ScheduleSelector({
       await onRefresh();
     } catch (error) {
       toast.error("Fehler beim Löschen des Dienstplans");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const startEditingDescription = (scheduleId: string, currentDescription?: string) => {
+    setEditingDescriptionId(scheduleId);
+    setEditingDescription(currentDescription || "");
+  };
+
+  const cancelEditingDescription = () => {
+    setEditingDescriptionId(null);
+    setEditingDescription("");
+  };
+
+  const saveDescription = async (scheduleId: string) => {
+    if (!onDescriptionUpdate) return;
+    
+    try {
+      setIsLoading(true);
+      await onDescriptionUpdate(scheduleId, editingDescription);
+      toast.success("Beschreibung aktualisiert");
+      setEditingDescriptionId(null);
+      setEditingDescription("");
+      await onRefresh();
+    } catch (error) {
+      toast.error("Fehler beim Aktualisieren der Beschreibung");
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -98,114 +140,213 @@ export function ScheduleSelector({
     (a, b) => new Date(b.generatedAt).getTime() - new Date(a.generatedAt).getTime()
   );
 
+  const handleCheckboxChange = (scheduleId: string, checked: boolean) => {
+    const newSelection = checked 
+      ? [...localSelectedIds, scheduleId]
+      : localSelectedIds.filter(id => id !== scheduleId);
+    
+    setLocalSelectedIds(newSelection);
+    onMultipleSchedulesSelect?.(newSelection);
+  };
+
   return (
     <div className="flex items-center gap-4">
       <div className="flex-1 ">
-        <Select
-          value={schedulesMetadata.selectedScheduleId || ""}
-          onValueChange={handleSelect}
-          disabled={isLoading}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Dienstplan auswählen..." />
-          </SelectTrigger>
-            <SelectContent>
-              {sortedSchedules.map((schedule) => {
-                return (
-                  <SelectItem key={schedule.scheduleId} value={schedule.scheduleId}>
-                    <div className="flex items-center gap-2">
-                      {schedule.isSelected && <CheckCircle className="h-4 w-4" />}
-                      <span>
-                        Seed: {schedule.seed} - {formatDate(schedule.generatedAt)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
-            </SelectContent>
-          </Select>
-        </div>
-        {schedulesMetadata.selectedScheduleId && (
-          <div className="text-sm text-muted-foreground">
-            {(() => {
-              const selected = schedulesMetadata.schedules.find(
-                (s) => s.scheduleId === schedulesMetadata.selectedScheduleId
-              );
-              if (!selected) return null;
-              return (
-                <span>
-                  Aktuell: Seed {selected.seed} - {formatDate(selected.generatedAt)}
-                </span>
-              );
-            })()}
+        {compareMode ? (
+          <div className="text-sm">
+            <span className="font-medium">{localSelectedIds.length} Dienstpläne</span> zum Vergleich ausgewählt
           </div>
+        ) : (
+          <>
+            <Select
+              value={schedulesMetadata.selectedScheduleId || ""}
+              onValueChange={handleSelect}
+              disabled={isLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Dienstplan auswählen..." />
+              </SelectTrigger>
+              <SelectContent>
+                {sortedSchedules.map((schedule) => {
+                  return (
+                    <SelectItem key={schedule.scheduleId} value={schedule.scheduleId}>
+                      <div className="flex items-center gap-2">
+                        {schedule.isSelected && <CheckCircle className="h-4 w-4" />}
+                        <span>
+                          {schedule.description ? (schedule.description!.length > 30 ? schedule.description!.slice(0, 30) + "..." : schedule.description || "Ohne Beschreibung") : "Ohne Beschreibung"} - {formatDate(schedule.generatedAt)}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </>
         )}
+      </div>
+      {!compareMode && schedulesMetadata.selectedScheduleId && (
+        <div className="text-sm text-muted-foreground">
+          {(() => {
+            const selected = schedulesMetadata.schedules.find(
+              (s) => s.scheduleId === schedulesMetadata.selectedScheduleId
+            );
+            if (!selected) return null;
+            return (
+              <span>
+                Aktuell: { selected.description ? (selected.description!.length > 30 ? selected.description!.slice(0, 30) + "..." : selected.description) : "Ohne Beschreibung"} - {formatDate(selected.generatedAt)}
+              </span>
+            );
+          })()}
+        </div>
+      )}
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">
-              Alle Dienstpläne ({schedulesMetadata.schedules.length})
+              {compareMode ? "Vergleich verwalten" : `Alle Dienstpläne (${schedulesMetadata.schedules.length})`}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Alle Dienstpläne</DialogTitle>
+              <DialogTitle>{compareMode ? "Dienstpläne zum Vergleich auswählen" : "Alle Dienstpläne"}</DialogTitle>
               <DialogDescription>
-                Vergleichen Sie verschiedene generierte Dienstpläne.
+                {compareMode 
+                  ? "Wählen Sie mehrere Dienstpläne aus, um sie zu vergleichen."
+                  : "Vergleichen Sie verschiedene generierte Dienstpläne."
+                }
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4">
               {sortedSchedules.map((schedule, index) => {
+                const isChecked = localSelectedIds.includes(schedule.scheduleId);
                 return (
                   <Card
                     key={schedule.scheduleId}
                     className={
-                      schedule.isSelected ? "border-primary border-2" : ""
+                      compareMode && isChecked 
+                        ? "border-primary border-2" 
+                        : schedule.isSelected && !compareMode 
+                        ? "border-primary border-2" 
+                        : ""
                     }
                   >
                     <CardHeader>
                       <div className="flex items-start justify-between">
-                        <div className="space-y-1">
+                        <div className="flex items-start gap-3 flex-1">
+                          {compareMode && (
+                            <Checkbox 
+                              checked={isChecked}
+                              onCheckedChange={(checked) => handleCheckboxChange(schedule.scheduleId, checked as boolean)}
+                              className="mt-1"
+                            />
+                          )}
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <CardTitle className="text-lg">
+                                Dienstplan #{index + 1}
+                              </CardTitle>
+                              {schedule.isSelected && !compareMode && (
+                                <Badge variant="default">Ausgewählt</Badge>
+                              )}
+                              {compareMode && isChecked && (
+                                <Badge variant="default">Zum Vergleich</Badge>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-4 w-4" />
+                                {formatDate(schedule.generatedAt)}
+                              </span>
+                              {editingDescriptionId === schedule.scheduleId ? (
+                                <div className="flex items-start gap-2 flex-1 mt-1">
+                                  <Textarea
+                                    value={editingDescription}
+                                    onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditingDescription(e.target.value)}
+                                    placeholder="Beschreibung hinzufügen..."
+                                    className="text-sm min-h-[60px]"
+                                    autoFocus
+                                    maxLength={500}
+                                    rows={2}
+                                  />
+                                  <div className="flex flex-col gap-1">
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => saveDescription(schedule.scheduleId)}
+                                      disabled={isLoading}
+                                      className="h-8"
+                                    >
+                                      <Check className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={cancelEditingDescription}
+                                      disabled={isLoading}
+                                      className="h-8 text-xs px-2"
+                                    >
+                                      ×
+                                    </Button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <>
+                                  {schedule.description ? (
+                                    <span className="flex items-start gap-2">
+                                      <span className="whitespace-pre-wrap wrap-break-word">{schedule.description}</span>
+                                      {!compareMode && onDescriptionUpdate && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          className="h-6 w-6 p-0 shrink-0"
+                                          onClick={() => startEditingDescription(schedule.scheduleId, schedule.description)}
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </Button>
+                                      )}
+                                    </span>
+                                  ) : !compareMode && onDescriptionUpdate ? (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      className="h-6 text-xs"
+                                      onClick={() => startEditingDescription(schedule.scheduleId)}
+                                    >
+                                      <Pencil className="h-3 w-3 mr-1" />
+                                      Beschreibung hinzufügen
+                                    </Button>
+                                  ) : null}
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {!compareMode && (
                           <div className="flex items-center gap-2">
-                            <CardTitle className="text-lg">
-                              Dienstplan #{index + 1}
-                            </CardTitle>
-                            {schedule.isSelected && (
-                              <Badge variant="default">Ausgewählt</Badge>
-                            )}
+                            <Button
+                              size="sm"
+                              variant={schedule.isSelected ? "outline" : "default"}
+                              onClick={() => handleSelect(schedule.scheduleId)}
+                              disabled={isLoading || schedule.isSelected}
+                            >
+                              {isLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : schedule.isSelected ? (
+                                "Aktiv"
+                              ) : (
+                                "Auswählen"
+                              )}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDelete(schedule.scheduleId)}
+                              disabled={isLoading || schedule.isSelected}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-4 w-4" />
-                              {formatDate(schedule.generatedAt)}
-                            </span>
-                            <span>Seed: {schedule.seed}</span>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant={schedule.isSelected ? "outline" : "default"}
-                            onClick={() => handleSelect(schedule.scheduleId)}
-                            disabled={isLoading || schedule.isSelected}
-                          >
-                            {isLoading ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : schedule.isSelected ? (
-                              "Aktiv"
-                            ) : (
-                              "Auswählen"
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDelete(schedule.scheduleId)}
-                            disabled={isLoading || schedule.isSelected}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        )}
                       </div>
                     </CardHeader>
                     <CardContent>

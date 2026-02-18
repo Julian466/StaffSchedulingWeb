@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { employeeRepository } from '@/features/employees/api/employee-repository';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
 const apiLogger = createApiLogger('/api/employees/[id]');
@@ -22,16 +22,22 @@ export async function GET(
 ) {
   const method = 'GET';
   let caseId: number | undefined;
+  let monthYear: string | undefined;
   let idNum: number | undefined;
   try {
-    caseId = await getCaseIdFromHeaders();
+    const context = await getCaseContextFromHeaders();
+    caseId = context.caseId;
+    monthYear = context.monthYear;
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
     const { id } = await params; // In Next.js 15+, params is a Promise
     idNum = parseInt(id, 10);
     if (Number.isNaN(idNum)) {
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     }
-    apiLogger.info('Fetching employee', { method, caseId, employeeKey: idNum });
-    const employee = await employeeRepository.getByKey(idNum, caseId);
+    apiLogger.info('Fetching employee', { method, caseId, monthYear, employeeKey: idNum });
+    const employee = await employeeRepository.getByKey(idNum, caseId, monthYear);
     
     if (!employee) {
       return NextResponse.json(
@@ -40,10 +46,10 @@ export async function GET(
       );
     }
     
-    apiLogger.info('Fetched employee', { method, caseId, employeeKey: idNum });
+    apiLogger.info('Fetched employee', { method, caseId, monthYear, employeeKey: idNum });
     return NextResponse.json(employee);
   } catch (error) {
-    apiLogger.error('Failed to fetch employee', { method, caseId, employeeKey: idNum, error });
+    apiLogger.error('Failed to fetch employee', { method, caseId, monthYear, employeeKey: idNum, error });
     return NextResponse.json(
       { error: 'Failed to fetch employee' }, 
       { status: 500 }

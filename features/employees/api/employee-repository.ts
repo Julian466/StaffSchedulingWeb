@@ -16,10 +16,11 @@ export const employeeRepository = {
    * Retrieves all employees for a specific case.
    * 
    * @param caseId - The case ID to fetch employees for
+   * @param monthYear - The month/year in MM_YYYY format
    * @returns Promise resolving to an array of all employees
    */
-  async getAll(caseId: number): Promise<Employee[]> {
-    const db = await getDb(caseId);
+  async getAll(caseId: number, monthYear: string): Promise<Employee[]> {
+    const db = await getDb(caseId, monthYear);
     await db.read();
     return db.data.employees;
   },
@@ -29,10 +30,11 @@ export const employeeRepository = {
    * 
    * @param key - The unique numeric identifier of the employee
    * @param caseId - The case ID where the employee exists
+   * @param monthYear - The month/year in MM_YYYY format
    * @returns Promise resolving to the employee if found, undefined otherwise
    */
-  async getByKey(key: number, caseId: number): Promise<Employee | undefined> {
-    const db = await getDb(caseId);
+  async getByKey(key: number, caseId: number, monthYear: string): Promise<Employee | undefined> {
+    const db = await getDb(caseId, monthYear);
     await db.read();
     return db.data.employees.find(emp => emp.key === key);
   },

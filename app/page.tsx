@@ -3,9 +3,12 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Building2, Briefcase, Calendar, ArrowRight, ClockFading } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Users, Calendar, ArrowRight, ClockFading, Wand2, CalendarRangeIcon } from 'lucide-react';
+import { useWorkflow } from '@/contexts/workflow-context';
 
 export default function HomePage() {
+  const { isWorkflowMode } = useWorkflow();
   const databases = [
     {
       title: 'Mitarbeiter',
@@ -14,6 +17,14 @@ export default function HomePage() {
       href: '/employees',
       color: 'text-blue-500',
       bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Globale Wünsche & Blockierungen',
+      description: 'Verwalte allgemeine Wünsche und Blockierungen für alle Mitarbeiter',
+      icon: CalendarRangeIcon,
+      href: '/global-wishes-and-blocked',
+      color: 'text-indigo-500',
+      bgColor: 'bg-indigo-50',
     },
     {
       title: 'Wünsche & Blockierungen',
@@ -41,6 +52,18 @@ export default function HomePage() {
           Zentrale Verwaltung aller Datenbanken für die Schichtplanung
         </p>
       </div>
+
+      {!isWorkflowMode && (
+        <Alert className="mb-6 border-blue-200 bg-blue-50">
+          <Wand2 className="h-5 w-5 text-blue-600" />
+          <AlertTitle className="text-blue-900">TimeOffice Integration</AlertTitle>
+          <AlertDescription className="text-blue-800">
+            Wenn Sie diese Anwendung über den Zauberstab-Button in TimeOffice starten,
+            werden Sie automatisch zum strukturierten Workflow weitergeleitet,
+            wo Sie Schritt für Schritt Ihren Dienstplan erstellen können.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {databases.map((db) => {

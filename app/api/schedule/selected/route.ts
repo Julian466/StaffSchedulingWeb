@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import {NextResponse } from 'next/server';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
-import { getCaseIdFromHeaders } from '@/lib/http/case-helper';
+import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 
 /**
  * GET /api/schedule/selected
  * Retrieves the currently selected schedule solution.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const caseId = await getCaseIdFromHeaders();
-    const schedule = await ScheduleRepository.getSelectedSchedule(caseId);
+    const { caseId, monthYear } = await getCaseContextFromHeaders();
+    if (!monthYear) {
+      return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
+    }
+    const schedule = await ScheduleRepository.getSelectedSchedule(caseId, monthYear);
     
     if (!schedule) {
       return NextResponse.json(

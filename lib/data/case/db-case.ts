@@ -1,143 +1,113 @@
 import { join } from 'path';
 import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
-import { CaseInformation } from '@/types/case';
+import { CaseUnit } from '@/types/case';
 import fs from 'fs/promises';
 import { getCasesDirectory } from '@/lib/config/app-config';
-
-/**
- * Data structure for case information stored in the database.
- */
-interface CaseInfoData {
-  information: CaseInformation;
-}
+import { parseMonthYear, formatMonthYear } from '@/lib/utils/case-utils';
 
 /**
  * Root directory where all case data is stored.
  * Each case has its own subdirectory named by its case ID.
- * The path is loaded from config.json.
+ * Within each case directory are month folders in MM_YYYY format.
+ * The path is loaded from config.template.json.
  */
 const CASES_DIR = getCasesDirectory();
 
 /**
- * Gets or creates a database connection for case information.
- * Ensures the case directory exists and initializes default data if needed.
+ * Lists all existing planning units with their available months.
+ * Scans the cases directory two levels deep: unit folders and month_year subfolders.
  * 
- * @param caseId - The ID of the case to get information for
- * @returns Promise resolving to the case information database instance
- * 
- * @example
- * const db = await getCaseInformationDb(1);
- * await db.read();
- * console.log(db.data.information.month);
- */
-export async function getCaseInformationDb(caseId: number) {
-  const caseDir = join(CASES_DIR, caseId.toString());
-  const file = join(caseDir, 'case_information.json');
-  
-  // Ensure case directory exists before creating database connection
-  await fs.mkdir(caseDir, { recursive: true });
-  
-  const adapter = new JSONFile<CaseInfoData>(file);
-  // Set up default data with current date/time
-  const defaultData: CaseInfoData = {
-    information: {
-      caseId,
-      month: new Date().getMonth() + 1,
-      year: new Date().getFullYear(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-  };
-  const db = new Low(adapter, defaultData);
-  
-  await db.read();
-  
-  // Initialize with default data if file doesn't exist or is empty
-  if (!db.data) {
-    db.data = defaultData;
-    await db.write();
-  }
-  
-  return db;
-}
-
-/**
- * Lists all existing case IDs by scanning the cases directory.
- * Returns case IDs sorted in ascending order.
- * 
- * @returns Promise resolving to an array of case IDs
+ * @returns Promise resolving to an array of case units with available months
  * 
  * @example
- * const cases = await listCases();
- * console.log('Available cases:', cases); // [1, 2, 3]
+ * const units = await listCases();
+ * console.log(units); // [{ unitId: 77, months: ["11_2024", "12_2024"] }]
  */
-export async function listCases(): Promise<number[]> {
+export async function listCases(): Promise<CaseUnit[]> {
   try {
     // Ensure the cases directory exists
     await fs.mkdir(CASES_DIR, { recursive: true });
     const entries = await fs.readdir(CASES_DIR, { withFileTypes: true });
     
-    // Filter for directories with numeric names
-    return entries
+    // Filter for directories with numeric names (planning units)
+    const unitDirs = entries
       .filter(entry => entry.isDirectory())
       .map(entry => parseInt(entry.name))
       .filter(id => !isNaN(id))
       .sort((a, b) => a - b);
+    
+    // For each unit, scan for month folders
+    const caseUnits: CaseUnit[] = [];
+    for (const unitId of unitDirs) {
+      const unitPath = join(CASES_DIR, unitId.toString());
+      const monthEntries = await fs.readdir(unitPath, { withFileTypes: true });
+      
+      // Filter for month folders (MM_YYYY format)
+      const months = monthEntries
+        .filter(entry => entry.isDirectory() && /^\d{1,2}_\d{4}$/.test(entry.name))
+        .map(entry => entry.name)
+        .sort();
+      
+      if (months.length > 0) {
+        caseUnits.push({ unitId, months });
+      }
+    }
+    
+    return caseUnits;
   } catch (error) {
     return [];
   }
 }
 
 /**
- * Creates a new case with a unique ID and initializes its directory structure.
- * The new case ID is determined by incrementing the highest existing case ID.
+ * Creates a new case with the specified planning unit, month, and year.
+ * Creates the directory structure: cases/[unitId]/[MM_YYYY]/
  * 
- * @returns Promise resolving to the newly created case ID
+ * @param unitId - The planning unit ID
+ * @param month - Month (1-12)
+ * @param year - Year (e.g., 2024)
+ * @returns Promise resolving to the monthYear string
  * 
  * @example
- * const newCaseId = await createCase();
- * console.log('Created case:', newCaseId); // 4
+ * const monthYear = await createCase(77, 11, 2024);
+ * console.log(monthYear); // "11_2024"
  */
-export async function createCase(): Promise<number> {
-  const existingCases = await listCases();
-  // Generate new case ID by incrementing the highest existing ID
-  const newCaseId = existingCases.length > 0 ? Math.max(...existingCases) + 1 : 1;
+export async function createCase(unitId: number, month: number, year: number): Promise<string> {
+  const monthYear = formatMonthYear(month, year);
+  const casePath = join(CASES_DIR, unitId.toString(), monthYear);
+  await fs.mkdir(casePath, { recursive: true });
   
-  const caseDir = join(CASES_DIR, newCaseId.toString());
-  await fs.mkdir(caseDir, { recursive: true });
-  
-  // Initialize the case with default case_information.json
-  await getCaseInformationDb(newCaseId);
-  
-  return newCaseId;
+  return monthYear;
 }
 
 /**
  * Gets the absolute file system path for a specific case directory.
  * 
- * @param caseId - The ID of the case
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
  * @returns The absolute path to the case directory
  * 
  * @example
- * const path = getCasePath(1);
- * console.log(path); // '/path/to/project/cases/1'
+ * const path = getCasePath(77, "11_2024");
+ * console.log(path); // '/path/to/project/cases/77/11_2024'
  */
-export function getCasePath(caseId: number): string {
-  return join(CASES_DIR, caseId.toString());
+export function getCasePath(caseId: number, monthYear: string): string {
+  return join(CASES_DIR, caseId.toString(), monthYear);
 }
 
 /**
  * Gets the absolute file path for a specific file within a case directory.
  * 
- * @param caseId - The ID of the case
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
  * @param filename - The name of the file
  * @returns The absolute path to the file
  * 
  * @example
- * const path = getDbFilePath(1, 'schedule.json');
- * console.log(path); // '/path/to/project/cases/1/schedule.json'
+ * const path = getDbFilePath(77, "11_2024", 'employees.json');
+ * console.log(path); // '/path/to/project/cases/77/11_2024/employees.json'
  */
-export function getDbFilePath(caseId: number, filename: string): string {
-  return join(CASES_DIR, caseId.toString(), filename);
+export function getDbFilePath(caseId: number, monthYear: string, filename: string): string {
+  return join(CASES_DIR, caseId.toString(), monthYear, filename);
 }

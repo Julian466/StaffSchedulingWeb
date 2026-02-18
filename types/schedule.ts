@@ -36,10 +36,18 @@ export interface ScheduleEmployee {
     /** Array of day numbers for preferred days off */
     day_off_wishes: number[];
   };
-  /** Days when employee is unavailable */
-  unavailable_days?: number[];
+  /** Days when employee is on vacation */
+  vacation_days: number[];
+  /** Days when employee cannot work */
+  forbidden_days: number[];
+  /** Shifts employee is on vacation for on specific days */
+  vacation_shifts: [number, string][];
   /** Shifts employee cannot work on specific days */
-  unavailable_shifts?: Record<number, string[]>;
+  forbidden_shifts: [number, string][];
+  hidden_actual_working_time: number;
+  actual_working_time: number;
+  is_hidden_employee: boolean;
+
 }
 
 /**
@@ -105,8 +113,8 @@ export interface ScheduleSolutionRaw {
 export interface ScheduleMetadata {
   /** Unique identifier for this schedule instance */
   scheduleId: string;
-  /** Seed used to generate this schedule */
-  seed: number;
+  /** Optional description for this schedule */
+  description?: string;
   /** ISO timestamp when the schedule was generated */
   generatedAt: string;
   /** Whether this schedule is selected as the best/active one */

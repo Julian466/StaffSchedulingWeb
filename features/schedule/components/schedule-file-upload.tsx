@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, Upload } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ScheduleSolutionRaw } from '@/types/schedule';
 
 interface ScheduleFileUploadProps {
@@ -20,6 +20,7 @@ export function ScheduleFileUpload({ onFileLoaded, isLoading }: ScheduleFileUplo
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    console.log('file', file);
     if (!file) return;
 
     setError('');
@@ -39,6 +40,9 @@ export function ScheduleFileUpload({ onFileLoaded, isLoading }: ScheduleFileUplo
       } catch (err) {
         setError('Failed to parse solution file. Please check the file format.');
         console.error(err);
+      } finally {
+        // Reset the input value to allow uploading the same file again
+        event.target.value = '';
       }
     };
     reader.readAsText(file);
