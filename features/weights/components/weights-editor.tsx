@@ -5,7 +5,6 @@ import { Weights, WEIGHT_METADATA } from '@/types/weights';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Info, Download, Upload, Save } from 'lucide-react';
 import {
   Tooltip,
@@ -39,7 +38,7 @@ interface WeightsEditorProps {
 
 /**
  * Component for editing solver weight configurations.
- * Provides sliders and numeric inputs for all weight values (0-100).
+ * Provides numeric inputs (no fixed min/max) for all weight values.
  */
 export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps) {
   const [editedWeights, setEditedWeights] = useState<Weights>(weights);
@@ -77,11 +76,10 @@ export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps)
   const hasChanges = useMemo(() => JSON.stringify(weights) !== JSON.stringify(editedWeights), [weights, editedWeights]);
 
   const handleWeightChange = (key: keyof Weights, value: number) => {
-    // Ensure value is within bounds
-    const clampedValue = Math.max(0, Math.min(100, value));
+    // No enforced min/max for weights — accept the provided numeric value as-is
     setEditedWeights(prev => ({
       ...prev,
-      [key]: clampedValue,
+      [key]: value,
     }));
   };
 
@@ -137,25 +135,17 @@ export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps)
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              <div className="w-16">
+              <div className="w-28 sm:w-24 md:w-28">
                 <Input
                   type="number"
+                  inputMode="numeric"
                   value={value}
                   onChange={(e) => handleWeightChange(metadata.key, parseInt(e.target.value) || 0)}
-                  min={metadata.min}
-                  max={metadata.max}
-                  className="text-center h-8 text-sm"
+                  className="w-full text-center h-8 text-sm"
                 />
               </div>
             </div>
-            <Slider
-              value={[value]}
-              onValueChange={(values) => handleWeightChange(metadata.key, values[0])}
-              min={metadata.min}
-              max={metadata.max}
-              step={1}
-              className="w-full"
-            />
+
           </div>
         );
       })}

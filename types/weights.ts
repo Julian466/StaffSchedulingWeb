@@ -19,8 +19,7 @@ export type WeightType =
   | 'second_weekend';
 
 /**
- * Metadata for a single weight configuration.
- */
+/** Metadata for a single weight configuration. */
 export interface WeightMetadata {
   /** Unique identifier key for the weight */
   key: WeightType;
@@ -28,15 +27,11 @@ export interface WeightMetadata {
   label: string;
   /** Detailed description of what this weight controls */
   description: string;
-  /** Minimum allowed value */
-  min: number;
-  /** Maximum allowed value */
-  max: number;
 }
 
 /**
  * Complete weight configuration for the solver.
- * Maps weight types to their numeric values (0-100).
+ * Maps weight types to their numeric values.
  */
 export interface Weights {
   /** Free Days Near Weekend - Prioritizes having free days adjacent to weekends */
@@ -68,64 +63,46 @@ export const WEIGHT_METADATA: WeightMetadata[] = [
     key: 'free_weekend',
     label: 'Freie Tage am Wochenende',
     description: 'Freie Tage nahe am Wochenende bevorzugen',
-    min: 0,
-    max: 100,
   },
   {
     key: 'consecutive_nights',
     label: 'Aufeinanderfolgende Nachtschichten',
     description: 'Aufeinanderfolgende Nachtschichten minimieren',
-    min: 0,
-    max: 100,
   },
   {
     key: 'hidden',
     label: 'Versteckte Mitarbeiter',
     description: 'Sicherstellen, dass alle qualifizierten Mitarbeiter eingeplant werden',
-    min: 0,
-    max: 100,
   },
   {
     key: 'overtime',
     label: 'Überstunden',
     description: 'Überstunden aller Mitarbeiter minimieren',
-    min: 0,
-    max: 100,
   },
   {
     key: 'consecutive_days',
     label: 'Aufeinanderfolgende Arbeitstage',
     description: 'Aufeinanderfolgende Arbeitstage begrenzen',
-    min: 0,
-    max: 100,
   },
   {
     key: 'rotate',
     label: 'Schichten vorwärts rotieren',
     description: 'Vorwärtsrotation der Schichten fördern (F→S→N)',
-    min: 0,
-    max: 100,
   },
   {
     key: 'wishes',
     label: 'Mitarbeiterwünsche',
     description: 'Wünsche der Mitarbeiter berücksichtigen',
-    min: 0,
-    max: 100,
   },
   {
     key: 'after_night',
     label: 'Freier Tag nach Nachtschicht',
     description: 'Ruhetag nach Nachtschichtphase sicherstellen',
-    min: 0,
-    max: 100,
   },
   {
     key: 'second_weekend',
     label: 'Jedes zweite Wochenende frei',
     description: 'Abwechselnde freie Wochenenden anstreben',
-    min: 0,
-    max: 100,
   },
 ];
 
