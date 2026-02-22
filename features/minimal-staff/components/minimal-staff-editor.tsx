@@ -8,8 +8,25 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Save, Sunrise, Sun, Moon } from 'lucide-react';
+import { Save, Sunrise, Sun, Moon, Upload, Save as SaveIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { SaveTemplateDialog } from '@/components/save-template-dialog';
+import { ImportTemplateDialog } from '@/components/import-template-dialog';
+import {
+  useMinimalStaffTemplates,
+  useCreateMinimalStaffTemplate,
+  useMinimalStaffTemplate,
+} from '@/features/minimal-staff/hooks/use-minimal-staff-templates';
 
 interface MinimalStaffEditorProps {
   requirements: MinimalStaffRequirements;
@@ -57,6 +74,30 @@ const categories: { key: EmployeeCategory; label: string; color: string; descrip
 export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalStaffEditorProps) {
   const [localRequirements, setLocalRequirements] = useState<MinimalStaffRequirements>(requirements);
   const [hasChanges, setHasChanges] = useState(false);
+  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+  const [importConfirmed, setImportConfirmed] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const { data: templates = [] } = useMinimalStaffTemplates();
+  const { mutate: createTemplate, isPending: isCreating } = useCreateMinimalStaffTemplate();
+  const { data: templateToImport } = useMinimalStaffTemplate(selectedTemplateId);
+
+  // Perform import only after user confirmed
+  useEffect(() => {
+    if (templateToImport && importConfirmed) {
+      Promise.resolve().then(() => {
+        setLocalRequirements(templateToImport.content);
+        setHasChanges(true);
+        setImportConfirmOpen(false);
+        setImportConfirmed(false);
+        setSelectedTemplateId(null);
+        setImportDialogOpen(false);
+      });
+    }
+  }, [templateToImport, importConfirmed]);
+
   useEffect(() => {
     if (!hasChanges) {
       const reqStr = JSON.stringify(requirements);
@@ -91,6 +132,23 @@ export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalSt
   const handleSave = () => {
     onSave(localRequirements);
     setHasChanges(false);
+  };
+
+  const handleSaveAsTemplate = (description: string) => {
+    createTemplate(
+      { content: localRequirements, description },
+      { onSuccess: () => setSaveDialogOpen(false) }
+    );
+  };
+
+  const handleImportTemplate = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    setImportDialogOpen(false);
+    setImportConfirmOpen(true);
+  };
+
+  const confirmImport = () => {
+    setImportConfirmed(true);
   };
 
   const getTotalForDay = (category: EmployeeCategory, day: WeekDay) => {
@@ -223,13 +281,73 @@ export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalSt
         ))}
       </Tabs>
 
-      {/* Bottom Save Button */}
-      <div className="flex justify-end">
+      {/* Bottom Toolbar */}
+      <div className="flex justify-between gap-2 pt-4 border-t">
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setImportDialogOpen(true)}
+            disabled={isSaving}
+            size="sm"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            Template laden
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setSaveDialogOpen(true)}
+            disabled={isSaving}
+            size="sm"
+          >
+            <SaveIcon className="mr-2 h-4 w-4" />
+            Als Template speichern
+          </Button>
+        </div>
         <Button onClick={handleSave} disabled={isSaving || !hasChanges} size="lg">
           <Save className="h-4 w-4 mr-2" />
           {isSaving ? 'Speichert...' : hasChanges ? 'Änderungen speichern' : 'Gespeichert'}
         </Button>
       </div>
+
+      <SaveTemplateDialog
+        open={saveDialogOpen}
+        onOpenChange={setSaveDialogOpen}
+        onSave={handleSaveAsTemplate}
+        isSaving={isCreating}
+        title="Mindestbesetzung als Template speichern"
+        descriptionPlaceholder="z.B. 'Standardbesetzung Sommer' oder 'Erhöhte Besetzung Wochenende'"
+      />
+
+      <ImportTemplateDialog
+        open={importDialogOpen}
+        onOpenChange={setImportDialogOpen}
+        templates={templates}
+        onImport={handleImportTemplate}
+        title="Mindestbesetzungs-Template laden"
+      />
+
+      <AlertDialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Template laden?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Die aktuellen Mindestbesetzungs-Einstellungen werden durch die Template-Werte ersetzt.
+              Nicht gespeicherte Änderungen gehen dabei verloren.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                setImportConfirmOpen(false);
+                setSelectedTemplateId(null);
+              }}
+            >
+              Abbrechen
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={confirmImport}>Laden</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

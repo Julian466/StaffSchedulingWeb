@@ -522,10 +522,10 @@ export function ScheduleTable(props: ScheduleTableProps) {
                             const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
                             const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
 
-                            const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : '—';
-                            const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : '—';
-                            const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : '—';
-                            const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : '—';
+                            const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F0|H0|A0';
+                            const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'F0|H0|A0';
+                            const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'F0|H0|A0';
+                            const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'F0|H0|A0';
 
                             return (
                                 <td
@@ -730,10 +730,10 @@ export function ScheduleTable(props: ScheduleTableProps) {
                           const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
                           const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
 
-                          const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : '—';
-                          const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : '—';
-                          const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : '—';
-                          const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : '—';
+                          const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F0|H0|A0';
+                          const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'F0|H0|A0';
+                          const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'F0|H0|A0';
+                          const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'F0|H0|A0';
 
                           return (
                               <td
@@ -969,10 +969,10 @@ export function ScheduleTable(props: ScheduleTableProps) {
                   const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
                   const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
 
-                  const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F';
-                  const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'Z';
-                  const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'S';
-                  const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'N';
+                  const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F0|H0|A0';
+                  const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'F0|H0|A0';
+                  const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'F0|H0|A0';
+                  const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'F0|H0|A0';
 
                   return (
                       <td
@@ -1273,10 +1273,10 @@ export function ScheduleTable(props: ScheduleTableProps) {
               const spaetEntry = dayEntries.find(([abbr]) => abbr === 'S');
               const nachtEntry = dayEntries.find(([abbr]) => abbr === 'N');
 
-              const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F';
-              const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'Z';
-              const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'S';
-              const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'N';
+              const fruehStr = fruehEntry ? generateSummaryString(fruehEntry) : 'F0|H0|A0';
+              const zwischenStr = zwischenEntry ? generateSummaryString(zwischenEntry) : 'F0|H0|A0';
+              const spaetStr = spaetEntry ? generateSummaryString(spaetEntry) : 'F0|H0|A0';
+              const nachtStr = nachtEntry ? generateSummaryString(nachtEntry) : 'F0|H0|A0';
 
               return (
                   <td

@@ -182,7 +182,7 @@ export function executeSolve(params: SolveParams): PythonCommandResult {
     }
 
     // Convert timeout to milliseconds, add buffer for process overhead
-    const timeoutMs = params.timeout ? (params.timeout + 10) * 1000 : undefined;
+    const timeoutMs = params.timeout ? (params.timeout + 10) * 2 * 1000 : undefined;
 
     return executePythonCommand('solve', args, timeoutMs);
 }
@@ -206,7 +206,7 @@ export function executeSolveMultiple(
 
     // Convert timeout to milliseconds, add buffer for process overhead
     // solve-multiple runs 3 times with different weight sets, so multiply by 3
-    const timeoutMs = params.timeout ? (params.timeout * 3 + 30) * 1000 : undefined;
+    const timeoutMs = params.timeout ? (params.timeout * 3 + 30) * 2 * 1000 : undefined;
 
     return executePythonCommand('solve-multiple', args, timeoutMs);
 }

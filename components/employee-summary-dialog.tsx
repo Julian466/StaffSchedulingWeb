@@ -135,21 +135,11 @@ export function EmployeeSummaryDialog({
             lastname.toLowerCase().trim() === targetLastname.toLowerCase().trim();
     };
 
-    // Find base employee data (source of truth)
-    const employee = employeesData?.find((e) =>
-        matchEmployee(e.key, e.firstname, e.name, targetEmployee.id, targetEmployee.firstname, targetEmployee.lastname)
-    );
-
-    // Helper to parse full name from schedule (could be "Firstname Lastname" or other formats)
-    const parseScheduleName = (fullName: string): { firstname: string; lastname: string } => {
-        const parts = fullName.trim().split(/\s+/);
-        if (parts.length === 0) return {firstname: '', lastname: ''};
-        if (parts.length === 1) return {firstname: parts[0], lastname: ''};
-        return {
-            firstname: parts[0],
-            lastname: parts.slice(1).join(' ')
-        };
-    };
+    // Find base employee data (source of truth) — prefer ID match, fall back to name match
+    const employee = employeesData?.find((e) => e.key === targetEmployee.id) ??
+        employeesData?.find((e) =>
+            matchEmployee(e.key, e.firstname, e.name, targetEmployee.id, targetEmployee.firstname, targetEmployee.lastname)
+        );
 
     // Find matching employee in wishes and blocked data
     const wishesAndBlocked = employee
@@ -158,12 +148,9 @@ export function EmployeeSummaryDialog({
         )
         : undefined;
 
-    // Find matching employee in schedule data
+    // Find matching employee in schedule data by ID (ScheduleEmployee.id === Employee.key)
     const scheduleEmployee = employee
-        ? scheduleData?.employees.find((e) => {
-            const {firstname, lastname} = parseScheduleName(e.name);
-            return matchEmployee(e.id, firstname, lastname, employee.key, employee.firstname, employee.name);
-        })
+        ? scheduleData?.employees.find((e) => e.id === employee.key)
         : undefined;
 
     // Navigation logic
@@ -417,6 +404,7 @@ export function EmployeeSummaryDialog({
                                             showLegend={true}
                                             readOnly={true}
                                             container={container}
+                                            allowedEventTitles={['F', 'S', 'N']}
                                         />
                                         <p className="text-xs text-muted-foreground text-center">
                                             Diese Ansicht ist schreibgeschützt. Änderungen können auf der Wünsche &
