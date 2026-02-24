@@ -6,6 +6,7 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/
 import {Badge} from "@/components/ui/badge";
 import {Input} from "@/components/ui/input";
 import {Search} from 'lucide-react';
+import {filterEmployees} from "@/features/employees/utils/filter-employees";
 
 interface EmployeeListProps {
     employees: Employee[];
@@ -16,19 +17,10 @@ export function EmployeeList({
                              }: EmployeeListProps) {
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredEmployees = useMemo(() => {
-        if (!searchTerm) return employees;
-
-        const lowerSearch = searchTerm.toLowerCase();
-        return employees.filter((employee) => {
-            const fullName = `${employee.firstname} ${employee.name}`.toLowerCase();
-            return fullName.includes(lowerSearch) ||
-                employee.firstname.toLowerCase().includes(lowerSearch) ||
-                employee.name.toLowerCase().includes(lowerSearch) ||
-                employee.type.toLowerCase().includes(lowerSearch) ||
-                employee.key.toString().includes(lowerSearch);
-        });
-    }, [employees, searchTerm]);
+    const filteredEmployees = useMemo(
+        () => filterEmployees(employees, searchTerm),
+        [employees, searchTerm]
+    );
 
     if (employees.length === 0) {
         return (
