@@ -1,6 +1,7 @@
 'use client';
 
 import { useCase } from '@/components/case-provider';
+import { useRouter, usePathname } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -58,6 +59,8 @@ type CreateCaseFormValues = z.infer<typeof createCaseSchema>;
 
 export function CaseSelector() {
   const { currentCase, availableCases, switchCase, createNewCase, isLoading } = useCase();
+  const router = useRouter();
+  const pathname = usePathname();
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   const form = useForm<CreateCaseFormValues>({
@@ -85,7 +88,13 @@ export function CaseSelector() {
 
   const handleCaseChange = async (value: string) => {
     const [unitIdStr, monthYear] = value.split('|');
-    await switchCase(parseInt(unitIdStr), monthYear);
+    const unitId = parseInt(unitIdStr);
+    await switchCase(unitId, monthYear);
+
+    // Navigate to the new case URL, preserving the current feature path
+    const featureMatch = pathname.match(/\/cases\/\d+\/\d+_\d+\/(.+)/);
+    const feature = featureMatch ? featureMatch[1] : '';
+    router.push(`/cases/${unitId}/${monthYear}${feature ? '/' + feature : '/employees'}`);
   };
 
   const handleCreateCase = async (data: CreateCaseFormValues) => {
@@ -93,6 +102,8 @@ export function CaseSelector() {
       await createNewCase(data.unitId, data.month, data.year);
       setShowCreateDialog(false);
       form.reset();
+      const monthYear = `${data.month}_${data.year}`;
+      router.push(`/cases/${data.unitId}/${monthYear}/employees`);
     } catch (error) {
       console.error('Failed to create case:', error);
     }

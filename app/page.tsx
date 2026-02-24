@@ -6,15 +6,18 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Users, Calendar, ArrowRight, ClockFading, Wand2, CalendarRangeIcon } from 'lucide-react';
 import { useWorkflow } from '@/contexts/workflow-context';
+import { useCase } from '@/components/case-provider';
 
 export default function HomePage() {
   const { isWorkflowMode } = useWorkflow();
+  const { currentCase } = useCase();
+  const caseBase = currentCase ? `/cases/${currentCase.caseId}/${currentCase.monthYear}` : '';
   const databases = [
     {
       title: 'Mitarbeiter',
       description: 'Verwalte alle Mitarbeiter und ihre Informationen',
       icon: Users,
-      href: '/employees',
+      href: `${caseBase}/employees`,
       color: 'text-blue-500',
       bgColor: 'bg-blue-50',
     },
@@ -22,7 +25,7 @@ export default function HomePage() {
       title: 'Globale Wünsche & Blockierungen',
       description: 'Verwalte allgemeine Wünsche und Blockierungen für alle Mitarbeiter',
       icon: CalendarRangeIcon,
-      href: '/global-wishes-and-blocked',
+      href: `${caseBase}/global-wishes-and-blocked`,
       color: 'text-indigo-500',
       bgColor: 'bg-indigo-50',
     },
@@ -30,7 +33,7 @@ export default function HomePage() {
       title: 'Wünsche & Blockierungen',
       description: 'Verwalte Mitarbeiterwünsche und Blockierungen',
       icon: Calendar,
-      href: '/wishes-and-blocked',
+      href: `${caseBase}/wishes-and-blocked`,
       color: 'text-purple-500',
       bgColor: 'bg-purple-50',
     },
@@ -38,7 +41,7 @@ export default function HomePage() {
       title: 'Dienstplan',
       description: 'Analysiere und visualisiere Mitarbeiter-Schichtpläne',
       icon: ClockFading,
-      href: '/schedule',
+      href: `${caseBase}/schedule`,
       color: 'text-green-500',
       bgColor: 'bg-green-50',
     },

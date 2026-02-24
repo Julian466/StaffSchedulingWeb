@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { CaseSelector } from '@/components/case-selector';
+import { useCase } from '@/components/case-provider';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,9 +17,11 @@ import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
   const pathname = usePathname();
+  const { currentCase } = useCase();
+  const caseBase = currentCase ? `/cases/${currentCase.caseId}/${currentCase.monthYear}` : '';
 
   const isActive = (path: string) => {
-    return pathname === path;
+    return pathname === path || pathname === `${caseBase}${path}` || pathname.endsWith(path);
   };
 
   return (
@@ -41,7 +44,7 @@ export function AppNavigation() {
                 asChild
                 className={cn(isActive('/employees') && 'bg-accent')}
             >
-              <Link href="/employees" className="gap-2">
+              <Link href={`${caseBase}/employees`} className="gap-2">
                 <Calendar className="h-4 w-4" />
                 Mitarbeiter
               </Link>
@@ -66,13 +69,13 @@ export function AppNavigation() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild>
-                  <Link href="/global-wishes-and-blocked" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/global-wishes-and-blocked`} className="flex items-center gap-2 cursor-pointer">
                     <Heart className="h-4 w-4" />
                     Allgemeine Wünsche
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/wishes-and-blocked" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/wishes-and-blocked`} className="flex items-center gap-2 cursor-pointer">
                     <Heart className="h-4 w-4" />
                     Wünsche & Blockierungen
                   </Link>
@@ -100,13 +103,13 @@ export function AppNavigation() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild>
-                  <Link href="/weights" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/weights`} className="flex items-center gap-2 cursor-pointer">
                     <Scale className="h-4 w-4" />
                     Gewichtungen
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/minimal-staff" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/minimal-staff`} className="flex items-center gap-2 cursor-pointer">
                     <UserCog className="h-4 w-4" />
                     Mindestbesetzung
                   </Link>
@@ -120,7 +123,7 @@ export function AppNavigation() {
               asChild
               className={cn(isActive('/schedule') && 'bg-accent')}
             >
-              <Link href="/schedule" className="gap-2">
+              <Link href={`${caseBase}/schedule`} className="gap-2">
                 <Calendar className="h-4 w-4" />
                 Dienstplan
               </Link>
@@ -133,7 +136,7 @@ export function AppNavigation() {
               asChild
               className={cn(isActive('/solver') && 'bg-accent')}
             >
-              <Link href="/solver" className="gap-2">
+              <Link href={`${caseBase}/solver`} className="gap-2">
                 <Cog className="h-4 w-4" />
                 Solver
               </Link>
@@ -156,25 +159,25 @@ export function AppNavigation() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild>
-                  <Link href="/templates" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/templates`} className="flex items-center gap-2 cursor-pointer">
                     <FileText className="h-4 w-4" />
                     Alle Templates
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/templates/weights" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/templates/weights`} className="flex items-center gap-2 cursor-pointer">
                     <Scale className="h-4 w-4" />
                     Gewichtungs-Templates
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/templates/global-wishes" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/templates/global-wishes`} className="flex items-center gap-2 cursor-pointer">
                     <Heart className="h-4 w-4" />
                     Wünsche-Templates
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/templates/minimal-staff" className="flex items-center gap-2 cursor-pointer">
+                  <Link href={`${caseBase}/templates/minimal-staff`} className="flex items-center gap-2 cursor-pointer">
                     <UserCog className="h-4 w-4" />
                     Mindestbesetzung-Templates
                   </Link>
