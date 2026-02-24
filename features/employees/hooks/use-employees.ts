@@ -1,8 +1,7 @@
 'use client';
 
 import {useQuery} from '@tanstack/react-query';
-import {Employee} from '@/src/entities/models/employee.model';
-import {getAllEmployeesAction} from '../employees.actions';
+import {getAllEmployeesAction} from '@/features/employees/employees.actions';
 
 /**
  * Hook to fetch all employees for the current case.
@@ -14,10 +13,8 @@ import {getAllEmployeesAction} from '../employees.actions';
 export function useEmployees(caseId: number, monthYear: string) {
     return useQuery({
         queryKey: ['employees', caseId, monthYear],
-        queryFn: async (): Promise<Employee[]> => {
-            return getAllEmployeesAction(caseId, monthYear);
-        },
-        enabled: caseId > 0 && monthYear.length > 0,
+        queryFn: () => getAllEmployeesAction(caseId, monthYear),
+        enabled: caseId > 0 && !!monthYear,
     });
 }
 
