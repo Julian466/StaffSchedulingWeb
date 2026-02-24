@@ -3,8 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Employee } from '@/types/employee';
 import { useCase } from '@/components/case-provider';
-
-const API_URL = '/api/employees';
+import { getAllEmployeesAction } from '../employees.actions';
 
 /**
  * Hook to fetch all employees for the current case.
@@ -19,13 +18,7 @@ export function useEmployees() {
     queryKey: ['employees', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<Employee[]> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        headers: {
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,},
-      });
-      if (!res.ok) throw new Error('Failed to fetch employees');
-      return res.json();
+      return getAllEmployeesAction(currentCase.caseId, currentCase.monthYear);
     },
     enabled: !!currentCase,
   });

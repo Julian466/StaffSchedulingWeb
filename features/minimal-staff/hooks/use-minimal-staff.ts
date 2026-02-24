@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MinimalStaffRequirements } from '@/types/minimal-staff';
 import { useCase } from '@/components/case-provider';
 import { toast } from 'sonner';
-
-const API_URL = '/api/minimal-staff';
+import { getMinimalStaffAction, updateMinimalStaffAction } from '../minimal-staff.actions';
 
 /**
  * Hook to fetch minimal staff requirements for the current case.
@@ -20,14 +19,7 @@ export function useMinimalStaff() {
     queryKey: ['minimal-staff', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<MinimalStaffRequirements> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        headers: {
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch minimal staff requirements');
-      return res.json();
+      return getMinimalStaffAction(currentCase.caseId, currentCase.monthYear);
     },
     enabled: !!currentCase,
   });
@@ -46,17 +38,7 @@ export function useUpdateMinimalStaff() {
   return useMutation({
     mutationFn: async (requirements: MinimalStaffRequirements) => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify(requirements),
-      });
-      if (!res.ok) throw new Error('Failed to update minimal staff requirements');
-      return res.json();
+      return updateMinimalStaffAction(currentCase.caseId, currentCase.monthYear, requirements);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['minimal-staff', currentCase?.caseId, currentCase?.monthYear] });

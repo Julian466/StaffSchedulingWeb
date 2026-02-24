@@ -3,8 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
 import { useCase } from '@/components/case-provider';
-
-const API_URL = '/api/wishes-and-blocked';
+import { getAllWishesAction, createWishesAction, updateWishesAction, deleteWishesAction } from '../wishes-and-blocked.actions';
 
 /**
  * Hook to fetch all employees with their wishes and blocked data for the current case.
@@ -19,14 +18,7 @@ export function useWishesAndBlocked() {
     queryKey: ['wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<WishesAndBlockedEmployee[]> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        headers: { 
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch wishes and blocked employees');
-      return res.json();
+      return getAllWishesAction(currentCase.caseId, currentCase.monthYear);
     },
     enabled: !!currentCase,
   });
@@ -45,17 +37,7 @@ export function useCreateWishesAndBlocked() {
   return useMutation({
     mutationFn: async (data: Omit<WishesAndBlockedEmployee, 'key'>): Promise<WishesAndBlockedEmployee> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to create wishes and blocked employee');
-      return res.json();
+      return createWishesAction(currentCase.caseId, currentCase.monthYear, data);
     },
     onSuccess: () => {
       if (currentCase) {
@@ -84,17 +66,7 @@ export function useUpdateWishesAndBlocked() {
       data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>
     }): Promise<WishesAndBlockedEmployee> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: 'PUT',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error('Failed to update wishes and blocked employee');
-      return res.json();
+      return updateWishesAction(currentCase.caseId, currentCase.monthYear, id, data);
     },
     onSuccess: () => {
       if (currentCase) {
@@ -117,14 +89,7 @@ export function useDeleteWishesAndBlocked() {
   return useMutation({
     mutationFn: async (id: number): Promise<void> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(`${API_URL}/${id}`, {
-        method: 'DELETE',
-        headers: { 
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-      });
-      if (!res.ok) throw new Error('Failed to delete wishes and blocked employee');
+      return deleteWishesAction(currentCase.caseId, currentCase.monthYear, id);
     },
     onSuccess: () => {
       if (currentCase) {

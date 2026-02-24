@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Case, CaseUnit } from '@/types/case';
 import { useWorkflow } from '@/contexts/workflow-context';
+import { listCasesAction, createCaseAction } from '@/features/cases/cases.actions';
 
 interface CaseContextType {
   currentCase: Case | null;
@@ -25,8 +26,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
 
   const refreshCases = async (): Promise<CaseUnit[]> => {
     try {
-      const response = await fetch('/api/cases');
-      const data = await response.json();
+      const data = await listCasesAction();
       const units = data.units || [];
       setAvailableCases(units);
       return units;
@@ -58,12 +58,7 @@ export function CaseProvider({ children }: { children: ReactNode }) {
 
   const createNewCase = async (unitId: number, month: number, year: number): Promise<void> => {
     try {
-      const response = await fetch('/api/cases', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ unitId, month, year }),
-      });
-      const data = await response.json();
+      const data = await createCaseAction(unitId, month, year);
       await refreshCases();
       await switchCase(unitId, data.monthYear);
     } catch (error) {

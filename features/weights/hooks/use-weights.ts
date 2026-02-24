@@ -4,8 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Weights } from '@/types/weights';
 import { useCase } from '@/components/case-provider';
 import { toast } from 'sonner';
-
-const API_URL = '/api/weights';
+import { getWeightsAction, updateWeightsAction } from '../weights.actions';
 
 /**
  * Hook to fetch weights configuration for the current case.
@@ -20,14 +19,7 @@ export function useWeights() {
     queryKey: ['weights', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<Weights> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        headers: {
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch weights configuration');
-      return res.json();
+      return getWeightsAction(currentCase.caseId, currentCase.monthYear);
     },
     enabled: !!currentCase,
   });
@@ -46,17 +38,7 @@ export function useUpdateWeights() {
   return useMutation({
     mutationFn: async (weights: Weights) => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify(weights),
-      });
-      if (!res.ok) throw new Error('Failed to update weights configuration');
-      return res.json();
+      return updateWeightsAction(currentCase.caseId, currentCase.monthYear, weights);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['weights', currentCase?.caseId, currentCase?.monthYear] });
