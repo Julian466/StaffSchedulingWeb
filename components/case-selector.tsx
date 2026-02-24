@@ -1,14 +1,8 @@
 'use client';
 
-import { useSearchParams, usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import {usePathname, useRouter, useSearchParams} from 'next/navigation';
+import {useEffect, useState} from 'react';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -17,23 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { parseMonthYear } from '@/lib/utils/case-utils';
-import { CaseUnit } from '@/types/case';
-import { listCasesAction, createCaseAction } from '@/features/cases/cases.actions';
+import {Form, FormControl, FormField, FormItem, FormLabel, FormMessage,} from '@/components/ui/form';
+import {Input} from '@/components/ui/input';
+import {Button} from '@/components/ui/button';
+import {Plus} from 'lucide-react';
+import {useForm} from 'react-hook-form';
+import {zodResolver} from '@hookform/resolvers/zod';
+import {z} from 'zod';
+import {parseMonthYear} from '@/lib/utils/case-utils';
+import {CaseUnit} from '@/types/case';
+import {createCaseAction, listCasesAction} from '@/features/cases/cases.actions';
 
 const MONTHS = [
   { value: 1, label: 'Januar' },
@@ -105,8 +92,7 @@ export function CaseSelector() {
     const params = new URLSearchParams(searchParams.toString());
     params.set('caseId', unitIdStr);
     params.set('monthYear', my);
-    const currentPath = pathname === '/' ? '/employees' : pathname;
-    router.push(`${currentPath}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`);
   };
 
   const handleCreateCase = async (data: CreateCaseFormValues) => {

@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Users, Briefcase, Heart, Calendar, Cog, UserCog, Scale, FileText, ChevronDown } from 'lucide-react';
+import { Briefcase, Heart, Calendar, Cog, UserCog, Scale, FileText, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
@@ -30,7 +30,7 @@ export function AppNavigation() {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 gap-4">
           {/* Logo/Brand */}
-          <Link href="/" className="flex items-center gap-2 min-w-fit hover:opacity-80 transition-opacity">
+          <Link href={`/${caseSearch}`} className="flex items-center gap-2 min-w-fit hover:opacity-80 transition-opacity">
             <Briefcase className="h-6 w-6" />
             <span className="font-semibold text-lg hidden sm:inline">
               Schichtplan Manager
@@ -196,5 +196,17 @@ export function AppNavigation() {
         </div>
       </div>
     </div>
+  );
+}
+
+// wrapper needed because AppNavigation uses useSearchParams which is a client hook
+// and must be rendered inside a Suspense boundary during SSR/prerendering.
+import { Suspense } from 'react';
+
+export function NavigationWrapper() {
+  return (
+    <Suspense fallback={<div className="h-16 border-b bg-background sticky top-0 z-50" />}>
+      <AppNavigation />
+    </Suspense>
   );
 }

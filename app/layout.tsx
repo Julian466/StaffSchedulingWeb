@@ -1,5 +1,5 @@
 import { Providers } from '@/components/providers';
-import { AppNavigation } from '@/components/app-navigation';
+import { NavigationWrapper } from '@/components/app-navigation';
 import { WorkflowBanner } from '@/components/workflow-banner';
 import { Toaster } from '@/components/ui/sonner';
 import './globals.css';
@@ -13,7 +13,7 @@ export default function RootLayout({
     <html lang="de">
       <body>
         <Providers>
-          <AppNavigation />
+          <NavigationWrapper />
           <main className="container mx-auto p-4">
             <WorkflowBanner />
             {children}
