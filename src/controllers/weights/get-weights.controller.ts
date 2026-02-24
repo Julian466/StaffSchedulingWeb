@@ -2,12 +2,14 @@ import { getWeightsUseCase } from '@/src/application/use-cases/weights/get-weigh
 import { IWeightsRepository } from '@/src/application/ports/weights.repository';
 import { Weights } from '@/src/entities/models/weights.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
+import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export class GetWeightsController {
   constructor(private readonly weightsRepository: IWeightsRepository) {}
 
   async execute(caseId: number, monthYear: string): Promise<{ data: Weights } | { error: string }> {
     try {
+      validateMonthYear(monthYear);
       const weights = await getWeightsUseCase(caseId, monthYear, this.weightsRepository);
       return { data: weights };
     } catch (error) {

@@ -1,6 +1,7 @@
 import { updateScheduleMetadataUseCase } from '@/src/application/use-cases/schedule/update-schedule-metadata.use-case';
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 import { isDomainError } from '@/src/entities/errors/base.errors';
+import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export class UpdateScheduleMetadataController {
   constructor(private readonly scheduleRepository: IScheduleRepository) {}
@@ -12,6 +13,8 @@ export class UpdateScheduleMetadataController {
     updates: { description?: string; comment?: string }
   ): Promise<{ data: void } | { error: string }> {
     try {
+      validateMonthYear(monthYear);
+      validateScheduleId(scheduleId);
       await updateScheduleMetadataUseCase(caseId, monthYear, scheduleId, updates, this.scheduleRepository);
       return { data: undefined };
     } catch (error) {

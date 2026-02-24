@@ -2,6 +2,7 @@ import { saveScheduleUseCase } from '@/src/application/use-cases/schedule/save-s
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 import { ScheduleSolutionRaw, ScheduleMetadata } from '@/src/entities/models/schedule.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
+import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export class SaveScheduleController {
   constructor(private readonly scheduleRepository: IScheduleRepository) {}
@@ -14,6 +15,8 @@ export class SaveScheduleController {
     description?: string
   ): Promise<{ data: ScheduleMetadata } | { error: string }> {
     try {
+      validateMonthYear(monthYear);
+      validateScheduleId(scheduleId);
       const metadata = await saveScheduleUseCase(caseId, monthYear, scheduleId, solution, this.scheduleRepository, description);
       return { data: metadata };
     } catch (error) {
