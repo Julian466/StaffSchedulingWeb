@@ -1,19 +1,19 @@
 'use server';
 
-import { getInjection } from '@/src/di/container';
+import { getInjection } from '@/di/container';
 import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { globalWishesAndBlockedRepository } from '@/features/global_wishes_and_blocked/api/global-wishes-and-blocked-repository';
 import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export async function getAllGlobalWishesAction(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {
-  const controller = getInjection('GetAllGlobalWishesController');
+  const controller = getInjection('IGetAllGlobalWishesController');
   const result = await controller({ caseId, monthYear });
   if ('error' in result) throw new Error(result.error);
   return result.data;
 }
 
 export async function getGlobalWishesByKeyAction(caseId: number, monthYear: string, key: number): Promise<WishesAndBlockedEmployee | null> {
-  const controller = getInjection('GetGlobalWishesByKeyController');
+  const controller = getInjection('IGetGlobalWishesByKeyController');
   const result = await controller({ caseId, monthYear, key });
   if ('error' in result) return null;
   return result.data;
@@ -43,7 +43,7 @@ export async function updateGlobalWishesAction(
 }
 
 export async function deleteGlobalWishesAction(caseId: number, monthYear: string, key: number): Promise<void> {
-  const controller = getInjection('DeleteGlobalWishesController');
+  const controller = getInjection('IDeleteGlobalWishesController');
   const result = await controller({ caseId, monthYear, key });
   if ('error' in result) throw new Error(result.error);
 }

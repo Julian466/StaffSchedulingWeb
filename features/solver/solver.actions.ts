@@ -12,7 +12,7 @@ import {
 } from '@/lib/services/python-cli-service';
 import { jobRepository } from '@/features/solver/api/job-repository';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
-import { getInjection } from '@/src/di/container';
+import { getInjection } from '@/di/container';
 import {
   SolveParams,
   SolveMultipleParams,
@@ -632,7 +632,7 @@ export async function getJobs(
   try {
     apiLogger.info('Fetching job history', { caseId, monthYear });
 
-    const controller = getInjection('GetAllJobsController');
+    const controller = getInjection('IGetAllJobsController');
     const result = await controller({ caseId, monthYear });
 
     if ('error' in result) {
@@ -662,7 +662,7 @@ export async function getJob(
   try {
     apiLogger.info('Fetching job', { caseId, monthYear, jobId });
 
-    const controller = getInjection('GetJobController');
+    const controller = getInjection('IGetJobController');
     const result = await controller({ caseId, monthYear, jobId });
 
     if ('error' in result) {

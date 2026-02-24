@@ -3,7 +3,7 @@ import type { CaseUnit } from '@/src/entities/models/case.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 
 export interface IListCasesController {
-  (input: {}): Promise<{ data: CaseUnit[] } | { error: string }>;
+  (): Promise<{ data: CaseUnit[] } | { error: string }>;
 }
 
 export function makeListCasesController(
