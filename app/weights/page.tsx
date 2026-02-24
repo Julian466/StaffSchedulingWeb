@@ -1,4 +1,5 @@
 import {WeightsPageClient} from './weights-page-client';
+import {getWeightsAction} from '@/features/weights/weights.actions';
 
 export default async function WeightsPage({
                                               searchParams,
@@ -18,5 +19,7 @@ export default async function WeightsPage({
             aus</div>;
     }
 
-    return <WeightsPageClient caseId={caseId} monthYear={monthYear}/>;
+    const weights = await getWeightsAction(caseId, monthYear);
+
+    return <WeightsPageClient caseId={caseId} monthYear={monthYear} weights={weights}/>;
 }

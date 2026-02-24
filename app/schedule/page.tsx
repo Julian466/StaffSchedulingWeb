@@ -1,4 +1,6 @@
 import {SchedulePageClient} from './schedule-page-client';
+import {getSchedulesMetadataAction, getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
+import {parseSolutionFile} from '@/lib/services/schedule-parser';
 
 export default async function SchedulePage({
                                                searchParams,
@@ -18,5 +20,19 @@ export default async function SchedulePage({
             aus</div>;
     }
 
-    return <SchedulePageClient caseId={caseId} monthYear={monthYear}/>;
+    const [selectedScheduleData, schedulesMetadata] = await Promise.all([
+        getSelectedScheduleAction(caseId, monthYear),
+        getSchedulesMetadataAction(caseId, monthYear),
+    ]);
+
+    const schedule = selectedScheduleData.solution
+        ? parseSolutionFile(selectedScheduleData.solution)
+        : null;
+
+    return <SchedulePageClient
+        caseId={caseId}
+        monthYear={monthYear}
+        initialSchedule={schedule}
+        initialMetadata={schedulesMetadata}
+    />;
 }

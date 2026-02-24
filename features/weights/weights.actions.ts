@@ -1,5 +1,6 @@
 'use server';
 
+import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import {Weights} from '@/src/entities/models/weights.model';
 
@@ -14,4 +15,5 @@ export async function updateWeightsAction(caseId: number, monthYear: string, wei
     const controller = getInjection('IUpdateWeightsController');
     const result = await controller({caseId, monthYear, weights});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/weights');
 }

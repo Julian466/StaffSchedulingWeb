@@ -1,4 +1,6 @@
 import {SolverPageClient} from './solver-page-client';
+import {validateConfig} from '@/features/solver/solver.actions';
+import {getJobs} from '@/features/solver/solver.actions';
 
 export default async function SolverPage({
                                              searchParams,
@@ -18,5 +20,15 @@ export default async function SolverPage({
             aus</div>;
     }
 
-    return <SolverPageClient caseId={caseId} monthYear={monthYear}/>;
+    const [configValidation, jobsData] = await Promise.all([
+        validateConfig().catch(() => null),
+        getJobs(caseId, monthYear).catch(() => ({jobs: []})),
+    ]);
+
+    return <SolverPageClient
+        caseId={caseId}
+        monthYear={monthYear}
+        initialConfigValidation={configValidation}
+        initialJobs={jobsData.jobs}
+    />;
 }

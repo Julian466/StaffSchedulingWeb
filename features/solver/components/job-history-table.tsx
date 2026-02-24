@@ -1,12 +1,9 @@
 'use client';
 
-import {useJobHistory} from '@/features/solver/hooks/use-jobs';
-import {useSearchParams} from 'next/navigation';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Skeleton} from '@/components/ui/skeleton';
 import {CheckCircle2, ChevronDown, ChevronUp, XCircle} from 'lucide-react';
 import {SolverJob} from '@/src/entities/models/solver.model';
 import {useState} from 'react';
@@ -103,45 +100,11 @@ function JobRow({job}: { job: SolverJob }) {
     );
 }
 
-export function JobHistoryTable() {
-    const searchParams = useSearchParams();
-    const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
-    const monthYear = searchParams.get('monthYear') ?? '';
-    const {data, isLoading, isError} = useJobHistory(caseId, monthYear);
+interface JobHistoryTableProps {
+    jobs: SolverJob[];
+}
 
-    if (isLoading) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Job-Verlauf</CardTitle>
-                    <CardDescription>Wird geladen...</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <Skeleton className="h-10 w-full"/>
-                        <Skeleton className="h-10 w-full"/>
-                        <Skeleton className="h-10 w-full"/>
-                    </div>
-                </CardContent>
-            </Card>
-        );
-    }
-
-    if (isError) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle>Job-Verlauf</CardTitle>
-                    <CardDescription className="text-destructive">
-                        Fehler beim Laden des Job-Verlaufs
-                    </CardDescription>
-                </CardHeader>
-            </Card>
-        );
-    }
-
-    const jobs = data?.jobs || [];
-
+export function JobHistoryTable({jobs}: JobHistoryTableProps) {
     return (
         <Card>
             <CardHeader>

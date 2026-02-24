@@ -1,5 +1,6 @@
 'use server';
 
+import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
 
@@ -14,4 +15,5 @@ export async function updateMinimalStaffAction(caseId: number, monthYear: string
     const controller = getInjection('IUpdateMinimalStaffController');
     const result = await controller({caseId, monthYear, data: requirements});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/minimal-staff');
 }

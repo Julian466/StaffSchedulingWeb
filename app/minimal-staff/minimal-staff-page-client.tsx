@@ -1,61 +1,33 @@
 'use client';
 
+import {useTransition} from 'react';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {MinimalStaffEditor} from '@/features/minimal-staff/components/minimal-staff-editor';
-import {useMinimalStaff, useUpdateMinimalStaff} from '@/features/minimal-staff/hooks/use-minimal-staff';
+import {updateMinimalStaffAction} from '@/features/minimal-staff/minimal-staff.actions';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {Skeleton} from '@/components/ui/skeleton';
-import {AlertCircle, CheckCircle2, UserCog} from 'lucide-react';
+import {CheckCircle2, UserCog} from 'lucide-react';
+import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
+import {toast} from 'sonner';
 
 interface MinimalStaffPageClientProps {
     caseId: number;
     monthYear: string;
+    requirements: MinimalStaffRequirements;
 }
 
-export function MinimalStaffPageClient({caseId, monthYear}: MinimalStaffPageClientProps) {
-    const {data: requirements, isLoading, error} = useMinimalStaff(caseId, monthYear);
-    const {mutate: updateRequirements, isPending} = useUpdateMinimalStaff(caseId, monthYear);
+export function MinimalStaffPageClient({caseId, monthYear, requirements}: MinimalStaffPageClientProps) {
+    const [isPending, startTransition] = useTransition();
 
-    if (error) {
-        return (
-            <div className="py-6 space-y-4">
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4"/>
-                    <AlertTitle>Fehler beim Laden</AlertTitle>
-                    <AlertDescription>
-                        Die Mindestbesetzung konnte nicht geladen werden. Bitte versuchen Sie es später erneut.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="py-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <UserCog className="h-6 w-6 text-primary"/>
-                            </div>
-                            <div>
-                                <CardTitle>Mindestbesetzung</CardTitle>
-                                <CardDescription>
-                                    Definieren Sie die minimale Anzahl von Mitarbeitern pro Kategorie, Wochentag und
-                                    Schicht
-                                </CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-12 w-full"/>
-                        <Skeleton className="h-[400px] w-full"/>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
+    const handleSave = (newRequirements: MinimalStaffRequirements) => {
+        startTransition(async () => {
+            try {
+                await updateMinimalStaffAction(caseId, monthYear, newRequirements);
+                toast.success('Mindestbesetzung erfolgreich aktualisiert');
+            } catch {
+                toast.error('Fehler beim Aktualisieren der Mindestbesetzung');
+            }
+        });
+    };
 
     return (
         <div className="py-6 space-y-4">
@@ -85,13 +57,11 @@ export function MinimalStaffPageClient({caseId, monthYear}: MinimalStaffPageClie
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {requirements && (
-                        <MinimalStaffEditor
-                            requirements={requirements}
-                            onSave={updateRequirements}
-                            isSaving={isPending}
-                        />
-                    )}
+                    <MinimalStaffEditor
+                        requirements={requirements}
+                        onSave={handleSave}
+                        isSaving={isPending}
+                    />
                 </CardContent>
             </Card>
         </div>

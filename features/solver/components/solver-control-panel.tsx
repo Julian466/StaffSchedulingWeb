@@ -4,13 +4,13 @@ import React, {useState} from 'react';
 import {usePathname, useRouter, useSearchParams} from 'next/navigation';
 import {parseMonthYear} from '@/lib/utils/case-utils';
 import {
-    useDelete,
-    useFetch,
-    useImportSolution,
-    useInsert,
-    useSolve,
-    useSolveMultiple,
-} from '@/features/solver/hooks/use-solver';
+    importSolution,
+    solverDelete,
+    solverFetch,
+    solverInsert,
+    solverSolve,
+    solverSolveMultiple,
+} from '@/features/solver/solver.actions';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
@@ -21,23 +21,30 @@ import {Database, Loader2, Play, Trash2, Upload} from 'lucide-react';
 import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
+import {toast} from 'sonner';
 
 // Commands that don't require date range
 const COMMANDS_WITHOUT_DATE: SolverCommandType[] = [];
 
-export function SolverControlPanel() {
+interface SolverControlPanelProps {
+    caseId: number;
+    monthYear: string;
+}
+
+export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
-    const caseIdStr = searchParams.get('caseId');
-    const monthYear = searchParams.get('monthYear') ?? '';
-    const caseId = caseIdStr ? parseInt(caseIdStr, 10) : 0;
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [timeout, setTimeout] = useState('300');
 
     // Month and year state
     const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
     const [selectedYear, setSelectedYear] = useState<number | null>(null);
+
+    // Execution state
+    const [isExecuting, setIsExecuting] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
 
     // Progress tracking
     const [progress, setProgress] = useState(0);
@@ -71,20 +78,6 @@ export function SolverControlPanel() {
         feasibleSolutions?: number[];
     } | null>(null);
 
-    const fetchMutation = useFetch(caseId, monthYear);
-    const solveMutation = useSolve(caseId, monthYear);
-    const solveMultipleMutation = useSolveMultiple(caseId, monthYear);
-    const insertMutation = useInsert(caseId, monthYear);
-    const deleteMutation = useDelete(caseId, monthYear);
-    const importSolutionMutation = useImportSolution(caseId, monthYear);
-
-    const isExecuting =
-        fetchMutation.isPending ||
-        solveMutation.isPending ||
-        solveMultipleMutation.isPending ||
-        insertMutation.isPending ||
-        deleteMutation.isPending;
-
     // Update progress based on elapsed time vs timeout
     React.useEffect(() => {
         if (!isExecuting || !executionStartTime) {
@@ -117,7 +110,7 @@ export function SolverControlPanel() {
         }
     }, [isExecuting]);
 
-    const handleExecute = () => {
+    const handleExecute = async () => {
         if (!caseId) {
             return;
         }
@@ -125,11 +118,13 @@ export function SolverControlPanel() {
         // Track execution start time for progress
         setExecutionStartTime(Date.now());
         setProgress(0);
+        setIsExecuting(true);
 
         const requiresDate = !COMMANDS_WITHOUT_DATE.includes(command);
 
         // For all other commands, dates are required
         if (requiresDate && (selectedMonth === null || selectedYear === null)) {
+            setIsExecuting(false);
             return;
         }
 
@@ -143,10 +138,12 @@ export function SolverControlPanel() {
             end: lastDay.getFullYear() + "-" + String(lastDay.getMonth() + 1).padStart(2, '0') + "-" + String(lastDay.getDate()).padStart(2, '0'),
         };
 
-        switch (command) {
-            case 'fetch':
-                fetchMutation.mutate(baseParams, {
-                    onSuccess: async () => {
+        try {
+            switch (command) {
+                case 'fetch': {
+                    const data = await solverFetch(caseId, monthYear, baseParams);
+                    if (data.job.status === 'completed') {
+                        toast.success('Daten erfolgreich von der Datenbank abgerufen');
                         // Update URL with new monthYear after successful fetch
                         if (selectedMonth !== null && selectedYear !== null) {
                             const monthStr = String(selectedMonth).padStart(2, '0');
@@ -156,62 +153,70 @@ export function SolverControlPanel() {
                             params.set('monthYear', newMonthYear);
                             router.push(`${pathname}?${params.toString()}`);
                         }
+                    } else {
+                        toast.error('Fehler beim Abrufen der Daten', {description: data.job.consoleOutput});
                     }
-                });
-                break;
-            case 'solve':
-                solveMutation.mutate(
-                    {
-                        ...baseParams,
-                        timeout: parseInt(timeout, 10),
-                    },
-                    {
-                        onSuccess: (data) => {
-                            if (data.job.status === 'completed') {
-                                // Show import dialog after successful solve
-                                setImportParams({
-                                    caseId: caseId,
-                                    start: baseParams.start,
-                                    end: baseParams.end,
-                                    solutionType: 'wdefault',
-                                });
-                                setShowImportDialog(true);
-                            }
-                        },
-                    }
-                );
-                break;
-            case 'solve-multiple':
-                solveMultipleMutation.mutate(
-                    {
-                        ...baseParams,
-                        timeout: parseInt(timeout, 10),
-                    },
-                    {
-                        onSuccess: (data) => {
-                            if (data.job.status === 'completed') {
-                                // Show multiple import dialog
-                                setMultipleImportParams({
-                                    caseId: caseId,
-                                    start: baseParams.start,
-                                    end: baseParams.end,
-                                    solutionCount: data.scheduleInfo.solutionsGenerated || 3,
-                                    feasibleSolutions: data.scheduleInfo.feasibleSolutions,
-                                });
-                                setShowMultipleImportDialog(true);
-                            }
-                        },
-                    }
-                );
-                break;
-            case 'insert':
-                insertMutation.mutate(baseParams);
-                break;
-            case 'delete':
-                if (confirm('Möchten Sie wirklich alle Daten für diesen Zeitraum löschen?')) {
-                    deleteMutation.mutate(baseParams);
+                    break;
                 }
-                break;
+                case 'solve': {
+                    const data = await solverSolve(caseId, monthYear, {...baseParams, timeout: parseInt(timeout, 10)});
+                    if (data.job.status === 'completed') {
+                        toast.success('Dienstplan erfolgreich erstellt');
+                        setImportParams({caseId, start: baseParams.start, end: baseParams.end, solutionType: 'wdefault'});
+                        setShowImportDialog(true);
+                    } else {
+                        toast.error('Fehler beim Erstellen des Dienstplans', {description: data.job.consoleOutput});
+                    }
+                    break;
+                }
+                case 'solve-multiple': {
+                    const data = await solverSolveMultiple(caseId, monthYear, {...baseParams, timeout: parseInt(timeout, 10)});
+                    if (data.job.status === 'completed') {
+                        const successCount = data.scheduleInfo.solutionsGenerated;
+                        const expectedCount = 3;
+                        if (successCount === expectedCount) {
+                            toast.success(`${successCount} Dienstpläne erfolgreich erstellt`, {description: 'Alle Lösungen können nun importiert werden'});
+                        } else if (successCount > 0) {
+                            toast.warning(`Nur ${successCount} von ${expectedCount} Dienstplänen erstellt`, {description: 'Einige Lösungen konnten nicht generiert werden (kein FEASIBLE Status)'});
+                        } else {
+                            toast.error('Keine Dienstpläne erstellt', {description: 'Der Solver konnte keine FEASIBLE Lösungen finden'});
+                        }
+                        setMultipleImportParams({caseId, start: baseParams.start, end: baseParams.end, solutionCount: data.scheduleInfo.solutionsGenerated || 3, feasibleSolutions: data.scheduleInfo.feasibleSolutions});
+                        setShowMultipleImportDialog(true);
+                    } else {
+                        toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {description: data.job.consoleOutput});
+                    }
+                    break;
+                }
+                case 'insert': {
+                    const data = await solverInsert(caseId, monthYear, baseParams);
+                    if (data.job.status === 'completed') {
+                        toast.success('Daten erfolgreich in die Datenbank eingefügt');
+                    } else {
+                        toast.error('Fehler beim Einfügen der Daten', {description: data.job.consoleOutput});
+                    }
+                    break;
+                }
+                case 'delete': {
+                    if (!confirm('Möchten Sie wirklich alle Daten für diesen Zeitraum löschen?')) {
+                        setIsExecuting(false);
+                        return;
+                    }
+                    const data = await solverDelete(caseId, monthYear, baseParams);
+                    if (data.job.status === 'completed') {
+                        toast.success('Daten erfolgreich aus der Datenbank gelöscht');
+                    } else {
+                        toast.error('Fehler beim Löschen der Daten', {description: data.job.consoleOutput});
+                    }
+                    break;
+                }
+            }
+        } catch (error) {
+            toast.error(`Fehler beim Ausführen des ${command}-Befehls`, {
+                description: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setIsExecuting(false);
         }
     };
 
@@ -424,9 +429,19 @@ export function SolverControlPanel() {
                     end={importParams.end}
                     solutionType={importParams.solutionType}
                     onImport={async (params) => {
-                        await importSolutionMutation.mutateAsync(params);
+                        setIsImporting(true);
+                        try {
+                            await importSolution(caseId, monthYear, params);
+                            toast.success('Lösung erfolgreich importiert');
+                        } catch (error) {
+                            toast.error('Fehler beim Importieren der Lösung', {
+                                description: error instanceof Error ? error.message : String(error),
+                            });
+                        } finally {
+                            setIsImporting(false);
+                        }
                     }}
-                    isImporting={importSolutionMutation.isPending}
+                    isImporting={isImporting}
                 />
             )}
 
@@ -441,9 +456,19 @@ export function SolverControlPanel() {
                     solutionCount={multipleImportParams.solutionCount}
                     feasibleSolutions={multipleImportParams.feasibleSolutions}
                     onImport={async (params) => {
-                        await importSolutionMutation.mutateAsync(params);
+                        setIsImporting(true);
+                        try {
+                            await importSolution(caseId, monthYear, params);
+                            toast.success('Lösung erfolgreich importiert');
+                        } catch (error) {
+                            toast.error('Fehler beim Importieren der Lösung', {
+                                description: error instanceof Error ? error.message : String(error),
+                            });
+                        } finally {
+                            setIsImporting(false);
+                        }
                     }}
-                    isImporting={importSolutionMutation.isPending}
+                    isImporting={isImporting}
                 />
             )}
         </Card>

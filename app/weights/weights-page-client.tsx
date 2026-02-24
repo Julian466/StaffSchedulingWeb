@@ -1,65 +1,33 @@
 'use client';
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {useTransition} from 'react';
+import {Card, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {WeightsEditor} from '@/features/weights/components/weights-editor';
-import {useUpdateWeights, useWeights} from '@/features/weights/hooks/use-weights';
+import {updateWeightsAction} from '@/features/weights/weights.actions';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {Skeleton} from '@/components/ui/skeleton';
-import {AlertCircle, Info, Scale} from 'lucide-react';
+import {Info, Scale} from 'lucide-react';
+import {Weights} from '@/src/entities/models/weights.model';
+import {toast} from 'sonner';
 
 interface WeightsPageClientProps {
     caseId: number;
     monthYear: string;
+    weights: Weights;
 }
 
-export function WeightsPageClient({caseId, monthYear}: WeightsPageClientProps) {
-    const {data: weights, isLoading, error} = useWeights(caseId, monthYear);
-    const {mutate: updateWeights, isPending} = useUpdateWeights(caseId, monthYear);
+export function WeightsPageClient({caseId, monthYear, weights}: WeightsPageClientProps) {
+    const [isPending, startTransition] = useTransition();
 
-    if (error) {
-        return (
-            <div className="py-6 space-y-4">
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4"/>
-                    <AlertTitle>Fehler beim Laden</AlertTitle>
-                    <AlertDescription>
-                        Die Gewichtungen konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="py-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <Scale className="h-6 w-6 text-primary"/>
-                            </div>
-                            <div>
-                                <CardTitle>Solver-Gewichtungen</CardTitle>
-                                <CardDescription>
-                                    Konfigurieren Sie die Wichtigkeit der verschiedenen Optimierungsziele
-                                </CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-[120px] w-full"/>
-                        <Skeleton className="h-[120px] w-full"/>
-                        <Skeleton className="h-[120px] w-full"/>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
-    if (!weights) {
-        return null;
-    }
+    const handleSave = (newWeights: Weights) => {
+        startTransition(async () => {
+            try {
+                await updateWeightsAction(caseId, monthYear, newWeights);
+                toast.success('Gewichtungen erfolgreich aktualisiert');
+            } catch {
+                toast.error('Fehler beim Aktualisieren der Gewichtungen');
+            }
+        });
+    };
 
     return (
         <div className="py-6 space-y-6">
@@ -92,7 +60,7 @@ export function WeightsPageClient({caseId, monthYear}: WeightsPageClientProps) {
 
             <WeightsEditor
                 weights={weights}
-                onSave={updateWeights}
+                onSave={handleSave}
                 isSaving={isPending}
             />
         </div>

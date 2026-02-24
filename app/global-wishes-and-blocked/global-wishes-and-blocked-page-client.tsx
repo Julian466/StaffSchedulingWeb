@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useTransition} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Plus, Save, Upload} from 'lucide-react';
@@ -19,46 +19,45 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import {
-    useCreateGlobalWishesAndBlocked,
-    useDeleteGlobalWishesAndBlocked,
-    useGlobalWishesAndBlocked,
-    useUpdateGlobalWishesAndBlocked,
-} from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-and-blocked';
+    createGlobalWishesAction,
+    deleteGlobalWishesAction,
+    importGlobalWishesTemplateAction,
+    updateGlobalWishesAction,
+} from '@/features/global_wishes_and_blocked/global-wishes-and-blocked.actions';
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportGlobalWishesTemplateDialog} from '@/components/import-global-wishes-template-dialog';
-import {
-    useCreateGlobalWishesTemplate,
-    useGlobalWishesTemplate,
-    useGlobalWishesTemplates,
-    useImportGlobalWishesTemplate,
-} from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-templates';
-import {useEmployees} from '@/features/employees/hooks/use-employees';
+import {createTemplateAction, getTemplateAction} from '@/features/templates/templates.actions';
+import {Employee} from '@/src/entities/models/employee.model';
+import {GlobalWishesTemplateContent, TemplateSummary, Template} from '@/src/entities/models/template.model';
 import {toast} from 'sonner';
 
 interface GlobalWishesAndBlockedPageClientProps {
     caseId: number;
     monthYear: string;
+    employees: WishesAndBlockedEmployee[];
+    currentEmployees: Employee[];
+    templates: TemplateSummary[];
 }
 
-export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWishesAndBlockedPageClientProps) {
+export function GlobalWishesAndBlockedPageClient({
+    caseId,
+    monthYear,
+    employees,
+    currentEmployees,
+    templates,
+}: GlobalWishesAndBlockedPageClientProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
-
-    const {data: employees = [], isLoading} = useGlobalWishesAndBlocked(caseId, monthYear);
-    const createMutation = useCreateGlobalWishesAndBlocked(caseId, monthYear);
-    const updateMutation = useUpdateGlobalWishesAndBlocked(caseId, monthYear);
-    const deleteMutation = useDeleteGlobalWishesAndBlocked(caseId, monthYear);
+    const [isSubmitting, startSubmitTransition] = useTransition();
+    const [isDeleting, startDeleteTransition] = useTransition();
 
     // Template functionality
     const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
     const [importTemplateDialogOpen, setImportTemplateDialogOpen] = useState(false);
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-
-    const {data: templates = []} = useGlobalWishesTemplates(caseId);
-    const {data: selectedTemplate} = useGlobalWishesTemplate(caseId, selectedTemplateId);
-    const {mutate: createTemplate, isPending: isCreatingTemplate} = useCreateGlobalWishesTemplate(caseId);
-    const {data: currentEmployees = []} = useEmployees(caseId, monthYear);
-    const importTemplateMutation = useImportGlobalWishesTemplate(caseId, monthYear);
+    const [selectedTemplate, setSelectedTemplate] = useState<Template<GlobalWishesTemplateContent> | null>(null);
+    const [isCreatingTemplate, startCreateTemplateTransition] = useTransition();
+    const [isImporting, startImportTransition] = useTransition();
+    const [, startLoadTemplateTransition] = useTransition();
 
     // Confirmation dialog for save (create / edit)
     const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
@@ -109,20 +108,22 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
     const handleConfirmSave = async () => {
         if (!pendingEntry) return;
         const {entry, isEdit} = pendingEntry;
-        try {
-            if (isEdit) {
-                const {key, ...data} = entry;
-                await updateMutation.mutateAsync({id: key, data});
-                toast.success('Globale Wünsche gespeichert. Monatliche Wünsche wurden zurückgesetzt.');
-            } else {
-                await createMutation.mutateAsync(entry);
-                toast.success('Globale Wünsche erstellt. Monatliche Wünsche wurden neu berechnet.');
+        startSubmitTransition(async () => {
+            try {
+                if (isEdit) {
+                    const {key, ...data} = entry;
+                    await updateGlobalWishesAction(caseId, monthYear, key, data);
+                    toast.success('Globale Wünsche gespeichert. Monatliche Wünsche wurden zurückgesetzt.');
+                } else {
+                    await createGlobalWishesAction(caseId, monthYear, entry);
+                    toast.success('Globale Wünsche erstellt. Monatliche Wünsche wurden neu berechnet.');
+                }
+            } catch {
+                toast.error('Fehler beim Speichern.');
             }
-        } catch {
-            toast.error('Fehler beim Speichern.');
-        }
-        setPendingEntry(null);
-        setEditingEmployee(undefined);
+            setPendingEntry(null);
+            setEditingEmployee(undefined);
+        });
     };
 
     const handleDeleteRequest = (id: number) => {
@@ -131,16 +132,16 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
 
     const handleConfirmDelete = async () => {
         if (confirmDeleteId === null) return;
-        try {
-            await deleteMutation.mutateAsync(confirmDeleteId);
-            toast.success('Eintrag und zugehörige monatliche Wünsche wurden gelöscht.');
-        } catch {
-            toast.error('Fehler beim Löschen.');
-        }
-        setConfirmDeleteId(null);
+        startDeleteTransition(async () => {
+            try {
+                await deleteGlobalWishesAction(caseId, monthYear, confirmDeleteId);
+                toast.success('Eintrag und zugehörige monatliche Wünsche wurden gelöscht.');
+            } catch {
+                toast.error('Fehler beim Löschen.');
+            }
+            setConfirmDeleteId(null);
+        });
     };
-
-    const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
     // Template handlers
     const handleSaveAsTemplate = (description: string) => {
@@ -156,37 +157,43 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
             })),
         };
 
-        createTemplate(
-            {content, description},
-            {
-                onSuccess: () => {
-                    setSaveTemplateDialogOpen(false);
-                    toast.success(`Template "${description}" wurde erfolgreich gespeichert.`);
-                },
-                onError: () => {
-                    toast.error('Das Template konnte nicht gespeichert werden.');
-                },
+        startCreateTemplateTransition(async () => {
+            try {
+                await createTemplateAction('global-wishes', caseId, content, description);
+                setSaveTemplateDialogOpen(false);
+                toast.success(`Template "${description}" wurde erfolgreich gespeichert.`);
+            } catch {
+                toast.error('Das Template konnte nicht gespeichert werden.');
             }
-        );
+        });
     };
 
     const handleSelectTemplate = (templateId: string) => {
-        setSelectedTemplateId(templateId);
+        startLoadTemplateTransition(async () => {
+            try {
+                const template = await getTemplateAction<GlobalWishesTemplateContent>('global-wishes', caseId, templateId);
+                setSelectedTemplate(template);
+            } catch {
+                toast.error('Template konnte nicht geladen werden.');
+            }
+        });
     };
 
     const handleImport = async (templateId: string) => {
-        try {
-            const result = await importTemplateMutation.mutateAsync(templateId);
-            toast.success(
-                `Template importiert: ${result.matchCount} von ${result.totalCount} Mitarbeiter wurden importiert.` +
-                (result.unmatchedCount > 0 ? ` ${result.unmatchedCount} Mitarbeiter wurden übersprungen.` : '')
-            );
-            setImportTemplateDialogOpen(false);
-            setSelectedTemplateId(null);
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Das Template konnte nicht importiert werden.';
-            toast.error(`Fehler beim Importieren: ${message}`);
-        }
+        startImportTransition(async () => {
+            try {
+                const result = await importGlobalWishesTemplateAction(caseId, monthYear, templateId);
+                toast.success(
+                    `Template importiert: ${result.matchCount} von ${result.totalCount} Mitarbeiter wurden importiert.` +
+                    (result.unmatchedCount > 0 ? ` ${result.unmatchedCount} Mitarbeiter wurden übersprungen.` : '')
+                );
+                setImportTemplateDialogOpen(false);
+                setSelectedTemplate(null);
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Das Template konnte nicht importiert werden.';
+                toast.error(`Fehler beim Importieren: ${message}`);
+            }
+        });
     };
 
     const pendingEmployeeName = pendingEntry
@@ -230,16 +237,12 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
-                        <div className="text-center py-8">Lädt...</div>
-                    ) : (
-                        <WishesAndBlockedList
-                            employees={employees}
-                            onEdit={handleEdit}
-                            onDelete={handleDeleteRequest}
-                            isDeleting={deleteMutation.isPending}
-                        />
-                    )}
+                    <WishesAndBlockedList
+                        employees={employees}
+                        onEdit={handleEdit}
+                        onDelete={handleDeleteRequest}
+                        isDeleting={isDeleting}
+                    />
                 </CardContent>
             </Card>
 
@@ -307,14 +310,14 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
                 open={importTemplateDialogOpen}
                 onOpenChange={(open) => {
                     setImportTemplateDialogOpen(open);
-                    if (!open) setSelectedTemplateId(null);
+                    if (!open) setSelectedTemplate(null);
                 }}
                 templates={templates}
                 selectedTemplateContent={selectedTemplate}
                 currentEmployees={currentEmployees}
                 onImport={handleImport}
                 onSelectTemplate={handleSelectTemplate}
-                isImporting={importTemplateMutation.isPending}
+                isImporting={isImporting}
             />
         </div>
     );

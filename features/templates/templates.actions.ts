@@ -1,5 +1,6 @@
 'use server';
 
+import {revalidatePath} from 'next/cache';
 import {createTemplateRepository, globalWishesTemplateRepository} from '@/lib/services/template-repository';
 import {Weights} from '@/src/entities/models/weights.model';
 import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
@@ -26,10 +27,15 @@ export async function getTemplateAction<T>(templateType: string, caseId: number,
 
 export async function createTemplateAction(templateType: string, caseId: number, content: unknown, description: string) {
     if (templateType === 'global-wishes') {
-        return globalWishesTemplateRepository.create(caseId, content as GlobalWishesTemplateContent, description);
+        const result = await globalWishesTemplateRepository.create(caseId, content as GlobalWishesTemplateContent, description);
+        revalidatePath('/templates/global-wishes');
+        revalidatePath('/global-wishes-and-blocked');
+        return result;
     }
     const repo = getTemplateRepo(templateType);
-    return repo.create(caseId, content as Weights & MinimalStaffRequirements, description);
+    const result = await repo.create(caseId, content as Weights & MinimalStaffRequirements, description);
+    revalidatePath(`/templates/${templateType}`);
+    return result;
 }
 
 export async function updateTemplateAction(templateType: string, caseId: number, templateId: string, data: {
@@ -37,16 +43,20 @@ export async function updateTemplateAction(templateType: string, caseId: number,
     description?: string
 }) {
     if (templateType === 'global-wishes') {
-        return globalWishesTemplateRepository.update(caseId, templateId, data as {
+        const result = await globalWishesTemplateRepository.update(caseId, templateId, data as {
             content?: GlobalWishesTemplateContent;
             description?: string
         });
+        revalidatePath('/templates/global-wishes');
+        return result;
     }
     const repo = getTemplateRepo(templateType);
-    return repo.update(caseId, templateId, data as {
+    const result = await repo.update(caseId, templateId, data as {
         content?: Weights & MinimalStaffRequirements;
         description?: string
     });
+    revalidatePath(`/templates/${templateType}`);
+    return result;
 }
 
 export async function deleteTemplateAction(templateType: string, caseId: number, templateId: string): Promise<{
@@ -54,10 +64,12 @@ export async function deleteTemplateAction(templateType: string, caseId: number,
 }> {
     if (templateType === 'global-wishes') {
         await globalWishesTemplateRepository.delete(caseId, templateId);
+        revalidatePath('/templates/global-wishes');
         return {success: true};
     }
     const repo = getTemplateRepo(templateType);
     await repo.delete(caseId, templateId);
+    revalidatePath(`/templates/${templateType}`);
     return {success: true};
 }
 

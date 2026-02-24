@@ -28,11 +28,13 @@ import {
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportTemplateDialog} from '@/components/import-template-dialog';
 import {
-    useCreateMinimalStaffTemplate,
-    useMinimalStaffTemplate,
-    useMinimalStaffTemplates,
-} from '@/features/minimal-staff/hooks/use-minimal-staff-templates';
+    createTemplateAction,
+    getTemplateAction,
+    listTemplatesAction,
+} from '@/features/templates/templates.actions';
+import {TemplateSummary} from '@/src/entities/models/template.model';
 import {useSearchParams} from 'next/navigation';
+import {toast} from 'sonner';
 
 interface MinimalStaffEditorProps {
     requirements: MinimalStaffRequirements;
@@ -85,33 +87,63 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importConfirmOpen, setImportConfirmOpen] = useState(false);
-    const [importConfirmed, setImportConfirmed] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [templates, setTemplates] = useState<TemplateSummary[]>([]);
+    const [isCreating, setIsCreating] = useState(false);
 
-    const {data: templates = []} = useMinimalStaffTemplates(caseId);
-    const {mutate: createTemplate, isPending: isCreating} = useCreateMinimalStaffTemplate(caseId);
-    const {data: templateToImport} = useMinimalStaffTemplate(caseId, selectedTemplateId);
-
-    // Perform import only after user confirmed
+    // Fetch templates on mount
     useEffect(() => {
-        if (templateToImport && importConfirmed) {
-            Promise.resolve().then(() => {
-                setLocalRequirements(templateToImport.content);
-                setHasChanges(true);
-                setImportConfirmOpen(false);
-                setImportConfirmed(false);
-                setSelectedTemplateId(null);
-                setImportDialogOpen(false);
-            });
-        }
-    }, [templateToImport, importConfirmed]);
+        if (!caseId) return;
+        listTemplatesAction('minimal-staff', caseId)
+            .then(setTemplates)
+            .catch(() => setTemplates([]));
+    }, [caseId]);
 
+    const handleSaveAsTemplate = async (description: string) => {
+        setIsCreating(true);
+        try {
+            await createTemplateAction('minimal-staff', caseId, localRequirements, description);
+            setSaveDialogOpen(false);
+            const updated = await listTemplatesAction('minimal-staff', caseId);
+            setTemplates(updated);
+            toast.success('Template gespeichert');
+        } catch (error) {
+            toast.error('Fehler beim Speichern des Templates', {
+                description: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    const handleImportTemplate = (templateId: string) => {
+        setSelectedTemplateId(templateId);
+        setImportDialogOpen(false);
+        setImportConfirmOpen(true);
+    };
+
+    const confirmImport = async () => {
+        if (!selectedTemplateId) return;
+        try {
+            const template = await getTemplateAction<MinimalStaffRequirements>('minimal-staff', caseId, selectedTemplateId);
+            setLocalRequirements(template.content);
+            setHasChanges(true);
+        } catch (error) {
+            toast.error('Fehler beim Laden des Templates', {
+                description: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setImportConfirmOpen(false);
+            setSelectedTemplateId(null);
+        }
+    };
+
+    // Sync local state when props change (only if user has no unsaved changes)
     useEffect(() => {
         if (!hasChanges) {
             const reqStr = JSON.stringify(requirements);
             const localStr = JSON.stringify(localRequirements);
             if (reqStr !== localStr) {
-                // Schedule update asynchronously to avoid synchronous setState in effect body
                 Promise.resolve().then(() => setLocalRequirements(requirements));
             }
         }
@@ -140,23 +172,6 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
     const handleSave = () => {
         onSave(localRequirements);
         setHasChanges(false);
-    };
-
-    const handleSaveAsTemplate = (description: string) => {
-        createTemplate(
-            {content: localRequirements, description},
-            {onSuccess: () => setSaveDialogOpen(false)}
-        );
-    };
-
-    const handleImportTemplate = (templateId: string) => {
-        setSelectedTemplateId(templateId);
-        setImportDialogOpen(false);
-        setImportConfirmOpen(true);
-    };
-
-    const confirmImport = () => {
-        setImportConfirmed(true);
     };
 
     const getTotalForDay = (category: EmployeeCategory, day: WeekDay) => {

@@ -1,5 +1,6 @@
 ﻿'use server';
 
+import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import type {
     DeleteParams,
@@ -31,6 +32,8 @@ export async function solverFetch(
     const controller = getInjection('IExecuteSolverFetchController');
     const result = await controller({caseId, monthYear, params});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/solver');
+    revalidatePath('/workflow');
     return result.data;
 }
 
@@ -42,6 +45,8 @@ export async function solverSolve(
     const controller = getInjection('IExecuteSolverSolveController');
     const result = await controller({caseId, monthYear, params});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/solver');
+    revalidatePath('/workflow');
     return result.data;
 }
 
@@ -53,6 +58,8 @@ export async function solverSolveMultiple(
     const controller = getInjection('IExecuteSolverSolveMultipleController');
     const result = await controller({caseId, monthYear, params});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/solver');
+    revalidatePath('/workflow');
     return result.data;
 }
 
@@ -64,6 +71,8 @@ export async function solverInsert(
     const controller = getInjection('IExecuteSolverInsertController');
     const result = await controller({caseId, monthYear, params});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/solver');
+    revalidatePath('/workflow');
     return result.data;
 }
 
@@ -75,6 +84,8 @@ export async function solverDelete(
     const controller = getInjection('IExecuteSolverDeleteController');
     const result = await controller({caseId, monthYear, params});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/solver');
+    revalidatePath('/workflow');
     return result.data;
 }
 
@@ -107,6 +118,9 @@ export async function importSolution(
     const controller = getInjection('IImportSolutionController');
     const result = await controller({caseId, monthYear, ...params});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/schedule');
+    revalidatePath('/solver');
+    revalidatePath('/workflow');
     return result.data;
 }
 

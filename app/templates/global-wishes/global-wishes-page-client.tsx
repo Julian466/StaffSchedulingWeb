@@ -4,8 +4,6 @@ import {useState} from 'react';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
-import {Skeleton} from '@/components/ui/skeleton';
-import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -18,27 +16,32 @@ import {
 } from '@/components/ui/alert-dialog';
 import {EditTemplateDescriptionDialog} from '@/components/edit-template-description-dialog';
 import {
-    useDeleteGlobalWishesTemplate,
-    useGlobalWishesTemplate,
-    useGlobalWishesTemplates,
-    useUpdateGlobalWishesTemplate,
-} from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-templates';
-import {AlertCircle, Clock, Edit, Eye, FileText, Heart, Trash2, Users,} from 'lucide-react';
+    deleteTemplateAction,
+    getTemplateAction,
+    updateTemplateAction,
+} from '@/features/templates/templates.actions';
+import {Clock, Edit, Eye, FileText, Heart, Trash2, Users,} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 import {de} from 'date-fns/locale';
 import {Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/dialog';
 import {ScrollArea} from '@/components/ui/scroll-area';
-import {GlobalWishesTemplateMetadata} from '@/src/entities/models/template.model';
+import {
+    GlobalWishesTemplateContent,
+    GlobalWishesTemplateMetadata,
+    Template,
+    TemplateSummary,
+} from '@/src/entities/models/template.model';
+import {toast} from 'sonner';
 
 interface GlobalWishesTemplatesPageClientProps {
     caseId: number;
     monthYear: string;
+    templates: TemplateSummary[];
 }
 
-export function GlobalWishesTemplatesPageClient({caseId, monthYear}: GlobalWishesTemplatesPageClientProps) {
-    const {data: templates = [], isLoading, error} = useGlobalWishesTemplates(caseId);
-    const {mutate: updateTemplate, isPending: isUpdating} = useUpdateGlobalWishesTemplate(caseId);
-    const {mutate: deleteTemplate, isPending: isDeleting} = useDeleteGlobalWishesTemplate(caseId);
+export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: GlobalWishesTemplatesPageClientProps) {
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [editingTemplate, setEditingTemplate] = useState<{
         id: string;
@@ -46,76 +49,49 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear}: GlobalWishe
     } | null>(null);
 
     const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
-    const {data: viewingTemplate} = useGlobalWishesTemplate(caseId, viewingTemplateId);
+    const [viewingTemplate, setViewingTemplate] = useState<Template<GlobalWishesTemplateContent> | null>(null);
+
+    const handleViewTemplate = async (templateId: string) => {
+        setViewingTemplateId(templateId);
+        try {
+            const template = await getTemplateAction<GlobalWishesTemplateContent>('global-wishes', caseId, templateId);
+            setViewingTemplate(template);
+        } catch {
+            toast.error('Fehler beim Laden des Templates');
+        }
+    };
 
     const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 
-    const handleSaveDescription = (newDescription: string) => {
+    const handleSaveDescription = async (newDescription: string) => {
         if (editingTemplate) {
-            updateTemplate(
-                {
-                    templateId: editingTemplate.id,
-                    description: newDescription,
-                },
-                {
-                    onSuccess: () => {
-                        setEditingTemplate(null);
-                    },
-                }
-            );
+            setIsUpdating(true);
+            try {
+                await updateTemplateAction('global-wishes', caseId, editingTemplate.id, {description: newDescription});
+                toast.success('Template erfolgreich aktualisiert');
+                setEditingTemplate(null);
+            } catch {
+                toast.error('Fehler beim Aktualisieren des Templates');
+            } finally {
+                setIsUpdating(false);
+            }
         }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (deletingTemplateId) {
-            deleteTemplate(deletingTemplateId, {
-                onSuccess: () => {
-                    setDeletingTemplateId(null);
-                },
-            });
+            setIsDeleting(true);
+            try {
+                await deleteTemplateAction('global-wishes', caseId, deletingTemplateId);
+                toast.success('Template erfolgreich gelöscht');
+                setDeletingTemplateId(null);
+            } catch {
+                toast.error('Fehler beim Löschen des Templates');
+            } finally {
+                setIsDeleting(false);
+            }
         }
     };
-
-    if (error) {
-        return (
-            <div className="py-6 space-y-4">
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4"/>
-                    <AlertTitle>Fehler beim Laden</AlertTitle>
-                    <AlertDescription>
-                        Die Templates konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="py-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <Heart className="h-6 w-6 text-primary"/>
-                            </div>
-                            <div>
-                                <CardTitle>Globale Wünsche-Templates</CardTitle>
-                                <CardDescription>
-                                    Verwalten Sie Ihre gespeicherten Wunsch- und Blockierungskonfigurationen
-                                </CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-24 w-full"/>
-                        <Skeleton className="h-24 w-full"/>
-                        <Skeleton className="h-24 w-full"/>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div className="py-6 space-y-6">
@@ -184,7 +160,7 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear}: GlobalWishe
                                                     <Button
                                                         variant="outline"
                                                         size="sm"
-                                                        onClick={() => setViewingTemplateId(template.id)}
+                                                        onClick={() => handleViewTemplate(template.id)}
                                                         disabled={isUpdating || isDeleting}
                                                     >
                                                         <Eye className="h-4 w-4"/>
@@ -233,7 +209,12 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear}: GlobalWishe
 
             <Dialog
                 open={!!viewingTemplateId}
-                onOpenChange={(open) => !open && setViewingTemplateId(null)}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setViewingTemplateId(null);
+                        setViewingTemplate(null);
+                    }
+                }}
             >
                 <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
                     <DialogHeader>

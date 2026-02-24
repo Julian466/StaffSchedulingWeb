@@ -23,7 +23,7 @@ interface ScheduleSelectorProps {
     schedulesMetadata: SchedulesMetadata;
     onScheduleSelect: (scheduleId: string) => Promise<void>;
     onScheduleDelete: (scheduleId: string) => Promise<void>;
-    onRefresh: () => Promise<void>;
+    onRefresh?: () => Promise<void>;
     selectedScheduleIds?: string[];
     onMultipleSchedulesSelect?: (scheduleIds: string[]) => void;
     compareMode?: boolean;
@@ -50,7 +50,7 @@ export function ScheduleSelector({
             setIsLoading(true);
             await onScheduleSelect(scheduleId);
             toast.success("Dienstplan ausgewählt");
-            await onRefresh();
+            if (onRefresh) await onRefresh();
         } catch (error) {
             toast.error("Fehler beim Auswählen des Dienstplans");
             console.error(error);
@@ -68,7 +68,7 @@ export function ScheduleSelector({
             setIsLoading(true);
             await onScheduleDelete(scheduleId);
             toast.success("Dienstplan gelöscht");
-            await onRefresh();
+            if (onRefresh) await onRefresh();
         } catch (error) {
             toast.error("Fehler beim Löschen des Dienstplans");
             console.error(error);
@@ -96,7 +96,7 @@ export function ScheduleSelector({
             toast.success("Beschreibung aktualisiert");
             setEditingDescriptionId(null);
             setEditingDescription("");
-            await onRefresh();
+            if (onRefresh) await onRefresh();
         } catch (error) {
             toast.error("Fehler beim Aktualisieren der Beschreibung");
             console.error(error);

@@ -20,11 +20,13 @@ import {
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportTemplateDialog} from '@/components/import-template-dialog';
 import {
-    useCreateWeightTemplate,
-    useWeightTemplate,
-    useWeightTemplates,
-} from '@/features/weights/hooks/use-weight-templates';
+    createTemplateAction,
+    getTemplateAction,
+    listTemplatesAction,
+} from '@/features/templates/templates.actions';
+import {TemplateSummary} from '@/src/entities/models/template.model';
 import {useSearchParams} from 'next/navigation';
+import {toast} from 'sonner';
 
 interface WeightsEditorProps {
     weights: Weights;
@@ -43,12 +45,17 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
     const [saveDialogOpen, setSaveDialogOpen] = useState(false);
     const [importDialogOpen, setImportDialogOpen] = useState(false);
     const [importConfirmOpen, setImportConfirmOpen] = useState(false);
-    const [importConfirmed, setImportConfirmed] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [templates, setTemplates] = useState<TemplateSummary[]>([]);
+    const [isCreating, setIsCreating] = useState(false);
 
-    const {data: templates = []} = useWeightTemplates(caseId);
-    const {mutate: createTemplate, isPending: isCreating} = useCreateWeightTemplate(caseId);
-    const {data: templateToImport} = useWeightTemplate(caseId, selectedTemplateId);
+    // Fetch templates on mount
+    useEffect(() => {
+        if (!caseId) return;
+        listTemplatesAction('weights', caseId)
+            .then(setTemplates)
+            .catch(() => setTemplates([]));
+    }, [caseId]);
 
     // Update local state when props change (deferred to avoid synchronous setState in effect)
     useEffect(() => {
@@ -56,20 +63,6 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
             Promise.resolve().then(() => setEditedWeights(weights));
         }
     }, [weights]);
-
-    // Perform import only after user confirmed
-    useEffect(() => {
-        if (templateToImport && importConfirmed) {
-            // Defer state updates to avoid synchronous setState inside effect
-            Promise.resolve().then(() => {
-                setEditedWeights(templateToImport.content);
-                setImportConfirmOpen(false);
-                setImportConfirmed(false);
-                setSelectedTemplateId(null);
-                setImportDialogOpen(false);
-            });
-        }
-    }, [templateToImport, importConfirmed]);
     // Derived flag: are there unsaved changes?
     const hasChanges = useMemo(() => JSON.stringify(weights) !== JSON.stringify(editedWeights), [weights, editedWeights]);
 
@@ -89,15 +82,22 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
         setEditedWeights(weights);
     };
 
-    const handleSaveAsTemplate = (description: string) => {
-        createTemplate(
-            {content: editedWeights, description},
-            {
-                onSuccess: () => {
-                    setSaveDialogOpen(false);
-                },
-            }
-        );
+    const handleSaveAsTemplate = async (description: string) => {
+        setIsCreating(true);
+        try {
+            await createTemplateAction('weights', caseId, editedWeights, description);
+            setSaveDialogOpen(false);
+            // Refresh template list
+            const updated = await listTemplatesAction('weights', caseId);
+            setTemplates(updated);
+            toast.success('Template gespeichert');
+        } catch (error) {
+            toast.error('Fehler beim Speichern des Templates', {
+                description: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const handleImportTemplate = (templateId: string) => {
@@ -107,9 +107,19 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
         setImportConfirmOpen(true);
     };
 
-    const confirmImport = () => {
-        // User confirmed: set flag which triggers the actual import in useEffect
-        setImportConfirmed(true);
+    const confirmImport = async () => {
+        if (!selectedTemplateId) return;
+        try {
+            const template = await getTemplateAction<Weights>('weights', caseId, selectedTemplateId);
+            setEditedWeights(template.content);
+        } catch (error) {
+            toast.error('Fehler beim Laden des Templates', {
+                description: error instanceof Error ? error.message : String(error),
+            });
+        } finally {
+            setImportConfirmOpen(false);
+            setSelectedTemplateId(null);
+        }
     };
 
     return (

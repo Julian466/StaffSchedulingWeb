@@ -1,4 +1,5 @@
 import {MinimalStaffPageClient} from './minimal-staff-page-client';
+import {getMinimalStaffAction} from '@/features/minimal-staff/minimal-staff.actions';
 
 export default async function MinimalStaffPage({
                                                    searchParams,
@@ -18,5 +19,7 @@ export default async function MinimalStaffPage({
             aus</div>;
     }
 
-    return <MinimalStaffPageClient caseId={caseId} monthYear={monthYear}/>;
+    const requirements = await getMinimalStaffAction(caseId, monthYear);
+
+    return <MinimalStaffPageClient caseId={caseId} monthYear={monthYear} requirements={requirements}/>;
 }

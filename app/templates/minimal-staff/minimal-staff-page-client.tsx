@@ -4,8 +4,6 @@ import {useState} from 'react';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
-import {Skeleton} from '@/components/ui/skeleton';
-import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,24 +17,26 @@ import {
 import {EditTemplateDescriptionDialog} from '@/components/edit-template-description-dialog';
 import {ViewMinimalStaffTemplateDialog} from '@/components/view-minimal-staff-template-dialog';
 import {
-    useDeleteMinimalStaffTemplate,
-    useMinimalStaffTemplate,
-    useMinimalStaffTemplates,
-    useUpdateMinimalStaffTemplate,
-} from '@/features/minimal-staff/hooks/use-minimal-staff-templates';
-import {AlertCircle, Clock, Edit, Eye, FileText, Trash2, UserCog,} from 'lucide-react';
+    deleteTemplateAction,
+    getTemplateAction,
+    updateTemplateAction,
+} from '@/features/templates/templates.actions';
+import {Clock, Edit, Eye, FileText, Trash2, UserCog,} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 import {de} from 'date-fns/locale';
+import {TemplateSummary} from '@/src/entities/models/template.model';
+import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
+import {toast} from 'sonner';
 
 interface MinimalStaffTemplatesPageClientProps {
     caseId: number;
     monthYear: string;
+    templates: TemplateSummary[];
 }
 
-export function MinimalStaffTemplatesPageClient({caseId, monthYear}: MinimalStaffTemplatesPageClientProps) {
-    const {data: templates = [], isLoading, error} = useMinimalStaffTemplates(caseId);
-    const {mutate: updateTemplate, isPending: isUpdating} = useUpdateMinimalStaffTemplate(caseId);
-    const {mutate: deleteTemplate, isPending: isDeleting} = useDeleteMinimalStaffTemplate(caseId);
+export function MinimalStaffTemplatesPageClient({caseId, monthYear, templates}: MinimalStaffTemplatesPageClientProps) {
+    const [isUpdating, setIsUpdating] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const [editingTemplate, setEditingTemplate] = useState<{
         id: string;
@@ -44,75 +44,57 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear}: MinimalStaf
     } | null>(null);
 
     const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
-    const {data: viewingTemplate} = useMinimalStaffTemplate(caseId, viewingTemplateId);
+    const [viewingTemplateData, setViewingTemplateData] = useState<{
+        description: string;
+        content: MinimalStaffRequirements;
+        last_modified: string;
+    } | null>(null);
 
-    const viewingTemplateForPreview = viewingTemplate
-        ? {
-            description: viewingTemplate._metadata.description,
-            content: viewingTemplate.content,
-            last_modified: viewingTemplate._metadata.last_modified,
+    const handleViewTemplate = async (templateId: string) => {
+        setViewingTemplateId(templateId);
+        try {
+            const template = await getTemplateAction<MinimalStaffRequirements>('minimal-staff', caseId, templateId);
+            setViewingTemplateData({
+                description: template._metadata.description,
+                content: template.content,
+                last_modified: template._metadata.last_modified,
+            });
+        } catch {
+            toast.error('Fehler beim Laden des Templates');
         }
-        : null;
+    };
 
     const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 
-    const handleSaveDescription = (newDescription: string) => {
+    const handleSaveDescription = async (newDescription: string) => {
         if (editingTemplate) {
-            updateTemplate(
-                {templateId: editingTemplate.id, description: newDescription},
-                {onSuccess: () => setEditingTemplate(null)}
-            );
+            setIsUpdating(true);
+            try {
+                await updateTemplateAction('minimal-staff', caseId, editingTemplate.id, {description: newDescription});
+                toast.success('Template erfolgreich aktualisiert');
+                setEditingTemplate(null);
+            } catch {
+                toast.error('Fehler beim Aktualisieren des Templates');
+            } finally {
+                setIsUpdating(false);
+            }
         }
     };
 
-    const handleDelete = () => {
+    const handleDelete = async () => {
         if (deletingTemplateId) {
-            deleteTemplate(deletingTemplateId, {
-                onSuccess: () => setDeletingTemplateId(null),
-            });
+            setIsDeleting(true);
+            try {
+                await deleteTemplateAction('minimal-staff', caseId, deletingTemplateId);
+                toast.success('Template erfolgreich gelöscht');
+                setDeletingTemplateId(null);
+            } catch {
+                toast.error('Fehler beim Löschen des Templates');
+            } finally {
+                setIsDeleting(false);
+            }
         }
     };
-
-    if (error) {
-        return (
-            <div className="py-6 space-y-4">
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4"/>
-                    <AlertTitle>Fehler beim Laden</AlertTitle>
-                    <AlertDescription>
-                        Die Templates konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-
-    if (isLoading) {
-        return (
-            <div className="py-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg">
-                                <UserCog className="h-6 w-6 text-primary"/>
-                            </div>
-                            <div>
-                                <CardTitle>Mindestbesetzungs-Templates</CardTitle>
-                                <CardDescription>
-                                    Verwalten Sie Ihre gespeicherten Mindestbesetzungskonfigurationen
-                                </CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Skeleton className="h-24 w-full"/>
-                        <Skeleton className="h-24 w-full"/>
-                        <Skeleton className="h-24 w-full"/>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
 
     return (
         <div className="py-6 space-y-6">
@@ -170,7 +152,7 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear}: MinimalStaf
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
-                                                    onClick={() => setViewingTemplateId(template.id)}
+                                                    onClick={() => handleViewTemplate(template.id)}
                                                     disabled={isUpdating || isDeleting}
                                                 >
                                                     <Eye className="h-4 w-4"/>
@@ -218,8 +200,13 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear}: MinimalStaf
 
             <ViewMinimalStaffTemplateDialog
                 open={!!viewingTemplateId}
-                onOpenChange={(open) => !open && setViewingTemplateId(null)}
-                template={viewingTemplateForPreview}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setViewingTemplateId(null);
+                        setViewingTemplateData(null);
+                    }
+                }}
+                template={viewingTemplateData}
             />
 
             <AlertDialog

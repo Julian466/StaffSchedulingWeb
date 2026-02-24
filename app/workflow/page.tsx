@@ -35,12 +35,12 @@ import {toast} from 'sonner';
 import {useWorkflow} from '@/contexts/workflow-context';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
-import {useImportSolution} from '@/features/solver/hooks/use-solver';
 import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
-import {useQueryClient} from '@tanstack/react-query';
 import {
     findSolutionFile,
+    getJobs,
+    importSolution,
     saveSolution,
     solverDelete,
     solverFetch,
@@ -67,7 +67,6 @@ interface ConfigCheck {
 export default function WorkflowPage() {
     const router = useRouter();
     const {workflowData, isLoading: workflowLoading} = useWorkflow();
-    const queryClient = useQueryClient();
 
     // Use workflow data from server environment
     const caseId = workflowData?.caseId;
@@ -75,6 +74,26 @@ export default function WorkflowPage() {
     const endDate = workflowData?.endDate;
     const wfCaseId = caseId ? parseInt(caseId, 10) : 0;
     const wfMonthYear = workflowData?.monthYear ?? '';
+
+    // Job history state (replaces TanStack Query)
+    const [jobs, setJobs] = useState<SolverJob[]>([]);
+    const [isImporting, setIsImporting] = useState(false);
+
+    const refreshJobs = async () => {
+        if (wfCaseId > 0 && wfMonthYear) {
+            try {
+                const data = await getJobs(wfCaseId, wfMonthYear);
+                setJobs(data.jobs);
+            } catch {
+                // silently fail
+            }
+        }
+    };
+
+    // Fetch jobs on mount
+    useEffect(() => {
+        refreshJobs();
+    }, [wfCaseId, wfMonthYear]);
 
     const [actionStates, setActionStates] = useState<Record<WorkflowAction, ActionState>>({
         delete: {status: 'idle'},
@@ -98,7 +117,6 @@ export default function WorkflowPage() {
         end: string;
         solutionType: string;
     } | null>(null);
-    const importSolutionMutation = useImportSolution(wfCaseId, wfMonthYear);
 
     // Multiple import dialog state
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
@@ -281,8 +299,8 @@ export default function WorkflowPage() {
                     throw new Error(`Unknown action: ${action}`);
             }
 
-            // Invalidate job history to refresh the table (even on errors to show failed jobs)
-            queryClient.invalidateQueries({queryKey: ['solver', 'jobs', wfCaseId]});
+            // Refresh job history
+            await refreshJobs();
 
             setActionStates(prev => ({
                 ...prev,
@@ -364,8 +382,8 @@ export default function WorkflowPage() {
                 setSolutionExists(false);
             }
         } catch (error) {
-            // Invalidate job history to show failed jobs
-            queryClient.invalidateQueries({queryKey: ['solver', 'jobs', wfCaseId]});
+            // Refresh job history to show failed jobs
+            await refreshJobs();
 
             const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
             setActionStates(prev => ({
@@ -589,7 +607,7 @@ export default function WorkflowPage() {
 
             {/* Job History Table */}
             <div className="mt-8">
-                <JobHistoryTable/>
+                <JobHistoryTable jobs={jobs}/>
             </div>
 
             {/* Delete Warning Dialog */}
@@ -656,9 +674,19 @@ export default function WorkflowPage() {
                     end={importParams.end}
                     solutionType={importParams.solutionType}
                     onImport={async (params) => {
-                        await importSolutionMutation.mutateAsync(params);
+                        setIsImporting(true);
+                        try {
+                            await importSolution(wfCaseId, wfMonthYear, params);
+                            toast.success('Lösung erfolgreich importiert');
+                        } catch (error) {
+                            toast.error('Fehler beim Importieren der Lösung', {
+                                description: error instanceof Error ? error.message : String(error),
+                            });
+                        } finally {
+                            setIsImporting(false);
+                        }
                     }}
-                    isImporting={importSolutionMutation.isPending}
+                    isImporting={isImporting}
                 />
             )}
 
@@ -673,9 +701,19 @@ export default function WorkflowPage() {
                     solutionCount={multipleImportParams.solutionCount}
                     feasibleSolutions={multipleImportParams.feasibleSolutions}
                     onImport={async (params) => {
-                        await importSolutionMutation.mutateAsync(params);
+                        setIsImporting(true);
+                        try {
+                            await importSolution(wfCaseId, wfMonthYear, params);
+                            toast.success('Lösung erfolgreich importiert');
+                        } catch (error) {
+                            toast.error('Fehler beim Importieren der Lösung', {
+                                description: error instanceof Error ? error.message : String(error),
+                            });
+                        } finally {
+                            setIsImporting(false);
+                        }
                     }}
-                    isImporting={importSolutionMutation.isPending}
+                    isImporting={isImporting}
                 />
             )}
 

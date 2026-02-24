@@ -7,7 +7,7 @@ import {Button} from '@/components/ui/button';
 import {Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,} from '@/components/ui/command';
 import {Popover, PopoverContent, PopoverTrigger,} from '@/components/ui/popover';
 import {Employee} from '@/src/entities/models/employee.model';
-import {useEmployees} from '@/features/employees/hooks/use-employees';
+import {getAllEmployeesAction} from '@/features/employees/employees.actions';
 import {useSearchParams} from 'next/navigation';
 import {Badge} from '@/components/ui/badge';
 
@@ -25,10 +25,20 @@ export function EmployeeSelector({
                                      excludedKeys = [],
                                  }: EmployeeSelectorProps) {
     const [open, setOpen] = React.useState(false);
+    const [employees, setEmployees] = React.useState<Employee[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
     const searchParams = useSearchParams();
     const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
     const monthYear = searchParams.get('monthYear') ?? '';
-    const {data: employees = [], isLoading} = useEmployees(caseId, monthYear);
+
+    React.useEffect(() => {
+        if (!caseId || !monthYear) return;
+        setIsLoading(true);
+        getAllEmployeesAction(caseId, monthYear)
+            .then(setEmployees)
+            .catch(() => setEmployees([]))
+            .finally(() => setIsLoading(false));
+    }, [caseId, monthYear]);
 
     // Filter out excluded employees
     const availableEmployees = employees.filter(emp => !excludedKeys.includes(emp.key));

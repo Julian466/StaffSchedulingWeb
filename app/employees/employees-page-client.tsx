@@ -1,18 +1,12 @@
-'use client';
-
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {EmployeeList} from '@/features/employees/components/employee-list';
-import {useEmployees,} from '@/features/employees/hooks/use-employees';
+import {Employee} from '@/src/entities/models/employee.model';
 
 interface EmployeesPageClientProps {
-    caseId: number;
-    monthYear: string;
+    employees: Employee[];
 }
 
-export function EmployeesPageClient({caseId, monthYear}: EmployeesPageClientProps) {
-    // TanStack Query Hooks
-    const {data: employees = [], isLoading} = useEmployees(caseId, monthYear);
-
+export function EmployeesPageClient({employees}: EmployeesPageClientProps) {
     return (
         <div className="py-6">
             <Card>
@@ -27,13 +21,9 @@ export function EmployeesPageClient({caseId, monthYear}: EmployeesPageClientProp
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
-                        <div className="text-center py-8">Lädt...</div>
-                    ) : (
-                        <EmployeeList
-                            employees={employees}
-                        />
-                    )}
+                    <EmployeeList
+                        employees={employees}
+                    />
                 </CardContent>
             </Card>
         </div>

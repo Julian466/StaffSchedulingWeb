@@ -1,21 +1,32 @@
 'use client';
 
-import {useValidateConfig} from '@/features/solver/hooks/use-solver';
+import {useState, useTransition} from 'react';
+import {validateConfig} from '@/features/solver/solver.actions';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {AlertCircle, CheckCircle2, Loader2, XCircle} from 'lucide-react';
+import type {SolverConfigResult} from '@/src/application/ports/solver.service';
 
-export function ConfigValidator() {
-    const {data, isLoading, isError, refetch, isFetching} = useValidateConfig();
+interface ConfigValidatorProps {
+    initialData: SolverConfigResult | null;
+}
 
-    if (isLoading) {
-        return (
-            <Alert>
-                <Loader2 className="h-4 w-4 animate-spin"/>
-                <AlertTitle>Konfiguration wird überprüft...</AlertTitle>
-            </Alert>
-        );
-    }
+export function ConfigValidator({initialData}: ConfigValidatorProps) {
+    const [data, setData] = useState(initialData);
+    const [isError, setIsError] = useState(initialData === null);
+    const [isFetching, startRefetchTransition] = useTransition();
+
+    const refetch = () => {
+        startRefetchTransition(async () => {
+            try {
+                const result = await validateConfig();
+                setData(result);
+                setIsError(false);
+            } catch {
+                setIsError(true);
+            }
+        });
+    };
 
     if (isError) {
         return (

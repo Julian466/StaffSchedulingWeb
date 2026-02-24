@@ -1,4 +1,5 @@
 import {GlobalWishesTemplatesPageClient} from './global-wishes-page-client';
+import {listTemplatesAction} from '@/features/templates/templates.actions';
 
 export default async function GlobalWishesTemplatesPage({
                                                             searchParams,
@@ -18,5 +19,7 @@ export default async function GlobalWishesTemplatesPage({
             aus</div>;
     }
 
-    return <GlobalWishesTemplatesPageClient caseId={caseId} monthYear={monthYear}/>;
+    const templates = await listTemplatesAction('global-wishes', caseId);
+
+    return <GlobalWishesTemplatesPageClient caseId={caseId} monthYear={monthYear} templates={templates}/>;
 }

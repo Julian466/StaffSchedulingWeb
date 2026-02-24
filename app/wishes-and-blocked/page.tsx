@@ -1,4 +1,5 @@
 import {WishesAndBlockedPageClient} from './wishes-and-blocked-page-client';
+import {getAllWishesAction} from '@/features/wishes_and_blocked/wishes-and-blocked.actions';
 
 export default async function WishesAndBlockedPage({
                                                        searchParams,
@@ -18,5 +19,7 @@ export default async function WishesAndBlockedPage({
             aus</div>;
     }
 
-    return <WishesAndBlockedPageClient caseId={caseId} monthYear={monthYear}/>;
+    const employees = await getAllWishesAction(caseId, monthYear);
+
+    return <WishesAndBlockedPageClient caseId={caseId} monthYear={monthYear} employees={employees}/>;
 }

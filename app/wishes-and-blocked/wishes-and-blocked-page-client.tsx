@@ -1,6 +1,6 @@
 'use client';
 
-import {useState} from 'react';
+import {useState, useTransition} from 'react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Plus} from 'lucide-react';
@@ -9,29 +9,25 @@ import {WishesAndBlockedList} from '@/features/wishes_and_blocked/components/wis
 import {WishesAndBlockedDialog} from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
 
 import {
-    useCreateWishesAndBlocked,
-    useDeleteWishesAndBlocked,
-    useUpdateWishesAndBlocked,
-    useWishesAndBlocked,
-} from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
+    createWishesAction,
+    deleteWishesAction,
+    updateWishesAction,
+} from '@/features/wishes_and_blocked/wishes-and-blocked.actions';
 
 interface WishesAndBlockedPageClientProps {
     caseId: number;
     monthYear: string;
+    employees: WishesAndBlockedEmployee[];
 }
 
-export function WishesAndBlockedPageClient({caseId, monthYear}: WishesAndBlockedPageClientProps) {
+export function WishesAndBlockedPageClient({caseId, monthYear, employees}: WishesAndBlockedPageClientProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
-
-    // TanStack Query Hooks
-    const {data: employees = [], isLoading} = useWishesAndBlocked(caseId, monthYear);
+    const [isSubmitting, startSubmitTransition] = useTransition();
+    const [isDeleting, startDeleteTransition] = useTransition();
 
     // Get list of employee keys that already have wishes
     const existingEmployeeKeys = employees.map(emp => emp.key);
-    const createMutation = useCreateWishesAndBlocked(caseId, monthYear);
-    const updateMutation = useUpdateWishesAndBlocked(caseId, monthYear);
-    const deleteMutation = useDeleteWishesAndBlocked(caseId, monthYear);
 
     const handleCreate = () => {
         setEditingEmployee(undefined);
@@ -44,27 +40,24 @@ export function WishesAndBlockedPageClient({caseId, monthYear}: WishesAndBlocked
     };
 
     const handleSubmit = async (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
-        if (editingEmployee) {
-            // Update
-            await updateMutation.mutateAsync({
-                id: editingEmployee.key,
-                data,
-            });
-        } else {
-            // Create
-            await createMutation.mutateAsync(data);
-        }
-        setDialogOpen(false);
-        setEditingEmployee(undefined);
+        startSubmitTransition(async () => {
+            if (editingEmployee) {
+                await updateWishesAction(caseId, monthYear, editingEmployee.key, data);
+            } else {
+                await createWishesAction(caseId, monthYear, data);
+            }
+            setDialogOpen(false);
+            setEditingEmployee(undefined);
+        });
     };
 
     const handleDelete = async (id: number) => {
         if (confirm('Möchtest du diesen Eintrag wirklich löschen?')) {
-            await deleteMutation.mutateAsync(id);
+            startDeleteTransition(async () => {
+                await deleteWishesAction(caseId, monthYear, id);
+            });
         }
     };
-
-    const isSubmitting = createMutation.isPending || updateMutation.isPending;
 
     return (
         <div className="py-6">
@@ -85,16 +78,12 @@ export function WishesAndBlockedPageClient({caseId, monthYear}: WishesAndBlocked
                     </div>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
-                        <div className="text-center py-8">Lädt...</div>
-                    ) : (
-                        <WishesAndBlockedList
-                            employees={employees}
-                            onEdit={handleEdit}
-                            onDelete={handleDelete}
-                            isDeleting={deleteMutation.isPending}
-                        />
-                    )}
+                    <WishesAndBlockedList
+                        employees={employees}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        isDeleting={isDeleting}
+                    />
                 </CardContent>
             </Card>
 

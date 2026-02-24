@@ -1,5 +1,6 @@
 'use server';
 
+import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import type {SchedulesMetadata, ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 import {ScheduleRepository} from '@/features/schedule/api/schedule-repository';
@@ -60,6 +61,7 @@ export async function saveScheduleAction(
         await selectController({caseId, monthYear, scheduleId});
     }
 
+    revalidatePath('/schedule');
     return {success: true};
 }
 
@@ -69,6 +71,7 @@ export async function selectScheduleAction(caseId: number, monthYear: string, sc
     const controller = getInjection('ISelectScheduleController');
     const result = await controller({caseId, monthYear, scheduleId});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/schedule');
     return {success: true};
 }
 
@@ -78,6 +81,7 @@ export async function deleteScheduleAction(caseId: number, monthYear: string, sc
     const controller = getInjection('IDeleteScheduleController');
     const result = await controller({caseId, monthYear, scheduleId});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/schedule');
     return {success: true};
 }
 
@@ -90,5 +94,6 @@ export async function updateScheduleMetadataAction(
     const controller = getInjection('IUpdateScheduleMetadataController');
     const result = await controller({caseId, monthYear, scheduleId, updates});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/schedule');
     return {success: true};
 }

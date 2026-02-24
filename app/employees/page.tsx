@@ -1,4 +1,5 @@
 import {EmployeesPageClient} from './employees-page-client';
+import {getAllEmployeesAction} from '@/features/employees/employees.actions';
 
 export default async function EmployeesPage({
                                                 searchParams,
@@ -18,5 +19,7 @@ export default async function EmployeesPage({
             aus</div>;
     }
 
-    return <EmployeesPageClient caseId={caseId} monthYear={monthYear}/>;
+    const employees = await getAllEmployeesAction(caseId, monthYear);
+
+    return <EmployeesPageClient employees={employees}/>;
 }

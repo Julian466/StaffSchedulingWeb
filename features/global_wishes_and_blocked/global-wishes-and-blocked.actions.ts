@@ -1,5 +1,6 @@
 'use server';
 
+import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {validateMonthYear} from '@/src/entities/validation/input-validators';
@@ -27,6 +28,8 @@ export async function createGlobalWishesAction(
     const controller = getInjection('ICreateGlobalWishesController');
     const result = await controller({caseId, monthYear, entry});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/global-wishes-and-blocked');
+    revalidatePath('/wishes-and-blocked');
 }
 
 export async function updateGlobalWishesAction(
@@ -39,12 +42,16 @@ export async function updateGlobalWishesAction(
     const controller = getInjection('IUpdateGlobalWishesController');
     const result = await controller({caseId, monthYear, key, data});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/global-wishes-and-blocked');
+    revalidatePath('/wishes-and-blocked');
 }
 
 export async function deleteGlobalWishesAction(caseId: number, monthYear: string, key: number): Promise<void> {
     const controller = getInjection('IDeleteGlobalWishesController');
     const result = await controller({caseId, monthYear, key});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/global-wishes-and-blocked');
+    revalidatePath('/wishes-and-blocked');
 }
 
 export async function importGlobalWishesTemplateAction(
@@ -55,5 +62,7 @@ export async function importGlobalWishesTemplateAction(
     const controller = getInjection('IImportGlobalWishesTemplateController');
     const result = await controller({caseId, monthYear, templateId});
     if ('error' in result) throw new Error(result.error);
+    revalidatePath('/global-wishes-and-blocked');
+    revalidatePath('/wishes-and-blocked');
     return result.data;
 }

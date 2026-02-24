@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState, useTransition} from 'react';
 import {Card} from '@/components/ui/card';
 import {Button, buttonVariants} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
@@ -13,45 +13,69 @@ import {ScheduleLegend} from '@/features/schedule/components/schedule-legend';
 import {ScheduleSelector} from '@/components/schedule-selector';
 import {DescriptionInputDialog} from '@/components/description-input-dialog';
 import {
-    useDeleteSchedule,
-    useMultipleSchedules,
-    useSaveSchedule,
-    useSchedule,
-    useSchedulesMetadata,
-    useSelectSchedule,
-    useUpdateSchedule
-} from '@/features/schedule/hooks/use-schedule';
-import {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
+    deleteScheduleAction,
+    getScheduleByIdAction,
+    saveScheduleAction,
+    selectScheduleAction,
+    updateScheduleMetadataAction,
+} from '@/features/schedule/schedule.actions';
+import {SchedulesMetadata, ScheduleSolution, ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
+import {parseSolutionFile} from '@/lib/services/schedule-parser';
 import {toast} from 'sonner';
 import {Root as Switch, Thumb as SwitchThumb} from '@radix-ui/react-switch';
 
 interface SchedulePageClientProps {
     caseId: number;
     monthYear: string;
+    initialSchedule: ScheduleSolution | null;
+    initialMetadata: SchedulesMetadata;
 }
 
-export function SchedulePageClient({caseId, monthYear}: SchedulePageClientProps) {
-    const {data: schedule, isLoading, refetch: refetchSchedule} = useSchedule(caseId, monthYear);
-    const {
-        data: schedulesMetadata,
-        isLoading: isMetadataLoading,
-        refetch: refetchMetadata
-    } = useSchedulesMetadata(caseId, monthYear);
+export function SchedulePageClient({caseId, monthYear, initialSchedule, initialMetadata}: SchedulePageClientProps) {
+    const schedule = initialSchedule;
+    const schedulesMetadata = initialMetadata;
+
     const [reducedView, setReducedView] = useState(false);
-    const saveSchedule = useSaveSchedule(caseId, monthYear);
-    const deleteSchedule = useDeleteSchedule(caseId, monthYear);
-    const selectSchedule = useSelectSchedule(caseId, monthYear);
-    const updateSchedule = useUpdateSchedule(caseId, monthYear);
+    const [isSaving, startSaveTransition] = useTransition();
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
     const [pendingSolution, setPendingSolution] = useState<ScheduleSolutionRaw | null>(null);
     const tableRef = useRef<HTMLDivElement>(null);
     const [compareMode, setCompareMode] = useState(false);
     const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
-    const {
-        data: multipleSchedules,
-        isLoading: isMultipleSchedulesLoading
-    } = useMultipleSchedules(caseId, monthYear, selectedScheduleIds);
+    const [multipleSchedules, setMultipleSchedules] = useState<(ScheduleSolution & { scheduleId: string; description?: string })[]>([]);
+    const [isMultipleSchedulesLoading, setIsMultipleSchedulesLoading] = useState(false);
+
+    // Fetch multiple schedules when compare mode IDs change
+    useEffect(() => {
+        if (selectedScheduleIds.length === 0) {
+            setMultipleSchedules([]);
+            return;
+        }
+
+        let cancelled = false;
+        setIsMultipleSchedulesLoading(true);
+
+        (async () => {
+            try {
+                const results = await Promise.all(
+                    selectedScheduleIds.map(async (scheduleId) => {
+                        const data = await getScheduleByIdAction(caseId, monthYear, scheduleId);
+                        if (!data.solution) return null;
+                        const parsedSolution = parseSolutionFile(data.solution);
+                        return {...parsedSolution, scheduleId, description: data.description};
+                    })
+                );
+                if (!cancelled) {
+                    setMultipleSchedules(results.filter((s): s is NonNullable<typeof s> => s !== null));
+                }
+            } finally {
+                if (!cancelled) setIsMultipleSchedulesLoading(false);
+            }
+        })();
+
+        return () => { cancelled = true; };
+    }, [selectedScheduleIds, caseId, monthYear]);
 
     const handleFileLoaded = async (solutionData: ScheduleSolutionRaw) => {
         setPendingSolution(solutionData);
@@ -61,45 +85,30 @@ export function SchedulePageClient({caseId, monthYear}: SchedulePageClientProps)
     const handleDescriptionConfirm = async (description?: string) => {
         if (!pendingSolution) return;
 
-        try {
-            const scheduleId = Date.now().toString();
-
-            await saveSchedule.mutateAsync({
-                scheduleId,
-                description,
-                solution: pendingSolution,
-                autoSelect: true,
-            });
-
-            // Refetch metadata and the selected schedule because we added a new schedule
-            await refetchMetadata();
-            await refetchSchedule();
-            setShowDescriptionDialog(false);
-            setPendingSolution(null);
-            toast.success('Dienstplan erfolgreich geladen');
-        } catch (error) {
-            toast.error('Fehler beim Speichern des Dienstplans');
-            console.error(error);
-        }
+        startSaveTransition(async () => {
+            try {
+                const scheduleId = Date.now().toString();
+                await saveScheduleAction(caseId, monthYear, scheduleId, pendingSolution, description, true);
+                setShowDescriptionDialog(false);
+                setPendingSolution(null);
+                toast.success('Dienstplan erfolgreich geladen');
+            } catch (error) {
+                toast.error('Fehler beim Speichern des Dienstplans');
+                console.error(error);
+            }
+        });
     };
 
     const handleScheduleSelect = async (scheduleId: string) => {
-        await selectSchedule.mutateAsync(scheduleId);
-        await refetchSchedule();
+        await selectScheduleAction(caseId, monthYear, scheduleId);
     };
 
     const handleScheduleDelete = async (scheduleId: string) => {
-        await deleteSchedule.mutateAsync(scheduleId);
-        refetchSchedule();
-    };
-
-    const handleRefresh = async () => {
-        await refetchMetadata();
-        await refetchSchedule();
+        await deleteScheduleAction(caseId, monthYear, scheduleId);
     };
 
     const handleDescriptionUpdate = async (scheduleId: string, description: string) => {
-        await updateSchedule.mutateAsync({scheduleId, description});
+        await updateScheduleMetadataAction(caseId, monthYear, scheduleId, {description});
     };
 
     const handleMultipleSchedulesSelect = (scheduleIds: string[]) => {
@@ -108,7 +117,6 @@ export function SchedulePageClient({caseId, monthYear}: SchedulePageClientProps)
 
     const toggleCompareMode = () => {
         if (compareMode) {
-            // Exiting compare mode
             setSelectedScheduleIds([]);
         }
         setCompareMode(!compareMode);
@@ -158,23 +166,21 @@ export function SchedulePageClient({caseId, monthYear}: SchedulePageClientProps)
                     {!compareMode && (
                         <ScheduleFileUpload
                             onFileLoaded={handleFileLoaded}
-                            isLoading={saveSchedule.isPending}
+                            isLoading={isSaving}
                         />
                     )}
 
                     {/* Schedule Selector */}
-                    {schedulesMetadata && !isMetadataLoading && (
+                    {schedulesMetadata && (
                         <ScheduleSelector
                             schedulesMetadata={schedulesMetadata}
                             onScheduleSelect={handleScheduleSelect}
                             onScheduleDelete={handleScheduleDelete}
-                            onRefresh={handleRefresh}
                             compareMode={compareMode}
                             selectedScheduleIds={selectedScheduleIds}
                             onMultipleSchedulesSelect={handleMultipleSchedulesSelect}
                             onDescriptionUpdate={handleDescriptionUpdate}
                         />
-
                     )}
 
                     {schedulesMetadata && schedulesMetadata.schedules.length >= 2 && (
@@ -225,7 +231,7 @@ export function SchedulePageClient({caseId, monthYear}: SchedulePageClientProps)
                 </div>
             </header>
 
-            {(isLoading || (compareMode && isMultipleSchedulesLoading)) ? (
+            {(compareMode && isMultipleSchedulesLoading) ? (
                 <Card className="border-border/50 p-12">
                     <div className="flex flex-col items-center justify-center text-center space-y-4">
                         <div className="text-lg text-muted-foreground">Lädt...</div>
@@ -328,7 +334,7 @@ export function SchedulePageClient({caseId, monthYear}: SchedulePageClientProps)
                 open={showDescriptionDialog}
                 onOpenChange={setShowDescriptionDialog}
                 onConfirm={handleDescriptionConfirm}
-                isLoading={saveSchedule.isPending}
+                isLoading={isSaving}
             />
         </div>
     );
