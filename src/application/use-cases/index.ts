@@ -72,14 +72,38 @@ export {makeListCasesUseCase} from './cases/list-cases.use-case';
 export type {IGetSelectedScheduleUseCase} from './schedule/get-selected-schedule.use-case';
 export {makeGetSelectedScheduleUseCase} from './schedule/get-selected-schedule.use-case';
 
-// Templates
-export type {IListTemplatesUseCase} from './templates/list-templates.use-case';
-export {makeListTemplatesUseCase} from './templates/list-templates.use-case';
-export type {IGetTemplateUseCase} from './templates/get-template.use-case';
-export {makeGetTemplateUseCase} from './templates/get-template.use-case';
-export type {ICreateTemplateUseCase} from './templates/create-template.use-case';
-export {makeCreateTemplateUseCase} from './templates/create-template.use-case';
-export type {IUpdateTemplateUseCase} from './templates/update-template.use-case';
-export {makeUpdateTemplateUseCase} from './templates/update-template.use-case';
-export type {IDeleteTemplateUseCase} from './templates/delete-template.use-case';
-export {makeDeleteTemplateUseCase} from './templates/delete-template.use-case';
+// Templates — Weights
+export type {IListWeightsTemplatesUseCase} from './templates/weights/list-weights-templates.use-case';
+export {makeListWeightsTemplatesUseCase} from './templates/weights/list-weights-templates.use-case';
+export type {IGetWeightsTemplateUseCase} from './templates/weights/get-weights-template.use-case';
+export {makeGetWeightsTemplateUseCase} from './templates/weights/get-weights-template.use-case';
+export type {ICreateWeightsTemplateUseCase} from './templates/weights/create-weights-template.use-case';
+export {makeCreateWeightsTemplateUseCase} from './templates/weights/create-weights-template.use-case';
+export type {IUpdateWeightsTemplateUseCase} from './templates/weights/update-weights-template.use-case';
+export {makeUpdateWeightsTemplateUseCase} from './templates/weights/update-weights-template.use-case';
+export type {IDeleteWeightsTemplateUseCase} from './templates/weights/delete-weights-template.use-case';
+export {makeDeleteWeightsTemplateUseCase} from './templates/weights/delete-weights-template.use-case';
+
+// Templates — Minimal Staff
+export type {IListMinimalStaffTemplatesUseCase} from './templates/minimal-staff/list-minimal-staff-templates.use-case';
+export {makeListMinimalStaffTemplatesUseCase} from './templates/minimal-staff/list-minimal-staff-templates.use-case';
+export type {IGetMinimalStaffTemplateUseCase} from './templates/minimal-staff/get-minimal-staff-template.use-case';
+export {makeGetMinimalStaffTemplateUseCase} from './templates/minimal-staff/get-minimal-staff-template.use-case';
+export type {ICreateMinimalStaffTemplateUseCase} from './templates/minimal-staff/create-minimal-staff-template.use-case';
+export {makeCreateMinimalStaffTemplateUseCase} from './templates/minimal-staff/create-minimal-staff-template.use-case';
+export type {IUpdateMinimalStaffTemplateUseCase} from './templates/minimal-staff/update-minimal-staff-template.use-case';
+export {makeUpdateMinimalStaffTemplateUseCase} from './templates/minimal-staff/update-minimal-staff-template.use-case';
+export type {IDeleteMinimalStaffTemplateUseCase} from './templates/minimal-staff/delete-minimal-staff-template.use-case';
+export {makeDeleteMinimalStaffTemplateUseCase} from './templates/minimal-staff/delete-minimal-staff-template.use-case';
+
+// Templates — Global Wishes
+export type {IListGlobalWishesTemplatesUseCase} from './templates/global-wishes/list-global-wishes-templates.use-case';
+export {makeListGlobalWishesTemplatesUseCase} from './templates/global-wishes/list-global-wishes-templates.use-case';
+export type {IGetGlobalWishesTemplateUseCase} from './templates/global-wishes/get-global-wishes-template.use-case';
+export {makeGetGlobalWishesTemplateUseCase} from './templates/global-wishes/get-global-wishes-template.use-case';
+export type {ICreateGlobalWishesTemplateUseCase} from './templates/global-wishes/create-global-wishes-template.use-case';
+export {makeCreateGlobalWishesTemplateUseCase} from './templates/global-wishes/create-global-wishes-template.use-case';
+export type {IUpdateGlobalWishesTemplateUseCase} from './templates/global-wishes/update-global-wishes-template.use-case';
+export {makeUpdateGlobalWishesTemplateUseCase} from './templates/global-wishes/update-global-wishes-template.use-case';
+export type {IDeleteGlobalWishesTemplateUseCase} from './templates/global-wishes/delete-global-wishes-template.use-case';
+export {makeDeleteGlobalWishesTemplateUseCase} from './templates/global-wishes/delete-global-wishes-template.use-case';

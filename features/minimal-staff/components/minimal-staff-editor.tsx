@@ -28,10 +28,10 @@ import {
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportTemplateDialog} from '@/components/import-template-dialog';
 import {
-    createTemplateAction,
-    getTemplateAction,
-    listTemplatesAction,
-} from '@/features/templates/templates.actions';
+    createMinimalStaffTemplateAction,
+    getMinimalStaffTemplateAction,
+    listMinimalStaffTemplatesAction,
+} from '@/features/templates/minimal-staff-templates.actions';
 import {TemplateSummary} from '@/src/entities/models/template.model';
 import {useSearchParams} from 'next/navigation';
 import {toast} from 'sonner';
@@ -94,7 +94,7 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
     // Fetch templates on mount
     useEffect(() => {
         if (!caseId) return;
-        listTemplatesAction('minimal-staff', caseId)
+        listMinimalStaffTemplatesAction(caseId)
             .then(setTemplates)
             .catch(() => setTemplates([]));
     }, [caseId]);
@@ -102,9 +102,9 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
     const handleSaveAsTemplate = async (description: string) => {
         setIsCreating(true);
         try {
-            await createTemplateAction('minimal-staff', caseId, localRequirements, description);
+            await createMinimalStaffTemplateAction(caseId, localRequirements, description);
             setSaveDialogOpen(false);
-            const updated = await listTemplatesAction('minimal-staff', caseId);
+            const updated = await listMinimalStaffTemplatesAction(caseId);
             setTemplates(updated);
             toast.success('Template gespeichert');
         } catch (error) {
@@ -125,7 +125,7 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
     const confirmImport = async () => {
         if (!selectedTemplateId) return;
         try {
-            const template = await getTemplateAction<MinimalStaffRequirements>('minimal-staff', caseId, selectedTemplateId);
+            const template = await getMinimalStaffTemplateAction(caseId, selectedTemplateId);
             setLocalRequirements(template.content);
             setHasChanges(true);
         } catch (error) {

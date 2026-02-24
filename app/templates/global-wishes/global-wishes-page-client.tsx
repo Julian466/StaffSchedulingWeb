@@ -16,10 +16,10 @@ import {
 } from '@/components/ui/alert-dialog';
 import {EditTemplateDescriptionDialog} from '@/components/edit-template-description-dialog';
 import {
-    deleteTemplateAction,
-    getTemplateAction,
-    updateTemplateAction,
-} from '@/features/templates/templates.actions';
+    deleteGlobalWishesTemplateAction,
+    getGlobalWishesTemplateAction,
+    updateGlobalWishesTemplateAction,
+} from '@/features/templates/global-wishes-templates.actions';
 import {Clock, Edit, Eye, FileText, Heart, Trash2, Users,} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 import {de} from 'date-fns/locale';
@@ -54,7 +54,7 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
     const handleViewTemplate = async (templateId: string) => {
         setViewingTemplateId(templateId);
         try {
-            const template = await getTemplateAction<GlobalWishesTemplateContent>('global-wishes', caseId, templateId);
+            const template = await getGlobalWishesTemplateAction(caseId, templateId);
             setViewingTemplate(template);
         } catch {
             toast.error('Fehler beim Laden des Templates');
@@ -67,7 +67,7 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
         if (editingTemplate) {
             setIsUpdating(true);
             try {
-                await updateTemplateAction('global-wishes', caseId, editingTemplate.id, {description: newDescription});
+                await updateGlobalWishesTemplateAction(caseId, editingTemplate.id, {description: newDescription});
                 toast.success('Template erfolgreich aktualisiert');
                 setEditingTemplate(null);
             } catch {
@@ -82,7 +82,7 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
         if (deletingTemplateId) {
             setIsDeleting(true);
             try {
-                await deleteTemplateAction('global-wishes', caseId, deletingTemplateId);
+                await deleteGlobalWishesTemplateAction(caseId, deletingTemplateId);
                 toast.success('Template erfolgreich gelöscht');
                 setDeletingTemplateId(null);
             } catch {

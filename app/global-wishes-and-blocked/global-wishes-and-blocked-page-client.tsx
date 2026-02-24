@@ -26,7 +26,7 @@ import {
 } from '@/features/global_wishes_and_blocked/global-wishes-and-blocked.actions';
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportGlobalWishesTemplateDialog} from '@/components/import-global-wishes-template-dialog';
-import {createTemplateAction, getTemplateAction} from '@/features/templates/templates.actions';
+import {createGlobalWishesTemplateAction, getGlobalWishesTemplateAction} from '@/features/templates/global-wishes-templates.actions';
 import {Employee} from '@/src/entities/models/employee.model';
 import {GlobalWishesTemplateContent, TemplateSummary, Template} from '@/src/entities/models/template.model';
 import {toast} from 'sonner';
@@ -159,7 +159,7 @@ export function GlobalWishesAndBlockedPageClient({
 
         startCreateTemplateTransition(async () => {
             try {
-                await createTemplateAction('global-wishes', caseId, content, description);
+                await createGlobalWishesTemplateAction(caseId, content, description);
                 setSaveTemplateDialogOpen(false);
                 toast.success(`Template "${description}" wurde erfolgreich gespeichert.`);
             } catch {
@@ -171,7 +171,7 @@ export function GlobalWishesAndBlockedPageClient({
     const handleSelectTemplate = (templateId: string) => {
         startLoadTemplateTransition(async () => {
             try {
-                const template = await getTemplateAction<GlobalWishesTemplateContent>('global-wishes', caseId, templateId);
+                const template = await getGlobalWishesTemplateAction(caseId, templateId);
                 setSelectedTemplate(template);
             } catch {
                 toast.error('Template konnte nicht geladen werden.');

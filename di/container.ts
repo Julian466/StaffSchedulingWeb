@@ -10,7 +10,9 @@ import {createSchedulesModule} from '@/di/modules/schedules.module';
 import {createJobsModule} from '@/di/modules/jobs.module';
 import {createCasesModule} from '@/di/modules/cases.module';
 import {createSolverModule} from '@/di/modules/solver.module';
-import {createTemplatesModule} from '@/di/modules/templates.module';
+import {createWeightsTemplatesModule} from '@/di/modules/weights-templates.module';
+import {createMinimalStaffTemplatesModule} from '@/di/modules/minimal-staff-templates.module';
+import {createGlobalWishesTemplatesModule} from '@/di/modules/global-wishes-templates.module';
 
 const ApplicationContainer = createContainer();
 
@@ -23,7 +25,9 @@ ApplicationContainer.load(Symbol('SchedulesModule'), createSchedulesModule());
 ApplicationContainer.load(Symbol('JobsModule'), createJobsModule());
 ApplicationContainer.load(Symbol('CasesModule'), createCasesModule());
 ApplicationContainer.load(Symbol('SolverModule'), createSolverModule());
-ApplicationContainer.load(Symbol('TemplatesModule'), createTemplatesModule());
+ApplicationContainer.load(Symbol('WeightsTemplatesModule'), createWeightsTemplatesModule());
+ApplicationContainer.load(Symbol('MinimalStaffTemplatesModule'), createMinimalStaffTemplatesModule());
+ApplicationContainer.load(Symbol('GlobalWishesTemplatesModule'), createGlobalWishesTemplatesModule());
 
 export function getInjection<K extends keyof typeof DI_SYMBOLS>(
     symbol: K

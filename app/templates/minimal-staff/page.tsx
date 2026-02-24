@@ -1,5 +1,5 @@
 import {MinimalStaffTemplatesPageClient} from './minimal-staff-page-client';
-import {listTemplatesAction} from '@/features/templates/templates.actions';
+import {listMinimalStaffTemplatesAction} from '@/features/templates/minimal-staff-templates.actions';
 
 export default async function MinimalStaffTemplatesPage({
                                                             searchParams,
@@ -19,7 +19,7 @@ export default async function MinimalStaffTemplatesPage({
             aus</div>;
     }
 
-    const templates = await listTemplatesAction('minimal-staff', caseId);
+    const templates = await listMinimalStaffTemplatesAction(caseId);
 
     return <MinimalStaffTemplatesPageClient caseId={caseId} monthYear={monthYear} templates={templates}/>;
 }

@@ -18,10 +18,10 @@ import {
 import {EditTemplateDescriptionDialog} from '@/components/edit-template-description-dialog';
 import {ViewTemplateDialog} from '@/components/view-template-dialog';
 import {
-    deleteTemplateAction,
-    getTemplateAction,
-    updateTemplateAction,
-} from '@/features/templates/templates.actions';
+    deleteWeightsTemplateAction,
+    getWeightsTemplateAction,
+    updateWeightsTemplateAction,
+} from '@/features/templates/weights-templates.actions';
 import {AlertCircle, Clock, Edit, Eye, FileText, Scale, Trash2,} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 import {de} from 'date-fns/locale';
@@ -54,7 +54,7 @@ export function WeightsTemplatesPageClient({caseId, monthYear, templates}: Weigh
     const handleViewTemplate = async (templateId: string) => {
         setViewingTemplateId(templateId);
         try {
-            const template = await getTemplateAction<Weights>('weights', caseId, templateId);
+            const template = await getWeightsTemplateAction(caseId, templateId);
             setViewingTemplateData({
                 description: template._metadata.description,
                 content: template.content,
@@ -71,7 +71,7 @@ export function WeightsTemplatesPageClient({caseId, monthYear, templates}: Weigh
         if (editingTemplate) {
             setIsUpdating(true);
             try {
-                await updateTemplateAction('weights', caseId, editingTemplate.id, {description: newDescription});
+                await updateWeightsTemplateAction(caseId, editingTemplate.id, {description: newDescription});
                 toast.success('Template erfolgreich aktualisiert');
                 setEditingTemplate(null);
             } catch {
@@ -86,7 +86,7 @@ export function WeightsTemplatesPageClient({caseId, monthYear, templates}: Weigh
         if (deletingTemplateId) {
             setIsDeleting(true);
             try {
-                await deleteTemplateAction('weights', caseId, deletingTemplateId);
+                await deleteWeightsTemplateAction(caseId, deletingTemplateId);
                 toast.success('Template erfolgreich gelöscht');
                 setDeletingTemplateId(null);
             } catch {

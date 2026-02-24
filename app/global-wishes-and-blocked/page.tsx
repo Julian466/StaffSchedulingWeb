@@ -1,7 +1,7 @@
 import {GlobalWishesAndBlockedPageClient} from './global-wishes-and-blocked-page-client';
 import {getAllGlobalWishesAction} from '@/features/global_wishes_and_blocked/global-wishes-and-blocked.actions';
 import {getAllEmployeesAction} from '@/features/employees/employees.actions';
-import {listTemplatesAction} from '@/features/templates/templates.actions';
+import {listGlobalWishesTemplatesAction} from '@/features/templates/global-wishes-templates.actions';
 
 export default async function GlobalWishesAndBlockedPage({
                                                              searchParams,
@@ -24,7 +24,7 @@ export default async function GlobalWishesAndBlockedPage({
     const [employees, currentEmployees, templates] = await Promise.all([
         getAllGlobalWishesAction(caseId, monthYear),
         getAllEmployeesAction(caseId, monthYear),
-        listTemplatesAction('global-wishes', caseId),
+        listGlobalWishesTemplatesAction(caseId),
     ]);
 
     return <GlobalWishesAndBlockedPageClient

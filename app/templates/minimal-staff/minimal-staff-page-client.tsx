@@ -17,10 +17,10 @@ import {
 import {EditTemplateDescriptionDialog} from '@/components/edit-template-description-dialog';
 import {ViewMinimalStaffTemplateDialog} from '@/components/view-minimal-staff-template-dialog';
 import {
-    deleteTemplateAction,
-    getTemplateAction,
-    updateTemplateAction,
-} from '@/features/templates/templates.actions';
+    deleteMinimalStaffTemplateAction,
+    getMinimalStaffTemplateAction,
+    updateMinimalStaffTemplateAction,
+} from '@/features/templates/minimal-staff-templates.actions';
 import {Clock, Edit, Eye, FileText, Trash2, UserCog,} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 import {de} from 'date-fns/locale';
@@ -53,7 +53,7 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear, templates}: 
     const handleViewTemplate = async (templateId: string) => {
         setViewingTemplateId(templateId);
         try {
-            const template = await getTemplateAction<MinimalStaffRequirements>('minimal-staff', caseId, templateId);
+            const template = await getMinimalStaffTemplateAction(caseId, templateId);
             setViewingTemplateData({
                 description: template._metadata.description,
                 content: template.content,
@@ -70,7 +70,7 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear, templates}: 
         if (editingTemplate) {
             setIsUpdating(true);
             try {
-                await updateTemplateAction('minimal-staff', caseId, editingTemplate.id, {description: newDescription});
+                await updateMinimalStaffTemplateAction(caseId, editingTemplate.id, {description: newDescription});
                 toast.success('Template erfolgreich aktualisiert');
                 setEditingTemplate(null);
             } catch {
@@ -85,7 +85,7 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear, templates}: 
         if (deletingTemplateId) {
             setIsDeleting(true);
             try {
-                await deleteTemplateAction('minimal-staff', caseId, deletingTemplateId);
+                await deleteMinimalStaffTemplateAction(caseId, deletingTemplateId);
                 toast.success('Template erfolgreich gelöscht');
                 setDeletingTemplateId(null);
             } catch {

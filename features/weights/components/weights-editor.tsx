@@ -20,10 +20,10 @@ import {
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportTemplateDialog} from '@/components/import-template-dialog';
 import {
-    createTemplateAction,
-    getTemplateAction,
-    listTemplatesAction,
-} from '@/features/templates/templates.actions';
+    createWeightsTemplateAction,
+    getWeightsTemplateAction,
+    listWeightsTemplatesAction,
+} from '@/features/templates/weights-templates.actions';
 import {TemplateSummary} from '@/src/entities/models/template.model';
 import {useSearchParams} from 'next/navigation';
 import {toast} from 'sonner';
@@ -52,7 +52,7 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
     // Fetch templates on mount
     useEffect(() => {
         if (!caseId) return;
-        listTemplatesAction('weights', caseId)
+        listWeightsTemplatesAction(caseId)
             .then(setTemplates)
             .catch(() => setTemplates([]));
     }, [caseId]);
@@ -85,10 +85,10 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
     const handleSaveAsTemplate = async (description: string) => {
         setIsCreating(true);
         try {
-            await createTemplateAction('weights', caseId, editedWeights, description);
+            await createWeightsTemplateAction(caseId, editedWeights, description);
             setSaveDialogOpen(false);
             // Refresh template list
-            const updated = await listTemplatesAction('weights', caseId);
+            const updated = await listWeightsTemplatesAction(caseId);
             setTemplates(updated);
             toast.success('Template gespeichert');
         } catch (error) {
@@ -110,7 +110,7 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
     const confirmImport = async () => {
         if (!selectedTemplateId) return;
         try {
-            const template = await getTemplateAction<Weights>('weights', caseId, selectedTemplateId);
+            const template = await getWeightsTemplateAction(caseId, selectedTemplateId);
             setEditedWeights(template.content);
         } catch (error) {
             toast.error('Fehler beim Laden des Templates', {

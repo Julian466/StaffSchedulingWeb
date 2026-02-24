@@ -1,5 +1,5 @@
 import {WeightsTemplatesPageClient} from './weights-page-client';
-import {listTemplatesAction} from '@/features/templates/templates.actions';
+import {listWeightsTemplatesAction} from '@/features/templates/weights-templates.actions';
 
 export default async function WeightTemplatesPage({
                                                       searchParams,
@@ -19,7 +19,7 @@ export default async function WeightTemplatesPage({
             aus</div>;
     }
 
-    const templates = await listTemplatesAction('weights', caseId);
+    const templates = await listWeightsTemplatesAction(caseId);
 
     return <WeightsTemplatesPageClient caseId={caseId} monthYear={monthYear} templates={templates}/>;
 }

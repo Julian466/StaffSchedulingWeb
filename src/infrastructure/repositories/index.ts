@@ -6,4 +6,6 @@ export {LowdbGlobalWishesAndBlockedRepository} from './lowdb-global-wishes-and-b
 export {LowdbScheduleRepository} from './lowdb-schedule.repository';
 export {LowdbJobRepository} from './lowdb-job.repository';
 export {LowdbCaseRepository} from './lowdb-case.repository';
-export {FileTemplateRepository} from './file-template.repository';
+export {LowdbWeightsTemplateRepository} from './lowdb-weights-template.repository';
+export {LowdbMinimalStaffTemplateRepository} from './lowdb-minimal-staff-template.repository';
+export {GlobalWishesTemplateRepositoryAdapter} from './global-wishes-template.repository';

@@ -8,7 +8,8 @@ import type {IGlobalWishesTemplateRepository} from '@/src/application/ports/glob
 import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
 import type {IJobRepository} from '@/src/application/ports/job.repository';
 import type {ICaseRepository} from '@/src/application/ports/case.repository';
-import type {ITemplateRepository} from '@/src/application/ports/template.repository';
+import type {IWeightsTemplateRepository} from '@/src/application/ports/weights-template.repository';
+import type {IMinimalStaffTemplateRepository} from '@/src/application/ports/minimal-staff-template.repository';
 
 // Service interfaces
 import type {ISolverService} from '@/src/application/ports/solver.service';
@@ -50,11 +51,24 @@ import type {IGetJobUseCase} from '@/src/application/use-cases/jobs/get-job.use-
 import type {ICreateJobUseCase} from '@/src/application/use-cases/jobs/create-job.use-case';
 import type {IListCasesUseCase} from '@/src/application/use-cases/cases/list-cases.use-case';
 import type {IGetSelectedScheduleUseCase} from '@/src/application/use-cases/schedule/get-selected-schedule.use-case';
-import type {IListTemplatesUseCase} from '@/src/application/use-cases/templates/list-templates.use-case';
-import type {IGetTemplateUseCase} from '@/src/application/use-cases/templates/get-template.use-case';
-import type {ICreateTemplateUseCase} from '@/src/application/use-cases/templates/create-template.use-case';
-import type {IUpdateTemplateUseCase} from '@/src/application/use-cases/templates/update-template.use-case';
-import type {IDeleteTemplateUseCase} from '@/src/application/use-cases/templates/delete-template.use-case';
+// Use Case interfaces — Weights Templates
+import type {IListWeightsTemplatesUseCase} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
+import type {IGetWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/get-weights-template.use-case';
+import type {ICreateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
+import type {IUpdateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/update-weights-template.use-case';
+import type {IDeleteWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
+// Use Case interfaces — Minimal Staff Templates
+import type {IListMinimalStaffTemplatesUseCase} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
+import type {IGetMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/get-minimal-staff-template.use-case';
+import type {ICreateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/create-minimal-staff-template.use-case';
+import type {IUpdateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
+import type {IDeleteMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
+// Use Case interfaces — Global Wishes Templates
+import type {IListGlobalWishesTemplatesUseCase} from '@/src/application/use-cases/templates/global-wishes/list-global-wishes-templates.use-case';
+import type {IGetGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/get-global-wishes-template.use-case';
+import type {ICreateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
+import type {IUpdateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/update-global-wishes-template.use-case';
+import type {IDeleteGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
 
 // Use Case interfaces — Solver
 import type {IValidateConfigUseCase} from '@/src/application/use-cases/solver/validate-config.use-case';
@@ -101,11 +115,24 @@ import type {IGetJobController} from '@/src/controllers/jobs/get-job.controller'
 import type {ICreateJobController} from '@/src/controllers/jobs/create-job.controller';
 import type {IListCasesController} from '@/src/controllers/cases/list-cases.controller';
 import type {IGetSelectedScheduleController} from '@/src/controllers/schedule/get-selected-schedule.controller';
-import type {IListTemplatesController} from '@/src/controllers/templates/list-templates.controller';
-import type {IGetTemplateController} from '@/src/controllers/templates/get-template.controller';
-import type {ICreateTemplateController} from '@/src/controllers/templates/create-template.controller';
-import type {IUpdateTemplateController} from '@/src/controllers/templates/update-template.controller';
-import type {IDeleteTemplateController} from '@/src/controllers/templates/delete-template.controller';
+// Controller interfaces — Weights Templates
+import type {IListWeightsTemplatesController} from '@/src/controllers/templates/weights/list-weights-templates.controller';
+import type {IGetWeightsTemplateController} from '@/src/controllers/templates/weights/get-weights-template.controller';
+import type {ICreateWeightsTemplateController} from '@/src/controllers/templates/weights/create-weights-template.controller';
+import type {IUpdateWeightsTemplateController} from '@/src/controllers/templates/weights/update-weights-template.controller';
+import type {IDeleteWeightsTemplateController} from '@/src/controllers/templates/weights/delete-weights-template.controller';
+// Controller interfaces — Minimal Staff Templates
+import type {IListMinimalStaffTemplatesController} from '@/src/controllers/templates/minimal-staff/list-minimal-staff-templates.controller';
+import type {IGetMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/get-minimal-staff-template.controller';
+import type {ICreateMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/create-minimal-staff-template.controller';
+import type {IUpdateMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/update-minimal-staff-template.controller';
+import type {IDeleteMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/delete-minimal-staff-template.controller';
+// Controller interfaces — Global Wishes Templates
+import type {IListGlobalWishesTemplatesController} from '@/src/controllers/templates/global-wishes/list-global-wishes-templates.controller';
+import type {IGetGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/get-global-wishes-template.controller';
+import type {ICreateGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/create-global-wishes-template.controller';
+import type {IUpdateGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/update-global-wishes-template.controller';
+import type {IDeleteGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/delete-global-wishes-template.controller';
 
 // Controller interfaces — Solver
 import type {IValidateConfigController} from '@/src/controllers/solver/validate-config.controller';
@@ -128,10 +155,11 @@ export const DI_SYMBOLS = {
     IWishesAndBlockedRepository: Symbol.for('IWishesAndBlockedRepository'),
     IGlobalWishesAndBlockedRepository: Symbol.for('IGlobalWishesAndBlockedRepository'),
     IGlobalWishesTemplateRepository: Symbol.for('IGlobalWishesTemplateRepository'),
+    IWeightsTemplateRepository: Symbol.for('IWeightsTemplateRepository'),
+    IMinimalStaffTemplateRepository: Symbol.for('IMinimalStaffTemplateRepository'),
     IScheduleRepository: Symbol.for('IScheduleRepository'),
     IJobRepository: Symbol.for('IJobRepository'),
     ICaseRepository: Symbol.for('ICaseRepository'),
-    ITemplateRepository: Symbol.for('ITemplateRepository'),
 
     // Use Cases — Employees
     IGetAllEmployeesUseCase: Symbol.for('IGetAllEmployeesUseCase'),
@@ -180,12 +208,26 @@ export const DI_SYMBOLS = {
     // Use Cases — Schedule (extended)
     IGetSelectedScheduleUseCase: Symbol.for('IGetSelectedScheduleUseCase'),
 
-    // Use Cases — Templates
-    IListTemplatesUseCase: Symbol.for('IListTemplatesUseCase'),
-    IGetTemplateUseCase: Symbol.for('IGetTemplateUseCase'),
-    ICreateTemplateUseCase: Symbol.for('ICreateTemplateUseCase'),
-    IUpdateTemplateUseCase: Symbol.for('IUpdateTemplateUseCase'),
-    IDeleteTemplateUseCase: Symbol.for('IDeleteTemplateUseCase'),
+    // Use Cases — Weights Templates
+    IListWeightsTemplatesUseCase: Symbol.for('IListWeightsTemplatesUseCase'),
+    IGetWeightsTemplateUseCase: Symbol.for('IGetWeightsTemplateUseCase'),
+    ICreateWeightsTemplateUseCase: Symbol.for('ICreateWeightsTemplateUseCase'),
+    IUpdateWeightsTemplateUseCase: Symbol.for('IUpdateWeightsTemplateUseCase'),
+    IDeleteWeightsTemplateUseCase: Symbol.for('IDeleteWeightsTemplateUseCase'),
+
+    // Use Cases — Minimal Staff Templates
+    IListMinimalStaffTemplatesUseCase: Symbol.for('IListMinimalStaffTemplatesUseCase'),
+    IGetMinimalStaffTemplateUseCase: Symbol.for('IGetMinimalStaffTemplateUseCase'),
+    ICreateMinimalStaffTemplateUseCase: Symbol.for('ICreateMinimalStaffTemplateUseCase'),
+    IUpdateMinimalStaffTemplateUseCase: Symbol.for('IUpdateMinimalStaffTemplateUseCase'),
+    IDeleteMinimalStaffTemplateUseCase: Symbol.for('IDeleteMinimalStaffTemplateUseCase'),
+
+    // Use Cases — Global Wishes Templates
+    IListGlobalWishesTemplatesUseCase: Symbol.for('IListGlobalWishesTemplatesUseCase'),
+    IGetGlobalWishesTemplateUseCase: Symbol.for('IGetGlobalWishesTemplateUseCase'),
+    ICreateGlobalWishesTemplateUseCase: Symbol.for('ICreateGlobalWishesTemplateUseCase'),
+    IUpdateGlobalWishesTemplateUseCase: Symbol.for('IUpdateGlobalWishesTemplateUseCase'),
+    IDeleteGlobalWishesTemplateUseCase: Symbol.for('IDeleteGlobalWishesTemplateUseCase'),
 
     // Services — Solver
     ISolverService: Symbol.for('ISolverService'),
@@ -249,12 +291,26 @@ export const DI_SYMBOLS = {
     // Controllers — Schedule (extended)
     IGetSelectedScheduleController: Symbol.for('IGetSelectedScheduleController'),
 
-    // Controllers — Templates
-    IListTemplatesController: Symbol.for('IListTemplatesController'),
-    IGetTemplateController: Symbol.for('IGetTemplateController'),
-    ICreateTemplateController: Symbol.for('ICreateTemplateController'),
-    IUpdateTemplateController: Symbol.for('IUpdateTemplateController'),
-    IDeleteTemplateController: Symbol.for('IDeleteTemplateController'),
+    // Controllers — Weights Templates
+    IListWeightsTemplatesController: Symbol.for('IListWeightsTemplatesController'),
+    IGetWeightsTemplateController: Symbol.for('IGetWeightsTemplateController'),
+    ICreateWeightsTemplateController: Symbol.for('ICreateWeightsTemplateController'),
+    IUpdateWeightsTemplateController: Symbol.for('IUpdateWeightsTemplateController'),
+    IDeleteWeightsTemplateController: Symbol.for('IDeleteWeightsTemplateController'),
+
+    // Controllers — Minimal Staff Templates
+    IListMinimalStaffTemplatesController: Symbol.for('IListMinimalStaffTemplatesController'),
+    IGetMinimalStaffTemplateController: Symbol.for('IGetMinimalStaffTemplateController'),
+    ICreateMinimalStaffTemplateController: Symbol.for('ICreateMinimalStaffTemplateController'),
+    IUpdateMinimalStaffTemplateController: Symbol.for('IUpdateMinimalStaffTemplateController'),
+    IDeleteMinimalStaffTemplateController: Symbol.for('IDeleteMinimalStaffTemplateController'),
+
+    // Controllers — Global Wishes Templates
+    IListGlobalWishesTemplatesController: Symbol.for('IListGlobalWishesTemplatesController'),
+    IGetGlobalWishesTemplateController: Symbol.for('IGetGlobalWishesTemplateController'),
+    ICreateGlobalWishesTemplateController: Symbol.for('ICreateGlobalWishesTemplateController'),
+    IUpdateGlobalWishesTemplateController: Symbol.for('IUpdateGlobalWishesTemplateController'),
+    IDeleteGlobalWishesTemplateController: Symbol.for('IDeleteGlobalWishesTemplateController'),
 
     // Controllers — Solver
     IValidateConfigController: Symbol.for('IValidateConfigController'),
@@ -276,10 +332,11 @@ export interface DI_RETURN_TYPES {
     IWishesAndBlockedRepository: IWishesAndBlockedRepository;
     IGlobalWishesAndBlockedRepository: IGlobalWishesAndBlockedRepository;
     IGlobalWishesTemplateRepository: IGlobalWishesTemplateRepository;
+    IWeightsTemplateRepository: IWeightsTemplateRepository;
+    IMinimalStaffTemplateRepository: IMinimalStaffTemplateRepository;
     IScheduleRepository: IScheduleRepository;
     IJobRepository: IJobRepository;
     ICaseRepository: ICaseRepository;
-    ITemplateRepository: ITemplateRepository;
 
     // Use Cases — Employees
     IGetAllEmployeesUseCase: IGetAllEmployeesUseCase;
@@ -328,12 +385,26 @@ export interface DI_RETURN_TYPES {
     // Use Cases — Schedule (extended)
     IGetSelectedScheduleUseCase: IGetSelectedScheduleUseCase;
 
-    // Use Cases — Templates
-    IListTemplatesUseCase: IListTemplatesUseCase;
-    IGetTemplateUseCase: IGetTemplateUseCase;
-    ICreateTemplateUseCase: ICreateTemplateUseCase;
-    IUpdateTemplateUseCase: IUpdateTemplateUseCase;
-    IDeleteTemplateUseCase: IDeleteTemplateUseCase;
+    // Use Cases — Weights Templates
+    IListWeightsTemplatesUseCase: IListWeightsTemplatesUseCase;
+    IGetWeightsTemplateUseCase: IGetWeightsTemplateUseCase;
+    ICreateWeightsTemplateUseCase: ICreateWeightsTemplateUseCase;
+    IUpdateWeightsTemplateUseCase: IUpdateWeightsTemplateUseCase;
+    IDeleteWeightsTemplateUseCase: IDeleteWeightsTemplateUseCase;
+
+    // Use Cases — Minimal Staff Templates
+    IListMinimalStaffTemplatesUseCase: IListMinimalStaffTemplatesUseCase;
+    IGetMinimalStaffTemplateUseCase: IGetMinimalStaffTemplateUseCase;
+    ICreateMinimalStaffTemplateUseCase: ICreateMinimalStaffTemplateUseCase;
+    IUpdateMinimalStaffTemplateUseCase: IUpdateMinimalStaffTemplateUseCase;
+    IDeleteMinimalStaffTemplateUseCase: IDeleteMinimalStaffTemplateUseCase;
+
+    // Use Cases — Global Wishes Templates
+    IListGlobalWishesTemplatesUseCase: IListGlobalWishesTemplatesUseCase;
+    IGetGlobalWishesTemplateUseCase: IGetGlobalWishesTemplateUseCase;
+    ICreateGlobalWishesTemplateUseCase: ICreateGlobalWishesTemplateUseCase;
+    IUpdateGlobalWishesTemplateUseCase: IUpdateGlobalWishesTemplateUseCase;
+    IDeleteGlobalWishesTemplateUseCase: IDeleteGlobalWishesTemplateUseCase;
 
     // Services — Solver
     ISolverService: ISolverService;
@@ -397,12 +468,26 @@ export interface DI_RETURN_TYPES {
     // Controllers — Schedule (extended)
     IGetSelectedScheduleController: IGetSelectedScheduleController;
 
-    // Controllers — Templates
-    IListTemplatesController: IListTemplatesController;
-    IGetTemplateController: IGetTemplateController;
-    ICreateTemplateController: ICreateTemplateController;
-    IUpdateTemplateController: IUpdateTemplateController;
-    IDeleteTemplateController: IDeleteTemplateController;
+    // Controllers — Weights Templates
+    IListWeightsTemplatesController: IListWeightsTemplatesController;
+    IGetWeightsTemplateController: IGetWeightsTemplateController;
+    ICreateWeightsTemplateController: ICreateWeightsTemplateController;
+    IUpdateWeightsTemplateController: IUpdateWeightsTemplateController;
+    IDeleteWeightsTemplateController: IDeleteWeightsTemplateController;
+
+    // Controllers — Minimal Staff Templates
+    IListMinimalStaffTemplatesController: IListMinimalStaffTemplatesController;
+    IGetMinimalStaffTemplateController: IGetMinimalStaffTemplateController;
+    ICreateMinimalStaffTemplateController: ICreateMinimalStaffTemplateController;
+    IUpdateMinimalStaffTemplateController: IUpdateMinimalStaffTemplateController;
+    IDeleteMinimalStaffTemplateController: IDeleteMinimalStaffTemplateController;
+
+    // Controllers — Global Wishes Templates
+    IListGlobalWishesTemplatesController: IListGlobalWishesTemplatesController;
+    IGetGlobalWishesTemplateController: IGetGlobalWishesTemplateController;
+    ICreateGlobalWishesTemplateController: ICreateGlobalWishesTemplateController;
+    IUpdateGlobalWishesTemplateController: IUpdateGlobalWishesTemplateController;
+    IDeleteGlobalWishesTemplateController: IDeleteGlobalWishesTemplateController;
 
     // Controllers — Solver
     IValidateConfigController: IValidateConfigController;
