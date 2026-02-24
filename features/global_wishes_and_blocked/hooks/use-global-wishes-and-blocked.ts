@@ -11,11 +11,6 @@ import {
 
 /**
  * Hook to fetch all employees with their wishes and blocked data for the current case.
- * Includes wish days, wish shifts, blocked days, and blocked shifts.
- *
- * @param caseId - The case ID
- * @param monthYear - The month/year string
- * @returns React Query result with wishes and blocked employee data
  */
 export function useGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     return useQuery({
@@ -28,22 +23,14 @@ export function useGlobalWishesAndBlocked(caseId: number, monthYear: string) {
 }
 
 /**
- * Hook to create a new wishes and blocked employee entry.
- * Note: This is typically called automatically when creating an employee.
- *
- * @param caseId - The case ID
- * @param monthYear - The month/year string
- * @returns React Query mutation for creating a wishes and blocked entry
+ * Hook to create a new global wishes entry.
+ * Also deletes and regenerates the monthly wishes for that employee.
  */
 export function useCreateGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (payload: {
-            data: Omit<WishesAndBlockedEmployee, 'key'>;
-            options?: { skipSyncToMonthly?: boolean }
-        }) => {
-            const {data, options} = payload;
-            return createGlobalWishesAction(caseId, monthYear, data, options);
+        mutationFn: async (entry: WishesAndBlockedEmployee) => {
+            return createGlobalWishesAction(caseId, monthYear, entry);
         },
         onSuccess: () => {
             qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', caseId, monthYear]});
@@ -53,19 +40,18 @@ export function useCreateGlobalWishesAndBlocked(caseId: number, monthYear: strin
 }
 
 /**
- * @param caseId - The case ID
- * @param monthYear - The month/year string
+ * Hook to update a global wishes entry.
+ * Also deletes and regenerates the monthly wishes for that employee.
  */
 export function useUpdateGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({id, data, options}: {
+        mutationFn: async ({id, data}: {
             id: number;
             data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>;
-            options?: { skipSyncToMonthly?: boolean }
-        }): Promise<WishesAndBlockedEmployee> => {
-            return updateGlobalWishesAction(caseId, monthYear, id, data, options);
+        }): Promise<void> => {
+            return updateGlobalWishesAction(caseId, monthYear, id, data);
         },
         onSuccess: () => {
             qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', caseId, monthYear]});
@@ -75,8 +61,8 @@ export function useUpdateGlobalWishesAndBlocked(caseId: number, monthYear: strin
 }
 
 /**
- * @param caseId - The case ID
- * @param monthYear - The month/year string
+ * Hook to delete a global wishes entry.
+ * Also deletes the monthly wishes for that employee.
  */
 export function useDeleteGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
@@ -86,6 +72,7 @@ export function useDeleteGlobalWishesAndBlocked(caseId: number, monthYear: strin
         },
         onSuccess: () => {
             qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', caseId, monthYear]});
+            qc.invalidateQueries({queryKey: ['wishes-and-blocked', caseId, monthYear]});
         },
     });
 }

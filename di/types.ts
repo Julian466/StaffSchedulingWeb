@@ -4,6 +4,7 @@ import type {IWeightsRepository} from '@/src/application/ports/weights.repositor
 import type {IMinimalStaffRepository} from '@/src/application/ports/minimal-staff.repository';
 import type {IWishesAndBlockedRepository} from '@/src/application/ports/wishes-and-blocked.repository';
 import type {IGlobalWishesAndBlockedRepository} from '@/src/application/ports/global-wishes-and-blocked.repository';
+import type {IGlobalWishesTemplateRepository} from '@/src/application/ports/global-wishes-template.repository';
 import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
 import type {IJobRepository} from '@/src/application/ports/job.repository';
 import type {ICaseRepository} from '@/src/application/ports/case.repository';
@@ -34,6 +35,7 @@ import type {
 import type {ICreateGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/create-global-wishes.use-case';
 import type {IUpdateGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/update-global-wishes.use-case';
 import type {IDeleteGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/delete-global-wishes.use-case';
+import type {IImportGlobalWishesTemplateUseCase} from '@/src/application/use-cases/global-wishes/import-global-wishes-template.use-case';
 import type {IGetSchedulesMetadataUseCase} from '@/src/application/use-cases/schedule/get-schedules-metadata.use-case';
 import type {IGetScheduleUseCase} from '@/src/application/use-cases/schedule/get-schedule.use-case';
 import type {ISaveScheduleUseCase} from '@/src/application/use-cases/schedule/save-schedule.use-case';
@@ -80,6 +82,7 @@ import type {
 import type {ICreateGlobalWishesController} from '@/src/controllers/global-wishes/create-global-wishes.controller';
 import type {IUpdateGlobalWishesController} from '@/src/controllers/global-wishes/update-global-wishes.controller';
 import type {IDeleteGlobalWishesController} from '@/src/controllers/global-wishes/delete-global-wishes.controller';
+import type {IImportGlobalWishesTemplateController} from '@/src/controllers/global-wishes/import-global-wishes-template.controller';
 import type {IGetSchedulesMetadataController} from '@/src/controllers/schedule/get-schedules-metadata.controller';
 import type {IGetScheduleController} from '@/src/controllers/schedule/get-schedule.controller';
 import type {ISaveScheduleController} from '@/src/controllers/schedule/save-schedule.controller';
@@ -111,6 +114,7 @@ export const DI_SYMBOLS = {
     IMinimalStaffRepository: Symbol.for('IMinimalStaffRepository'),
     IWishesAndBlockedRepository: Symbol.for('IWishesAndBlockedRepository'),
     IGlobalWishesAndBlockedRepository: Symbol.for('IGlobalWishesAndBlockedRepository'),
+    IGlobalWishesTemplateRepository: Symbol.for('IGlobalWishesTemplateRepository'),
     IScheduleRepository: Symbol.for('IScheduleRepository'),
     IJobRepository: Symbol.for('IJobRepository'),
     ICaseRepository: Symbol.for('ICaseRepository'),
@@ -141,6 +145,7 @@ export const DI_SYMBOLS = {
     ICreateGlobalWishesUseCase: Symbol.for('ICreateGlobalWishesUseCase'),
     IUpdateGlobalWishesUseCase: Symbol.for('IUpdateGlobalWishesUseCase'),
     IDeleteGlobalWishesUseCase: Symbol.for('IDeleteGlobalWishesUseCase'),
+    IImportGlobalWishesTemplateUseCase: Symbol.for('IImportGlobalWishesTemplateUseCase'),
 
     // Use Cases — Schedule
     IGetSchedulesMetadataUseCase: Symbol.for('IGetSchedulesMetadataUseCase'),
@@ -199,6 +204,7 @@ export const DI_SYMBOLS = {
     ICreateGlobalWishesController: Symbol.for('ICreateGlobalWishesController'),
     IUpdateGlobalWishesController: Symbol.for('IUpdateGlobalWishesController'),
     IDeleteGlobalWishesController: Symbol.for('IDeleteGlobalWishesController'),
+    IImportGlobalWishesTemplateController: Symbol.for('IImportGlobalWishesTemplateController'),
 
     // Controllers — Schedule
     IGetSchedulesMetadataController: Symbol.for('IGetSchedulesMetadataController'),
@@ -235,6 +241,7 @@ export interface DI_RETURN_TYPES {
     IMinimalStaffRepository: IMinimalStaffRepository;
     IWishesAndBlockedRepository: IWishesAndBlockedRepository;
     IGlobalWishesAndBlockedRepository: IGlobalWishesAndBlockedRepository;
+    IGlobalWishesTemplateRepository: IGlobalWishesTemplateRepository;
     IScheduleRepository: IScheduleRepository;
     IJobRepository: IJobRepository;
     ICaseRepository: ICaseRepository;
@@ -265,6 +272,7 @@ export interface DI_RETURN_TYPES {
     ICreateGlobalWishesUseCase: ICreateGlobalWishesUseCase;
     IUpdateGlobalWishesUseCase: IUpdateGlobalWishesUseCase;
     IDeleteGlobalWishesUseCase: IDeleteGlobalWishesUseCase;
+    IImportGlobalWishesTemplateUseCase: IImportGlobalWishesTemplateUseCase;
 
     // Use Cases — Schedule
     IGetSchedulesMetadataUseCase: IGetSchedulesMetadataUseCase;
@@ -323,6 +331,7 @@ export interface DI_RETURN_TYPES {
     ICreateGlobalWishesController: ICreateGlobalWishesController;
     IUpdateGlobalWishesController: IUpdateGlobalWishesController;
     IDeleteGlobalWishesController: IDeleteGlobalWishesController;
+    IImportGlobalWishesTemplateController: IImportGlobalWishesTemplateController;
 
     // Controllers — Schedule
     IGetSchedulesMetadataController: IGetSchedulesMetadataController;

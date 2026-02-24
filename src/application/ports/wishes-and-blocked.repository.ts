@@ -10,4 +10,13 @@ export interface IWishesAndBlockedRepository {
     update(caseId: number, monthYear: string, key: number, data: Partial<WishesAndBlockedEmployee>): Promise<void>;
 
     delete(caseId: number, monthYear: string, key: number): Promise<void>;
+
+    /** Delete all monthly-wishes entries for the given case/month. */
+    deleteAll(caseId: number, monthYear: string): Promise<void>;
+
+    /**
+     * Generate (create or overwrite) the monthly wishes entry for one employee
+     * from their global (weekly) pattern.
+     */
+    generateFromGlobal(caseId: number, monthYear: string, globalEntry: WishesAndBlockedEmployee): Promise<void>;
 }

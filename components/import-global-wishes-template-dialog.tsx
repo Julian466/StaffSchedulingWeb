@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useState} from 'react';
 import {
@@ -12,7 +12,7 @@ import {
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
 import {Button} from '@/components/ui/button';
 import {Label} from '@/components/ui/label';
-import {AlertCircle, CheckCircle2, Clock, FileText, Loader2, Users, XCircle} from 'lucide-react';
+import {AlertCircle, CheckCircle2, Clock, FileText, Loader2, TriangleAlert, Users, XCircle} from 'lucide-react';
 import {GlobalWishesTemplateContent, Template, TemplateSummary} from '@/src/entities/models/template.model';
 import {Employee} from '@/src/entities/models/employee.model';
 import {format, formatDistanceToNow} from 'date-fns';
@@ -27,14 +27,15 @@ interface ImportGlobalWishesTemplateDialogProps {
     templates: TemplateSummary[];
     selectedTemplateContent?: Template<GlobalWishesTemplateContent> | null;
     currentEmployees: Employee[];
-    onImportMerge: (templateId: string) => void;
-    onImportOverwrite: (templateId: string) => void;
+    onImport: (templateId: string) => void;
     onSelectTemplate: (templateId: string) => void;
     isImporting?: boolean;
 }
 
 /**
  * Dialog for importing global wishes templates with employee matching preview.
+ * Always performs a full reset: all existing global and monthly wishes are deleted
+ * before importing from the template.
  */
 export function ImportGlobalWishesTemplateDialog({
                                                      open,
@@ -42,8 +43,7 @@ export function ImportGlobalWishesTemplateDialog({
                                                      templates,
                                                      selectedTemplateContent,
                                                      currentEmployees,
-                                                     onImportMerge,
-                                                     onImportOverwrite,
+                                                     onImport,
                                                      onSelectTemplate,
                                                      isImporting = false,
                                                  }: ImportGlobalWishesTemplateDialogProps) {
@@ -54,15 +54,9 @@ export function ImportGlobalWishesTemplateDialog({
         onSelectTemplate(templateId);
     };
 
-    const handleMerge = () => {
+    const handleImport = () => {
         if (selectedTemplateId) {
-            onImportMerge(selectedTemplateId);
-        }
-    };
-
-    const handleOverwrite = () => {
-        if (selectedTemplateId) {
-            onImportOverwrite(selectedTemplateId);
+            onImport(selectedTemplateId);
         }
     };
 
@@ -80,7 +74,7 @@ export function ImportGlobalWishesTemplateDialog({
 
     const truncate = (text: string, max = 60) => {
         if (!text) return '';
-        return text.length > max ? text.slice(0, max - 1) + '…' : text;
+        return text.length > max ? text.slice(0, max - 1) + 'â€¦' : text;
     };
 
     return (
@@ -89,21 +83,31 @@ export function ImportGlobalWishesTemplateDialog({
                 <DialogHeader>
                     <DialogTitle>Global Wishes Template laden</DialogTitle>
                     <DialogDescription>
-                        Wählen Sie ein Template aus. Es werden nur Wünsche für Mitarbeiter importiert, die im aktuellen
+                        WÃ¤hlen Sie ein Template aus. Es werden nur WÃ¼nsche fÃ¼r Mitarbeiter importiert, die im aktuellen
                         Monat vorhanden sind.
                     </DialogDescription>
                 </DialogHeader>
 
                 <div className="space-y-4 flex-1 overflow-hidden">
+                    {/* Warning about full reset */}
+                    <div
+                        className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 flex items-start gap-2">
+                        <TriangleAlert className="h-4 w-4 text-amber-600 mt-0.5 shrink-0"/>
+                        <p className="text-sm text-amber-800 dark:text-amber-200">
+                            <strong>Achtung:</strong> Alle bestehenden globalen und monatlichen WÃ¼nsche werden
+                            vollstÃ¤ndig gelÃ¶scht und durch die Daten aus dem Template ersetzt.
+                        </p>
+                    </div>
+
                     <div className="space-y-2">
-                        <Label htmlFor="template-select">Template auswählen</Label>
+                        <Label htmlFor="template-select">Template auswÃ¤hlen</Label>
                         <Select
                             value={selectedTemplateId}
                             onValueChange={handleSelectTemplate}
                             disabled={isImporting}
                         >
                             <SelectTrigger id="template-select" className="w-full">
-                                <SelectValue placeholder="Wählen Sie ein Template..."/>
+                                <SelectValue placeholder="WÃ¤hlen Sie ein Template..."/>
                             </SelectTrigger>
                             <SelectContent className="w-full" align="start">
                                 {templates.map((template) => {
@@ -147,7 +151,7 @@ export function ImportGlobalWishesTemplateDialog({
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock className="h-3.5 w-3.5"/>
                                 <span>
-                  Zuletzt geändert:{' '}
+                  Zuletzt geÃ¤ndert:{' '}
                                     {formatDistanceToNow(new Date(selectedTemplate.last_modified), {
                                         addSuffix: true,
                                         locale: de,
@@ -182,7 +186,7 @@ export function ImportGlobalWishesTemplateDialog({
                                     {matchResult.matchCount < matchResult.totalCount && (
                                         <Badge variant="outline" className="text-xs">
                                             <AlertCircle className="h-3 w-3 mr-1"/>
-                                            {matchResult.totalCount - matchResult.matchCount} werden übersprungen
+                                            {matchResult.totalCount - matchResult.matchCount} werden Ã¼bersprungen
                                         </Badge>
                                     )}
                                 </div>
@@ -242,20 +246,6 @@ export function ImportGlobalWishesTemplateDialog({
                                     </div>
                                 </ScrollArea>
                             </div>
-
-                            <div className="rounded-lg border p-3 bg-blue-50 dark:bg-blue-950/20 space-y-1.5">
-                                <div className="text-sm font-medium">Import-Optionen</div>
-                                <div className="text-xs text-muted-foreground space-y-1">
-                                    <div>
-                                        <strong>Merge:</strong> Gefundene Mitarbeiter aktualisieren, aktuelle
-                                        Mitarbeiter behalten
-                                    </div>
-                                    <div>
-                                        <strong>Überschreiben:</strong> Alle aktuellen globalen Wünsche löschen und nur
-                                        gefundene Mitarbeiter importieren
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     )}
                 </div>
@@ -265,23 +255,13 @@ export function ImportGlobalWishesTemplateDialog({
                         Abbrechen
                     </Button>
                     {matchResult && (
-                        <>
-                            <Button
-                                variant="secondary"
-                                onClick={handleMerge}
-                                disabled={isImporting || matchResult.matchCount === 0}
-                            >
-                                {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Merge ({matchResult.matchCount})
-                            </Button>
-                            <Button
-                                onClick={handleOverwrite}
-                                disabled={isImporting || matchResult.matchCount === 0}
-                            >
-                                {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                                Überschreiben ({matchResult.matchCount})
-                            </Button>
-                        </>
+                        <Button
+                            onClick={handleImport}
+                            disabled={isImporting || matchResult.matchCount === 0}
+                        >
+                            {isImporting && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Importieren ({matchResult.matchCount})
+                        </Button>
                     )}
                 </DialogFooter>
             </DialogContent>

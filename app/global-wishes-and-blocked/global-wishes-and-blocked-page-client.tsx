@@ -7,6 +7,16 @@ import {Plus, Save, Upload} from 'lucide-react';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {WishesAndBlockedList} from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
 import {WishesAndBlockedDialog} from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 import {
     useCreateGlobalWishesAndBlocked,
@@ -14,20 +24,16 @@ import {
     useGlobalWishesAndBlocked,
     useUpdateGlobalWishesAndBlocked,
 } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-and-blocked';
-import {useWishesAndBlocked} from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
-import {
-    GlobalWishesConflictDialog
-} from '@/features/global_wishes_and_blocked/components/global-wishes-conflict-dialog';
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportGlobalWishesTemplateDialog} from '@/components/import-global-wishes-template-dialog';
 import {
     useCreateGlobalWishesTemplate,
     useGlobalWishesTemplate,
-    useGlobalWishesTemplates
+    useGlobalWishesTemplates,
+    useImportGlobalWishesTemplate,
 } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-templates';
 import {useEmployees} from '@/features/employees/hooks/use-employees';
 import {toast} from 'sonner';
-import {matchTemplateEmployees} from '@/lib/utils/employee-matching';
 
 interface GlobalWishesAndBlockedPageClientProps {
     caseId: number;
@@ -38,10 +44,7 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
 
-    const {
-        data: employees = [] as WishesAndBlockedEmployee[],
-        isLoading
-    } = useGlobalWishesAndBlocked(caseId, monthYear);
+    const {data: employees = [], isLoading} = useGlobalWishesAndBlocked(caseId, monthYear);
     const createMutation = useCreateGlobalWishesAndBlocked(caseId, monthYear);
     const updateMutation = useUpdateGlobalWishesAndBlocked(caseId, monthYear);
     const deleteMutation = useDeleteGlobalWishesAndBlocked(caseId, monthYear);
@@ -55,6 +58,17 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
     const {data: selectedTemplate} = useGlobalWishesTemplate(caseId, selectedTemplateId);
     const {mutate: createTemplate, isPending: isCreatingTemplate} = useCreateGlobalWishesTemplate(caseId);
     const {data: currentEmployees = []} = useEmployees(caseId, monthYear);
+    const importTemplateMutation = useImportGlobalWishesTemplate(caseId, monthYear);
+
+    // Confirmation dialog for save (create / edit)
+    const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
+    const [pendingEntry, setPendingEntry] = useState<{
+        entry: WishesAndBlockedEmployee;
+        isEdit: boolean;
+    } | null>(null);
+
+    // Confirmation dialog for delete
+    const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
     const handleCreate = () => {
         setEditingEmployee(undefined);
@@ -66,54 +80,64 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
         setDialogOpen(true);
     };
 
-    // State for conflict dialog
-    const {data: monthlyEmployees = []} = useWishesAndBlocked(caseId, monthYear);
-    const [conflictOpen, setConflictOpen] = useState(false);
-    const [pendingPayload, setPendingPayload] = useState<{
-        data: Omit<WishesAndBlockedEmployee, 'key'>;
-        isEdit: boolean;
-        employeeKey?: number;
-        employeeName?: string;
-    } | null>(null);
+    /**
+     * Called when the form is submitted.
+     * Resolves the employee key and opens the confirmation dialog.
+     */
+    const handleSubmit = (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
+        const isEdit = !!editingEmployee;
 
-    const handleSubmit = async (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
-        // Determine if there are existing monthly wishes for this employee
-        const employeeKey = editingEmployee?.key;
-        const monthlyEntry = employeeKey
-            ? monthlyEmployees?.find((e: WishesAndBlockedEmployee) => e.key === employeeKey)
-            : monthlyEmployees?.find((e: WishesAndBlockedEmployee) => e.firstname === data.firstname && e.name === data.name);
-
-        const hasMonthlyWishes = !!monthlyEntry && (
-            (monthlyEntry.wish_days?.length || 0) > 0 ||
-            (monthlyEntry.wish_shifts?.length || 0) > 0 ||
-            (monthlyEntry.blocked_days?.length || 0) > 0 ||
-            (monthlyEntry.blocked_shifts?.length || 0) > 0
-        );
-
-        if (hasMonthlyWishes) {
-            setPendingPayload({
-                data,
-                isEdit: !!editingEmployee,
-                employeeKey: editingEmployee?.key,
-                employeeName: `${data.firstname} ${data.name}`
-            });
-            setConflictOpen(true);
-            return;
-        }
-
-        if (editingEmployee) {
-            await updateMutation.mutateAsync({id: editingEmployee.key, data});
+        let key: number;
+        if (isEdit) {
+            key = editingEmployee!.key;
         } else {
-            await createMutation.mutateAsync({data, options: {}});
+            const found = currentEmployees.find(
+                (e) => e.firstname === data.firstname && e.name === data.name
+            );
+            if (!found) {
+                toast.error('Mitarbeiter nicht gefunden.');
+                return;
+            }
+            key = found.key;
         }
+
+        setPendingEntry({entry: {key, ...data}, isEdit});
         setDialogOpen(false);
+        setConfirmSaveOpen(true);
+    };
+
+    const handleConfirmSave = async () => {
+        if (!pendingEntry) return;
+        const {entry, isEdit} = pendingEntry;
+        try {
+            if (isEdit) {
+                const {key, ...data} = entry;
+                await updateMutation.mutateAsync({id: key, data});
+                toast.success('Globale Wünsche gespeichert. Monatliche Wünsche wurden zurückgesetzt.');
+            } else {
+                await createMutation.mutateAsync(entry);
+                toast.success('Globale Wünsche erstellt. Monatliche Wünsche wurden neu berechnet.');
+            }
+        } catch {
+            toast.error('Fehler beim Speichern.');
+        }
+        setPendingEntry(null);
         setEditingEmployee(undefined);
     };
 
-    const handleDelete = async (id: number) => {
-        if (confirm('Möchtest du diesen Eintrag wirklich löschen?')) {
-            await deleteMutation.mutateAsync(id);
+    const handleDeleteRequest = (id: number) => {
+        setConfirmDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (confirmDeleteId === null) return;
+        try {
+            await deleteMutation.mutateAsync(confirmDeleteId);
+            toast.success('Eintrag und zugehörige monatliche Wünsche wurden gelöscht.');
+        } catch {
+            toast.error('Fehler beim Löschen.');
         }
+        setConfirmDeleteId(null);
     };
 
     const isSubmitting = createMutation.isPending || updateMutation.isPending;
@@ -150,117 +174,24 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
         setSelectedTemplateId(templateId);
     };
 
-    const handleImportMerge = async (templateId: string) => {
-        if (!selectedTemplate) return;
-
-        const matchResult = matchTemplateEmployees(
-            selectedTemplate.content.employees,
-            currentEmployees
-        );
-
-        if (matchResult.matchCount === 0) {
-            toast.error('Keine passenden Mitarbeiter gefunden. Es wurden keine Mitarbeiter gefunden, die importiert werden können.');
-            setImportTemplateDialogOpen(false);
-            setSelectedTemplateId(null);
-            return;
-        }
-
+    const handleImport = async (templateId: string) => {
         try {
-            // Merge mode: update existing, create new, keep unmatched current employees
-            for (const {templateEmployee, currentEmployee} of matchResult.matched) {
-                const existingGlobal = employees.find((e: WishesAndBlockedEmployee) => e.key === currentEmployee.key);
-
-                if (existingGlobal) {
-                    // Update existing
-                    await updateMutation.mutateAsync({
-                        id: currentEmployee.key,
-                        data: {
-                            firstname: templateEmployee.firstname,
-                            name: templateEmployee.name,
-                            wish_days: templateEmployee.wish_days,
-                            wish_shifts: templateEmployee.wish_shifts,
-                            blocked_days: templateEmployee.blocked_days,
-                            blocked_shifts: templateEmployee.blocked_shifts,
-                        },
-                        options: {skipSyncToMonthly: false},
-                    });
-                } else {
-                    // Create new
-                    await createMutation.mutateAsync({
-                        data: {
-                            firstname: templateEmployee.firstname,
-                            name: templateEmployee.name,
-                            wish_days: templateEmployee.wish_days,
-                            wish_shifts: templateEmployee.wish_shifts,
-                            blocked_days: templateEmployee.blocked_days,
-                            blocked_shifts: templateEmployee.blocked_shifts,
-                        },
-                        options: {skipSyncToMonthly: false},
-                    });
-                }
-            }
-
-            toast.success(`Template importiert (Merge): ${matchResult.matchCount} von ${matchResult.totalCount} Mitarbeiter wurden importiert.${
-                matchResult.unmatched.length > 0
-                    ? ` ${matchResult.unmatched.length} Mitarbeiter wurden übersprungen.`
-                    : ''
-            }`);
-
+            const result = await importTemplateMutation.mutateAsync(templateId);
+            toast.success(
+                `Template importiert: ${result.matchCount} von ${result.totalCount} Mitarbeiter wurden importiert.` +
+                (result.unmatchedCount > 0 ? ` ${result.unmatchedCount} Mitarbeiter wurden übersprungen.` : '')
+            );
             setImportTemplateDialogOpen(false);
             setSelectedTemplateId(null);
         } catch (error) {
-            toast.error('Fehler beim Importieren: Das Template konnte nicht importiert werden.');
+            const message = error instanceof Error ? error.message : 'Das Template konnte nicht importiert werden.';
+            toast.error(`Fehler beim Importieren: ${message}`);
         }
     };
 
-    const handleImportOverwrite = async (templateId: string) => {
-        if (!selectedTemplate) return;
-
-        const matchResult = matchTemplateEmployees(
-            selectedTemplate.content.employees,
-            currentEmployees
-        );
-
-        if (matchResult.matchCount === 0) {
-            toast.error('Keine passenden Mitarbeiter gefunden. Es wurden keine Mitarbeiter gefunden, die importiert werden können.');
-            setImportTemplateDialogOpen(false);
-            setSelectedTemplateId(null);
-            return;
-        }
-
-        try {
-            // Overwrite mode: delete all current, then create matched employees
-            for (const employee of employees) {
-                await deleteMutation.mutateAsync(employee.key);
-            }
-
-            for (const {templateEmployee} of matchResult.matched) {
-                await createMutation.mutateAsync({
-                    data: {
-                        firstname: templateEmployee.firstname,
-                        name: templateEmployee.name,
-                        wish_days: templateEmployee.wish_days,
-                        wish_shifts: templateEmployee.wish_shifts,
-                        blocked_days: templateEmployee.blocked_days,
-                        blocked_shifts: templateEmployee.blocked_shifts,
-                    },
-                    options: {skipSyncToMonthly: false},
-                });
-            }
-
-            toast.success(`Template importiert (Überschreiben): ${matchResult.matchCount} von ${matchResult.totalCount} Mitarbeiter wurden importiert.${
-                matchResult.unmatched.length > 0
-                    ? ` ${matchResult.unmatched.length} Mitarbeiter wurden übersprungen.`
-                    : ''
-            }`);
-
-            setImportTemplateDialogOpen(false);
-            setSelectedTemplateId(null);
-        } catch (error) {
-            toast.error('Fehler beim Importieren: Das Template konnte nicht importiert werden.');
-        }
-    };
-
+    const pendingEmployeeName = pendingEntry
+        ? `${pendingEntry.entry.firstname} ${pendingEntry.entry.name}`
+        : '';
 
     return (
         <div className="py-6">
@@ -305,7 +236,7 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
                         <WishesAndBlockedList
                             employees={employees}
                             onEdit={handleEdit}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteRequest}
                             isDeleting={deleteMutation.isPending}
                         />
                     )}
@@ -321,39 +252,49 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
                 isGlobal={true}
             />
 
-            <GlobalWishesConflictDialog
-                open={conflictOpen}
-                onOpenChange={setConflictOpen}
-                onChoice={async (choice) => {
-                    if (!pendingPayload) return;
-                    const {data, isEdit, employeeKey} = pendingPayload;
+            {/* Confirmation: save creates/edits a gw entry → resets mw */}
+            <AlertDialog open={confirmSaveOpen} onOpenChange={setConfirmSaveOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Monatliche Wünsche werden zurückgesetzt</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Die monatlichen Wünsche für <strong>{pendingEmployeeName}</strong> werden gelöscht
+                            und aus den globalen Wünschen neu berechnet. Fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setPendingEntry(null)}>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmSave}>Speichern</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
-                    if (choice === 'overwrite') {
-                        if (isEdit && employeeKey) {
-                            await updateMutation.mutateAsync({id: employeeKey, data});
-                        } else {
-                            await createMutation.mutateAsync({data, options: {}});
-                        }
-                    } else if (choice === 'keep-monthly') {
-                        if (isEdit && employeeKey) {
-                            await updateMutation.mutateAsync({
-                                id: employeeKey,
-                                data,
-                                options: {skipSyncToMonthly: true}
-                            });
-                        } else {
-                            await createMutation.mutateAsync({data, options: {skipSyncToMonthly: true}});
-                        }
-                    } else {
-                        // cancel -> do nothing
-                    }
-
-                    setPendingPayload(null);
-                    setDialogOpen(false);
-                    setEditingEmployee(undefined);
+            {/* Confirmation: delete gw entry also deletes mw */}
+            <AlertDialog
+                open={confirmDeleteId !== null}
+                onOpenChange={(open) => {
+                    if (!open) setConfirmDeleteId(null);
                 }}
-                employeeName={pendingPayload?.employeeName || ''}
-            />
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Eintrag löschen</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Die globalen <strong>und</strong> monatlichen Wünsche für diesen Mitarbeiter
+                            werden unwiderruflich gelöscht. Fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleConfirmDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Löschen
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <SaveTemplateDialog
                 open={saveTemplateDialogOpen}
@@ -366,18 +307,16 @@ export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWish
                 open={importTemplateDialogOpen}
                 onOpenChange={(open) => {
                     setImportTemplateDialogOpen(open);
-                    if (!open) {
-                        setSelectedTemplateId(null);
-                    }
+                    if (!open) setSelectedTemplateId(null);
                 }}
                 templates={templates}
                 selectedTemplateContent={selectedTemplate}
                 currentEmployees={currentEmployees}
-                onImportMerge={handleImportMerge}
-                onImportOverwrite={handleImportOverwrite}
+                onImport={handleImport}
                 onSelectTemplate={handleSelectTemplate}
-                isImporting={createMutation.isPending || updateMutation.isPending || deleteMutation.isPending}
+                isImporting={importTemplateMutation.isPending}
             />
         </div>
     );
 }
+
