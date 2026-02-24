@@ -1,0 +1,318 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { CalendarDays, Maximize2, Upload } from 'lucide-react';
+import { ScheduleTable } from '@/features/schedule/components/schedule-table';
+import { StatsGrid } from '@/features/schedule/components/stats-grid';
+import { ScheduleFileUpload } from '@/features/schedule/components/schedule-file-upload';
+import { cn } from '@/lib/utils';
+import { ScheduleLegend } from '@/features/schedule/components/schedule-legend';
+import { ScheduleSelector } from '@/components/schedule-selector';
+import { DescriptionInputDialog } from '@/components/description-input-dialog';
+import { 
+  useSchedule, 
+  useSaveSchedule, 
+  useDeleteSchedule,
+  useSchedulesMetadata,
+  useSelectSchedule,
+  useMultipleSchedules,
+  useUpdateSchedule
+} from '@/features/schedule/hooks/use-schedule';
+import { ScheduleSolutionRaw } from '@/types/schedule';
+import { toast } from 'sonner';
+import { Root as Switch, Thumb as SwitchThumb } from '@radix-ui/react-switch';
+
+interface SchedulePageClientProps {
+  caseId: number;
+  monthYear: string;
+}
+
+export function SchedulePageClient({ caseId, monthYear }: SchedulePageClientProps) {
+  const { data: schedule, isLoading, refetch: refetchSchedule } = useSchedule(caseId, monthYear);
+  const { data: schedulesMetadata, isLoading: isMetadataLoading, refetch: refetchMetadata } = useSchedulesMetadata(caseId, monthYear);
+  const [reducedView, setReducedView] = useState(false);
+  const saveSchedule = useSaveSchedule(caseId, monthYear);
+  const deleteSchedule = useDeleteSchedule(caseId, monthYear);
+  const selectSchedule = useSelectSchedule(caseId, monthYear);
+  const updateSchedule = useUpdateSchedule(caseId, monthYear);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
+  const [pendingSolution, setPendingSolution] = useState<ScheduleSolutionRaw | null>(null);
+  const tableRef = useRef<HTMLDivElement>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
+  const { data: multipleSchedules, isLoading: isMultipleSchedulesLoading } = useMultipleSchedules(caseId, monthYear, selectedScheduleIds);
+
+  const handleFileLoaded = async (solutionData: ScheduleSolutionRaw) => {
+    setPendingSolution(solutionData);
+    setShowDescriptionDialog(true);
+  };
+
+  const handleDescriptionConfirm = async (description?: string) => {
+    if (!pendingSolution) return;
+
+    try {
+      const scheduleId = Date.now().toString();
+      
+      await saveSchedule.mutateAsync({
+        scheduleId,
+        description,
+        solution: pendingSolution,
+        autoSelect: true,
+      });
+
+      // Refetch metadata and the selected schedule because we added a new schedule
+      await refetchMetadata();
+      await refetchSchedule();
+      setShowDescriptionDialog(false);
+      setPendingSolution(null);
+      toast.success('Dienstplan erfolgreich geladen');
+    } catch (error) {
+      toast.error('Fehler beim Speichern des Dienstplans');
+      console.error(error);
+    }
+  };
+
+  const handleScheduleSelect = async (scheduleId: string) => {
+    await selectSchedule.mutateAsync(scheduleId);
+    await refetchSchedule();
+  };
+
+  const handleScheduleDelete = async (scheduleId: string) => {
+    await deleteSchedule.mutateAsync(scheduleId);
+    refetchSchedule();
+  };
+
+  const handleRefresh = async () => {
+    await refetchMetadata();
+    await refetchSchedule();
+  };
+
+  const handleDescriptionUpdate = async (scheduleId: string, description: string) => {
+    await updateSchedule.mutateAsync({ scheduleId, description });
+  };
+
+  const handleMultipleSchedulesSelect = (scheduleIds: string[]) => {
+    setSelectedScheduleIds(scheduleIds);
+  };
+
+  const toggleCompareMode = () => {
+    if (compareMode) {
+      // Exiting compare mode
+      setSelectedScheduleIds([]);
+    }
+    setCompareMode(!compareMode);
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement && tableRef.current) {
+      tableRef.current.requestFullscreen();
+      setIsFullscreen(true);
+    } else {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  };
+
+  // Listen for fullscreen changes (e.g., ESC key)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  return (
+    <div className="py-6 space-y-6">
+      {/* Header */}
+      <header className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">Dienstplan</h1>
+            <p className="text-muted-foreground">Analysiere und visualisiere Mitarbeiter-Schichtpläne</p>
+          </div>
+          {schedule && (
+            <Badge variant="outline" className="gap-2">
+              <CalendarDays className="h-4 w-4" />
+              {schedule.days.length} Tage
+            </Badge>
+          )}
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-wrap items-center gap-4">
+          {!compareMode && (
+            <ScheduleFileUpload 
+              onFileLoaded={handleFileLoaded} 
+              isLoading={saveSchedule.isPending}
+            />
+          )}
+          
+          {/* Schedule Selector */}
+          {schedulesMetadata && !isMetadataLoading && (
+            <ScheduleSelector
+              schedulesMetadata={schedulesMetadata}
+              onScheduleSelect={handleScheduleSelect}
+              onScheduleDelete={handleScheduleDelete}
+              onRefresh={handleRefresh}
+              compareMode={compareMode}
+              selectedScheduleIds={selectedScheduleIds}
+              onMultipleSchedulesSelect={handleMultipleSchedulesSelect}
+              onDescriptionUpdate={handleDescriptionUpdate}
+            />
+
+          )}
+
+          {schedulesMetadata && schedulesMetadata.schedules.length >= 2 && (
+            <Button 
+              onClick={toggleCompareMode} 
+              variant={compareMode ? "default" : "outline"} 
+              className="gap-2"
+            >
+              {compareMode ? 'Vergleich beenden' : 'Dienstpläne vergleichen'}
+            </Button>
+          )}
+
+          <div
+            role="button"
+            tabIndex={0}
+            className={cn(buttonVariants({ variant: 'outline', size: 'default' }), 'inline-flex items-center gap-2')}
+            onClick={() => setReducedView(!reducedView)}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setReducedView(!reducedView); } }}
+            aria-pressed={reducedView}
+          >
+            <Switch
+              id="reduced-view-toggle"
+              checked={reducedView}
+              className={"relative inline-flex h-6 w-11 items-center rounded-full p-1 bg-muted/90 data-[state=checked]:bg-primary pointer-events-auto cursor-pointer mr-2" }>
+              <SwitchThumb className={"block h-4 w-4 rounded-full bg-card shadow transform transition-transform data-[state=checked]:translate-x-5 pointer-events-auto"} />
+            </Switch>
+            <span
+              className="text-sm ml-2 select-none pointer-events-auto cursor-pointer"
+              role="button"
+            >
+              Reduzierte Ansicht
+            </span>
+          </div>
+
+          <Button onClick={toggleFullscreen} variant="outline" className="gap-2">
+            <Maximize2 className="h-4 w-4" />
+            {isFullscreen ? 'Exit' : 'Enter'} Fullscreen
+          </Button>
+        </div>
+      </header>
+
+      {(isLoading || (compareMode && isMultipleSchedulesLoading)) ? (
+        <Card className="border-border/50 p-12">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <div className="text-lg text-muted-foreground">Lädt...</div>
+          </div>
+        </Card>
+      ) : compareMode && multipleSchedules && multipleSchedules.length > 0 ? (
+        <>
+          {/* Schedule Table in Compare Mode */}
+          <Card 
+            ref={tableRef}
+            className={cn(
+              "overflow-hidden border-border/50 shadow-lg relative",
+              isFullscreen && "h-screen bg-background flex flex-col p-4 rounded-none border-0"
+            )}
+          >
+            {isFullscreen && (
+              <Button 
+                onClick={toggleFullscreen} 
+                variant="outline" 
+                className="absolute top-4 right-4 z-50 gap-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Exit Fullscreen
+              </Button>
+            )}
+            <ScheduleTable
+              schedules={multipleSchedules}
+              compareMode={true}
+              isFullscreen={isFullscreen}
+              reducedView={reducedView}
+            />
+          </Card>
+
+          {/* Legend */}
+          <ScheduleLegend />
+        </>
+      ) : schedule && !compareMode ? (
+        <>
+          {/* Statistics Grid */}
+          <StatsGrid stats={schedule.stats} />
+
+          {/* Schedule Table */}
+          <Card 
+            ref={tableRef}
+            className={cn(
+              "overflow-hidden border-border/50 shadow-lg relative",
+              isFullscreen && "h-screen bg-background flex flex-col p-4 rounded-none border-0"
+            )}
+          >
+            {isFullscreen && (
+              <Button 
+                onClick={toggleFullscreen} 
+                variant="outline" 
+                className="absolute top-4 right-4 z-50 gap-2"
+              >
+                <Maximize2 className="h-4 w-4" />
+                Exit Fullscreen
+              </Button>
+            )}
+            <ScheduleTable
+               employees={schedule.employees}
+               days={schedule.days}
+               shifts={schedule.shifts}
+               variables={schedule.variables}
+               fulfilledDayOffCells={schedule.fulfilledDayOffCells}
+               fulfilledShiftWishCells={schedule.fulfilledShiftWishCells}
+               allDayOffWishCells={schedule.allDayOffWishCells}
+               allShiftWishColors={schedule.allShiftWishColors}
+               isFullscreen={isFullscreen}
+               reducedView={reducedView}
+             />
+          </Card>
+
+          {/* Legend */}
+          <ScheduleLegend />
+        </>
+      ) : (
+        <Card className="border-border/50 p-12">
+          <div className="flex flex-col items-center justify-center text-center space-y-4">
+            <div className="rounded-full bg-muted p-6">
+              <Upload className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold text-foreground">Kein Dienstplan geladen</h3>
+              <p className="text-muted-foreground max-w-md">
+                Lade eine solution.json Datei hoch, um die Dienstplan-Analyse und Visualisierungen anzuzeigen.
+              </p>
+            </div>
+            <Button onClick={() => document.getElementById('file-upload')?.click()} className="gap-2">
+              <Upload className="h-4 w-4" />
+              Solution-Datei hochladen
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      {/* Description Input Dialog */}
+      <DescriptionInputDialog
+        open={showDescriptionDialog}
+        onOpenChange={setShowDescriptionDialog}
+        onConfirm={handleDescriptionConfirm}
+        isLoading={saveSchedule.isPending}
+      />
+    </div>
+  );
+}
