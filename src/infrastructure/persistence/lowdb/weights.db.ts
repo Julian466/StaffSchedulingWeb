@@ -5,5 +5,6 @@ import {DEFAULT_WEIGHTS, Weights} from "@/src/entities/models";
 
 export async function getWeightsDb(caseId: number, monthYear: string) {
     const filePath = path.join(getCasePath(caseId, monthYear), 'weights.json');
-    return JSONFilePreset<Weights>(filePath, DEFAULT_WEIGHTS);
+    // Use Spread operator to create a new object based on DEFAULT_WEIGHTS, ensuring immutability
+    return JSONFilePreset<Weights>(filePath, { ...DEFAULT_WEIGHTS });
 }
