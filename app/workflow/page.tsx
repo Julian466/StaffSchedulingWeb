@@ -40,6 +40,7 @@ import {useImportSolution} from '@/features/solver/hooks/use-solver';
 import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {useQueryClient} from '@tanstack/react-query';
+import {validateConfig, findSolutionFile, solverDelete, solverFetch, solverSolve, solverSolveMultiple, solverInsert, saveSolution} from '@/features/solver/solver.actions';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -107,8 +108,7 @@ export default function WorkflowPage() {
     useEffect(() => {
         const checkConfig = async () => {
             try {
-                const response = await fetch('/api/solver/validate-config');
-                const data = await response.json();
+                const data = await validateConfig();
                 setConfigCheck({
                     isValid: data.isValid,
                     pythonExecutable: data.pythonExecutable,
@@ -132,8 +132,7 @@ export default function WorkflowPage() {
                 const isoEnd = convertToISODate(endDate);
                 const filename = `solution_${caseId}_${isoStart}-${isoEnd}.json`;
 
-                const response = await fetch(`/api/solver/find-file?filename=${encodeURIComponent(filename)}`);
-                const data = await response.json();
+                const data = await findSolutionFile(filename);
                 setSolutionExists(data.exists);
             } catch (error) {
                 setSolutionExists(false);
@@ -214,104 +213,41 @@ export default function WorkflowPage() {
             const isoStart = convertToISODate(startDate!);
             const isoEnd = convertToISODate(endDate!);
             const folderName = getFolderName(startDate!);
-            let endpoint = '';
-            const body: {
-                unit: number;
-                start: string;
-                end: string;
-                timeout?: number;
-            } = {
-                unit: parseInt(caseId!),
-                start: isoStart,
-                end: isoEnd
-            };
+            const numericCaseId = parseInt(caseId!);
+
+            let result: { job: any; scheduleInfo?: any; message?: string };
 
             switch (action) {
                 case 'delete':
-                    endpoint = '/api/solver/delete';
+                    result = await solverDelete(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd});
                     break;
                 case 'fetch':
-                    endpoint = '/api/solver/fetch';
+                    result = await solverFetch(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd});
                     break;
                 case 'solve':
-                    endpoint = '/api/solver/solve';
-                    body.timeout = timeout || 60;
+                    result = await solverSolve(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd, timeout: timeout || 60});
                     break;
                 case 'multi-solve':
-                    endpoint = '/api/solver/solve-multiple';
-                    body.timeout = timeout || 60;
+                    result = await solverSolveMultiple(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd, timeout: timeout || 60});
                     break;
-                case 'insert':
+                case 'insert': {
                     // First, save the currently selected schedule before exporting
                     toast.info('Speichere ausgewählten Dienstplan vor dem Export...');
 
-                    const saveSolutionResponse = await fetch('/api/solver/save-solution', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'x-case-id': caseId!,
-                            'x-month-year': folderName
-                        },
-                        body: JSON.stringify({
-                            start: isoStart,
-                            end: isoEnd
-                        })
-                    });
-
-                    if (!saveSolutionResponse.ok) {
-                        const saveError = await saveSolutionResponse.json();
-                        throw new Error(saveError.error || 'Fehler beim Speichern des Dienstplans vor dem Export');
-                    }
-
-                    const saveResult = await saveSolutionResponse.json();
+                    const saveResult = await saveSolution(numericCaseId, folderName, isoStart, isoEnd);
                     console.log('Dienstplan gespeichert:', saveResult);
                     toast.success(`Dienstplan gespeichert als ${saveResult.filename}`);
 
-                    endpoint = '/api/solver/insert';
+                    // Then insert
+                    result = await solverInsert(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd});
                     break;
+                }
+                default:
+                    throw new Error(`Unknown action: ${action}`);
             }
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-case-id': caseId!,
-                    'x-month-year': folderName
-                },
-                body: JSON.stringify(body)
-            });
-
-            const result = await response.json();
 
             // Invalidate job history to refresh the table (even on errors to show failed jobs)
             queryClient.invalidateQueries({queryKey: ['solver', 'jobs', currentCaseId]});
-
-            if (!response.ok) {
-                // If the job failed but we have job details, extract more information
-                if (result.job && result.job.status === 'failed') {
-                    // Extract error details from console output if available
-                    let errorDetail = 'Der Solver konnte keine FEASIBLE Lösung finden';
-
-                    if (result.job.consoleOutput) {
-                        // Try to extract meaningful error from console output
-                        const outputLines = result.job.consoleOutput.split('\n');
-                        const errorLines = outputLines.filter((line: string) =>
-                            line.includes('ERROR') ||
-                            line.includes('UNKNOWN') ||
-                            line.includes('INFEASIBLE') ||
-                            line.includes('status')
-                        );
-
-                        if (errorLines.length > 0) {
-                            errorDetail = errorLines.slice(0, 3).join('\n');
-                        }
-                    }
-
-                    throw new Error(errorDetail);
-                }
-
-                throw new Error(result.error || 'Fehler bei der Ausführung');
-            }
 
             setActionStates(prev => ({
                 ...prev,
