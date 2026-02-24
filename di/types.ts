@@ -42,7 +42,6 @@ import type {IGetAllJobsUseCase} from '@/src/application/use-cases/jobs/get-all-
 import type {IGetJobUseCase} from '@/src/application/use-cases/jobs/get-job.use-case';
 import type {ICreateJobUseCase} from '@/src/application/use-cases/jobs/create-job.use-case';
 import type {IListCasesUseCase} from '@/src/application/use-cases/cases/list-cases.use-case';
-import type {ICreateCaseUseCase} from '@/src/application/use-cases/cases/create-case.use-case';
 
 // Controller interfaces
 import type {IGetAllEmployeesController} from '@/src/controllers/employees/get-all-employees.controller';
@@ -74,7 +73,6 @@ import type {IGetAllJobsController} from '@/src/controllers/jobs/get-all-jobs.co
 import type {IGetJobController} from '@/src/controllers/jobs/get-job.controller';
 import type {ICreateJobController} from '@/src/controllers/jobs/create-job.controller';
 import type {IListCasesController} from '@/src/controllers/cases/list-cases.controller';
-import type {ICreateCaseController} from '@/src/controllers/cases/create-case.controller';
 
 export const DI_SYMBOLS = {
     // Repositories
@@ -129,7 +127,6 @@ export const DI_SYMBOLS = {
 
     // Use Cases — Cases
     IListCasesUseCase: Symbol.for('IListCasesUseCase'),
-    ICreateCaseUseCase: Symbol.for('ICreateCaseUseCase'),
 
     // Controllers — Employees
     IGetAllEmployeesController: Symbol.for('IGetAllEmployeesController'),
@@ -173,7 +170,6 @@ export const DI_SYMBOLS = {
 
     // Controllers — Cases
     IListCasesController: Symbol.for('IListCasesController'),
-    ICreateCaseController: Symbol.for('ICreateCaseController'),
 } as const;
 
 export interface DI_RETURN_TYPES {
@@ -229,7 +225,6 @@ export interface DI_RETURN_TYPES {
 
     // Use Cases — Cases
     IListCasesUseCase: IListCasesUseCase;
-    ICreateCaseUseCase: ICreateCaseUseCase;
 
     // Controllers — Employees
     IGetAllEmployeesController: IGetAllEmployeesController;
@@ -273,5 +268,4 @@ export interface DI_RETURN_TYPES {
 
     // Controllers — Cases
     IListCasesController: IListCasesController;
-    ICreateCaseController: ICreateCaseController;
 }

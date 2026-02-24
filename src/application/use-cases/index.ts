@@ -67,5 +67,3 @@ export {makeDeleteGlobalWishesUseCase} from './global-wishes/delete-global-wishe
 // Cases
 export type {IListCasesUseCase} from './cases/list-cases.use-case';
 export {makeListCasesUseCase} from './cases/list-cases.use-case';
-export type {ICreateCaseUseCase} from './cases/create-case.use-case';
-export {makeCreateCaseUseCase} from './cases/create-case.use-case';

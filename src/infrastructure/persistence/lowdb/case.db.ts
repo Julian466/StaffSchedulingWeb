@@ -2,7 +2,6 @@ import {join} from 'path';
 import {CaseUnit} from '@/src/entities/models/case.model';
 import fs from 'fs/promises';
 import {CASES_DIR} from '@/lib/config/app-config';
-import {formatMonthYear} from '@/lib/utils/case-utils';
 
 /**
  * Lists all existing planning units with their available months.
@@ -48,25 +47,4 @@ export async function listCases(): Promise<CaseUnit[]> {
     } catch (error) {
         return [];
     }
-}
-
-/**
- * Creates a new case with the specified planning unit, month, and year.
- * Creates the directory structure: cases/[unitId]/[MM_YYYY]/
- *
- * @param unitId - The planning unit ID
- * @param month - Month (1-12)
- * @param year - Year (e.g., 2024)
- * @returns Promise resolving to the monthYear string
- *
- * @example
- * const monthYear = await createCase(77, 11, 2024);
- * console.log(monthYear); // "11_2024"
- */
-export async function createCase(unitId: number, month: number, year: number): Promise<string> {
-    const monthYear = formatMonthYear(month, year);
-    const casePath = join(CASES_DIR, unitId.toString(), monthYear);
-    await fs.mkdir(casePath, {recursive: true});
-
-    return monthYear;
 }
