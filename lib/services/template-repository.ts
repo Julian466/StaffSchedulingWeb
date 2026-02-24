@@ -1,6 +1,6 @@
 import path from 'path';
 import fs from 'fs/promises';
-import { Template, TemplateMetadata, TemplateSummary, TemplateType, GlobalWishesTemplateContent, GlobalWishesTemplateMetadata } from '@/types/template';
+import { Template, TemplateMetadata, TemplateSummary, TemplateType, GlobalWishesTemplateContent, GlobalWishesTemplateMetadata } from '@/src/entities/models/template.model';
 import { getCasesDirectory } from '@/lib/config/app-config';
 
 /**
@@ -51,7 +51,7 @@ export class TemplateRepository<T> {
     try {
       const dir = this.getTemplateDir(caseId);
       await this.ensureTemplateDir(caseId);
-      
+
       const files = await fs.readdir(dir);
       const templateFiles = files.filter(
         (file) => file.startsWith(`${this.templateType}_`) && file.endsWith('.json')

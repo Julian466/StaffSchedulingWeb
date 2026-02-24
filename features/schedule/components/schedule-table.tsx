@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { ScheduleEmployee, Shift, ScheduleSolution } from '@/types/schedule';
+import { ScheduleEmployee, Shift, ScheduleSolution } from '@/src/entities/models/schedule.model';
 import { getShiftsForCell, isWeekend, getEmployeeStats } from '@/lib/services/schedule-parser';
 import {
   Tooltip,

@@ -1,4 +1,4 @@
-import { ScheduleSolutionRaw, SchedulesMetadata, ScheduleMetadata } from '@/types/schedule';
+import { ScheduleSolutionRaw, SchedulesMetadata, ScheduleMetadata } from '@/src/entities/models/schedule.model';
 import { getScheduleDb, getSchedulesMetadataDb, deleteSchedule as deleteScheduleFile } from '@/src/infrastructure/persistence/lowdb/schedule.db';
 import { RepositoryError } from '@/lib/errors/repository-errors';
 import { logger } from '@/lib/logging/logger';

@@ -1,4 +1,4 @@
-import {WishesAndBlockedEmployee} from "@/types/wishes-and-blocked";
+import {WishesAndBlockedEmployee} from "@/src/entities/models/wishes-and-blocked.model";
 
 export function getDaysByWeekday(year?: number, month?: number): number[][] {
     const today = new Date();

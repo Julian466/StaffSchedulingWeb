@@ -40,7 +40,7 @@ import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {useQueryClient} from '@tanstack/react-query';
 import {validateConfig, findSolutionFile, solverDelete, solverFetch, solverSolve, solverSolveMultiple, solverInsert, saveSolution} from '@/features/solver/solver.actions';
-import {SolverJob} from '@/types/solver';
+import {SolverJob} from '@/src/entities/models/solver.model';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 

@@ -21,7 +21,7 @@ import {
   useMultipleSchedules,
   useUpdateSchedule
 } from '@/features/schedule/hooks/use-schedule';
-import { ScheduleSolutionRaw } from '@/types/schedule';
+import { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 import { toast } from 'sonner';
 import { Root as Switch, Thumb as SwitchThumb } from '@radix-ui/react-switch';
 

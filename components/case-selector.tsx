@@ -19,7 +19,7 @@ import {useForm} from 'react-hook-form';
 import {zodResolver} from '@hookform/resolvers/zod';
 import {z} from 'zod';
 import {parseMonthYear} from '@/lib/utils/case-utils';
-import {CaseUnit} from '@/types/case';
+import {CaseUnit} from '@/src/entities/models/case.model';
 import {createCaseAction, listCasesAction} from '@/features/cases/cases.actions';
 
 const MONTHS = [

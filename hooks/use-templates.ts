@@ -6,7 +6,7 @@ import {
   Template,
   TemplateSummary,
   CreateTemplateRequest,
-} from '@/types/template';
+} from '@/src/entities/models/template.model';
 import {
   listTemplatesAction,
   getTemplateAction,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Employee } from '@/types/employee';
+import { Employee } from '@/src/entities/models/employee.model';
 import { getAllEmployeesAction } from '../employees.actions';
 
 /**

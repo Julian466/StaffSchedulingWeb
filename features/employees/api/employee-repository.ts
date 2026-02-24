@@ -1,5 +1,5 @@
 import { getEmployeeDb as getDb} from '@/src/infrastructure/persistence/lowdb/employees.db';
-import { Employee } from '@/types/employee';
+import { Employee } from '@/src/entities/models/employee.model';
 
 
 /**

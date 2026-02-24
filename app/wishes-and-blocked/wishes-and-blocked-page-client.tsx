@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { WishesAndBlockedList } from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
 import { WishesAndBlockedDialog } from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
 

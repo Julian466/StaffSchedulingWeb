@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle2, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { SolverJob } from '@/types/solver';
+import { SolverJob } from '@/src/entities/models/solver.model';
 import { useState } from 'react';
 import { format } from 'date-fns';
 import { de } from 'date-fns/locale';

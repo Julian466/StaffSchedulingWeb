@@ -1,6 +1,6 @@
 'use client';
 
-import { MinimalStaffRequirements } from '@/types/minimal-staff';
+import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
 import { createTemplateHooks } from '@/hooks/use-templates';
 
 /**

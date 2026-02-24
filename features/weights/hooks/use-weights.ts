@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Weights } from '@/types/weights';
+import { Weights } from '@/src/entities/models/weights.model';
 import { toast } from 'sonner';
 import { getWeightsAction, updateWeightsAction } from '../weights.actions';
 

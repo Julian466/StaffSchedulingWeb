@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { Weights, WEIGHT_METADATA } from '@/types/weights';
+import { Weights, WEIGHT_METADATA } from '@/src/entities/models/weights.model';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

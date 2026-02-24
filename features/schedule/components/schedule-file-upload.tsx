@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { ScheduleSolutionRaw } from '@/types/schedule';
+import { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 interface ScheduleFileUploadProps {
   onFileLoaded: (data: ScheduleSolutionRaw) => void;

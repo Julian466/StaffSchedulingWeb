@@ -20,8 +20,8 @@ import {
   InsertParams,
   DeleteParams,
   SolverJob,
-} from '@/types/solver';
-import { ScheduleSolutionRaw } from '@/types/schedule';
+} from '@/src/entities/models/solver.model';
+import { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 import { randomUUID } from 'crypto';
 import { existsSync, readFileSync } from 'fs';
 import { promises as fs } from 'fs';

@@ -13,7 +13,7 @@ import {
   FormMessage,
   FormDescription,
 } from '@/components/ui/form';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { useState } from 'react';
 import { InteractiveCalendar, DayData } from '@/components/InteractiveCalendar';
 import { Calendar as CalendarIcon, User } from 'lucide-react';
@@ -21,7 +21,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useSearchParams } from 'next/navigation';
 import { parseMonthYear } from '@/lib/utils/case-utils';
 import { EmployeeSelector } from '@/components/employee-selector';
-import { Employee } from '@/types/employee';
+import { Employee } from '@/src/entities/models/employee.model';
 
 const wishesAndBlockedSchema = z.object({
   employeeKey: z.number().min(1, {

@@ -1,5 +1,5 @@
 import { getJobHistoryDb } from '@/src/infrastructure/persistence/lowdb/jobs.db';
-import { SolverJob } from '@/types/solver';
+import { SolverJob } from '@/src/entities/models/solver.model';
 import { logger } from '@/lib/logging/logger';
 
 /**

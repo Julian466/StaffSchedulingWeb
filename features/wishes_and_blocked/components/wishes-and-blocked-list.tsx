@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import {
   Table,
   TableBody,

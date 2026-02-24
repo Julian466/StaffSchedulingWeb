@@ -19,7 +19,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, FileText, Clock } from 'lucide-react';
-import { TemplateSummary } from '@/types/template';
+import { TemplateSummary } from '@/src/entities/models/template.model';
 import { formatDistanceToNow, format } from 'date-fns';
 import { de } from 'date-fns/locale';
 

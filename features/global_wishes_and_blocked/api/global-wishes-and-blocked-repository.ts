@@ -1,5 +1,5 @@
 import { getGlobalWishesAndBlockedDb as getDb } from "@/src/infrastructure/persistence/lowdb/global-wishes-and-blocked.db";
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import {getEmployeeDb} from "@/src/infrastructure/persistence/lowdb/employees.db";
 import {wishesAndBlockedRepository} from "@/features/wishes_and_blocked/api/wishes-and-blocked-repository";
 

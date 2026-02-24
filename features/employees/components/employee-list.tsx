@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Employee } from '@/types/employee';
+import { Employee } from '@/src/entities/models/employee.model';
 import {
   Table,
   TableBody,

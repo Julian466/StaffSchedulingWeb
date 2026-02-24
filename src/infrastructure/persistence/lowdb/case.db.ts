@@ -1,5 +1,5 @@
 import {join} from 'path';
-import {CaseUnit} from '@/types/case';
+import {CaseUnit} from '@/src/entities/models/case.model';
 import fs from 'fs/promises';
 import {CASES_DIR} from '@/lib/config/app-config';
 import {formatMonthYear} from '@/lib/utils/case-utils';

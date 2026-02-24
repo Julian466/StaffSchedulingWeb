@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { SolverJob } from '@/types/solver';
+import { SolverJob } from '@/src/entities/models/solver.model';
 import { getJobs, getJob } from '@/features/solver/solver.actions';
 
 /**

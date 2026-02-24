@@ -6,7 +6,7 @@ import {
   InsertParams,
   DeleteParams,
   SolverJob,
-} from '@/types/solver';
+} from '@/src/entities/models/solver.model';
 import { toast } from 'sonner';
 import { PythonConfigValidation } from '@/lib/config/app-config';
 import {

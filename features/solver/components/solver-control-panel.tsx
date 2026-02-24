@@ -24,7 +24,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import {Loader2, Database, Play, Trash2, Upload} from 'lucide-react';
-import {SolverCommandType} from '@/types/solver';
+import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 

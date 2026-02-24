@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { getAllGlobalWishesAction, createGlobalWishesAction, updateGlobalWishesAction, deleteGlobalWishesAction } from '../global-wishes-and-blocked.actions';
 
 /**

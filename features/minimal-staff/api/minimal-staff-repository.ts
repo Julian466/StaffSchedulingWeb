@@ -1,5 +1,5 @@
 import { getMinimalStaffDb } from '@/src/infrastructure/persistence/lowdb/minimal-staff.db';
-import { MinimalStaffRequirements } from '@/types/minimal-staff';
+import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
 
 /**
  * Repository for managing minimal staff requirements.

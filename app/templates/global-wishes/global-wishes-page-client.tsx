@@ -43,7 +43,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { GlobalWishesTemplateMetadata } from '@/types/template';
+import { GlobalWishesTemplateMetadata } from '@/src/entities/models/template.model';
 
 interface GlobalWishesTemplatesPageClientProps {
   caseId: number;

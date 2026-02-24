@@ -14,7 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sunrise, Sun, Moon } from 'lucide-react';
-import { MinimalStaffRequirements, WeekDay, EmployeeCategory, ShiftType } from '@/types/minimal-staff';
+import { MinimalStaffRequirements, WeekDay, EmployeeCategory, ShiftType } from '@/src/entities/models/minimal-staff.model';
 import { cn } from '@/lib/utils';
 
 interface ViewMinimalStaffTemplateDialogProps {

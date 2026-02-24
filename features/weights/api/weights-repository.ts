@@ -1,5 +1,5 @@
 import { getWeightsDb } from '@/src/infrastructure/persistence/lowdb/weights.db';
-import { Weights } from '@/types/weights';
+import { Weights } from '@/src/entities/models/weights.model';
 
 /**
  * Repository for managing solver weight configurations.

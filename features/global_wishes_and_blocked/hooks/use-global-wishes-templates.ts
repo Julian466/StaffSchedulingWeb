@@ -1,6 +1,6 @@
 'use client';
 
-import { GlobalWishesTemplateContent } from '@/types/template';
+import { GlobalWishesTemplateContent } from '@/src/entities/models/template.model';
 import { createTemplateHooks } from '@/hooks/use-templates';
 
 /**

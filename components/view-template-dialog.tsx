@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Weights, WEIGHT_METADATA } from '@/types/weights';
+import { Weights, WEIGHT_METADATA } from '@/src/entities/models/weights.model';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 

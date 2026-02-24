@@ -12,7 +12,7 @@ import {
   XCircle 
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ScheduleStats } from '@/types/schedule';
+import { ScheduleStats } from '@/src/entities/models/schedule.model';
 
 interface StatsGridProps {
   stats: ScheduleStats;

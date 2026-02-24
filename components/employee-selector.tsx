@@ -17,7 +17,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Employee } from '@/types/employee';
+import { Employee } from '@/src/entities/models/employee.model';
 import { useEmployees } from '@/features/employees/hooks/use-employees';
 import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';

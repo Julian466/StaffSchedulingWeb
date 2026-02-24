@@ -3,8 +3,8 @@
  * Provides strict 3-field matching (key, firstname, name) for employee identification.
  */
 
-import type { Employee } from '@/types/employee';
-import type { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import type { Employee } from '@/src/entities/models/employee.model';
+import type { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 
 /**
  * Result of matching template employees against current employees.

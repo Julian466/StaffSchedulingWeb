@@ -19,8 +19,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Loader2, FileText, Clock, Users, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
-import { Template, TemplateSummary, GlobalWishesTemplateContent } from '@/types/template';
-import { Employee } from '@/types/employee';
+import { Template, TemplateSummary, GlobalWishesTemplateContent } from '@/src/entities/models/template.model';
+import { Employee } from '@/src/entities/models/employee.model';
 import { formatDistanceToNow, format } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { matchTemplateEmployees } from '@/lib/utils/employee-matching';

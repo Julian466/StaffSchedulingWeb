@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ScheduleSolution, ScheduleSolutionRaw, SchedulesMetadata } from '@/types/schedule';
+import { ScheduleSolution, ScheduleSolutionRaw, SchedulesMetadata } from '@/src/entities/models/schedule.model';
 import { parseSolutionFile } from '@/lib/services/schedule-parser';
 import {
   getSchedulesMetadataAction,

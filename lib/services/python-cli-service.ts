@@ -8,7 +8,7 @@ import {
     SolveMultipleParams,
     InsertParams,
     DeleteParams,
-} from '@/types/solver';
+} from '@/src/entities/models/solver.model';
 
 const logger = createApiLogger('python-cli-service');
 

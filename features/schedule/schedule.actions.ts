@@ -1,7 +1,7 @@
 'use server';
 
 import { getInjection } from '@/di/container';
-import type { SchedulesMetadata, ScheduleSolutionRaw } from '@/types/schedule';
+import type { SchedulesMetadata, ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
 
 export async function getSchedulesMetadataAction(caseId: number, monthYear: string): Promise<SchedulesMetadata> {

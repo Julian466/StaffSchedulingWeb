@@ -1,4 +1,4 @@
-import { ScheduleSolution, ScheduleSolutionRaw, ScheduleEmployee, Shift, ScheduleStats } from '@/types/schedule';
+import { ScheduleSolution, ScheduleSolutionRaw, ScheduleEmployee, Shift, ScheduleStats } from '@/src/entities/models/schedule.model';
 import { boolean, number } from 'zod';
 
 /**

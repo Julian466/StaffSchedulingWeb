@@ -1,5 +1,5 @@
 import { getWishesAndBlockedDb as getDb } from '@/src/infrastructure/persistence/lowdb/wishes-and-blocked.db';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import {getEmployeeDb} from "@/src/infrastructure/persistence/lowdb/employees.db";
 import {generateMonthlyDataFromWeeklyData} from "@/lib/services/global-to-current-wishes-converter";
 import {getGlobalWishesAndBlockedDb} from "@/src/infrastructure/persistence/lowdb/global-wishes-and-blocked.db";

@@ -1,6 +1,6 @@
 'use client';
 
-import { Weights } from '@/types/weights';
+import { Weights } from '@/src/entities/models/weights.model';
 import { createTemplateHooks } from '@/hooks/use-templates';
 
 /**

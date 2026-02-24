@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { MinimalStaffRequirements, WeekDay, EmployeeCategory, ShiftType } from '@/types/minimal-staff';
+import { MinimalStaffRequirements, WeekDay, EmployeeCategory, ShiftType } from '@/src/entities/models/minimal-staff.model';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

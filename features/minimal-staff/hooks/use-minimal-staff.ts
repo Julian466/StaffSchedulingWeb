@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MinimalStaffRequirements } from '@/types/minimal-staff';
+import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
 import { toast } from 'sonner';
 import { getMinimalStaffAction, updateMinimalStaffAction } from '../minimal-staff.actions';
 

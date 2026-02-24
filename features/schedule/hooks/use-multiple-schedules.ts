@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueries } from '@tanstack/react-query';
-import { ScheduleSolution } from '@/types/schedule';
+import { ScheduleSolution } from '@/src/entities/models/schedule.model';
 import { parseSolutionFile } from '@/lib/services/schedule-parser';
 import { getScheduleByIdAction } from '@/features/schedule/schedule.actions';
 
