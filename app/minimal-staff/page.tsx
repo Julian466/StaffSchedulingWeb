@@ -6,10 +6,12 @@ import { useMinimalStaff, useUpdateMinimalStaff } from '@/features/minimal-staff
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, UserCog, CheckCircle2 } from 'lucide-react';
+import { useCase } from '@/components/case-provider';
 
 export default function MinimalStaffPage() {
-  const { data: requirements, isLoading, error } = useMinimalStaff();
-  const { mutate: updateRequirements, isPending } = useUpdateMinimalStaff();
+  const { currentCase } = useCase();
+  const { data: requirements, isLoading, error } = useMinimalStaff(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const { mutate: updateRequirements, isPending } = useUpdateMinimalStaff(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
   if (error) {
     return (

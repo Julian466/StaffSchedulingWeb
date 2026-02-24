@@ -41,11 +41,13 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useCase } from '@/components/case-provider';
 
 export default function WeightTemplatesPage() {
-  const { data: templates = [], isLoading, error } = useWeightTemplates();
-  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateWeightTemplate();
-  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteWeightTemplate();
+  const { currentCase } = useCase();
+  const { data: templates = [], isLoading, error } = useWeightTemplates(currentCase?.caseId ?? 0);
+  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateWeightTemplate(currentCase?.caseId ?? 0);
+  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteWeightTemplate(currentCase?.caseId ?? 0);
 
   const [editingTemplate, setEditingTemplate] = useState<{
     id: string;
@@ -54,7 +56,7 @@ export default function WeightTemplatesPage() {
 
   const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
 
-  const { data: viewingTemplate } = useWeightTemplate(viewingTemplateId);
+  const { data: viewingTemplate } = useWeightTemplate(currentCase?.caseId ?? 0, viewingTemplateId);
 
   // Transform template shape for the preview dialog
   const viewingTemplateForPreview = viewingTemplate

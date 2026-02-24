@@ -2,7 +2,6 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ScheduleSolution, ScheduleSolutionRaw, SchedulesMetadata } from '@/types/schedule';
-import { useCase } from '@/components/case-provider';
 import { parseSolutionFile } from '@/lib/services/schedule-parser';
 import {
   getSchedulesMetadataAction,
@@ -17,18 +16,16 @@ import {
 /**
  * Hook to fetch all schedules metadata for the current case.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query result with schedules metadata
  */
-export function useSchedulesMetadata() {
-  const { currentCase } = useCase();
-  
+export function useSchedulesMetadata(caseId: number, monthYear: string) {
   return useQuery({
-    queryKey: ['schedules-metadata', currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['schedules-metadata', caseId, monthYear],
     queryFn: async (): Promise<SchedulesMetadata> => {
-      if (!currentCase) throw new Error('No case selected');
-      return getSchedulesMetadataAction(currentCase.caseId, currentCase.monthYear);
+      return getSchedulesMetadataAction(caseId, monthYear);
     },
-    enabled: !!currentCase,
   });
 }
 
@@ -36,16 +33,15 @@ export function useSchedulesMetadata() {
  * Hook to fetch the currently selected schedule solution.
  * Parses the raw solution data into a usable format with fulfilled wishes.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query result with parsed schedule data
  */
-export function useSchedule() {
-  const { currentCase } = useCase();
-  
+export function useSchedule(caseId: number, monthYear: string) {
   return useQuery({
-    queryKey: ['schedule', 'selected', currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['schedule', 'selected', caseId, monthYear],
     queryFn: async (): Promise<ScheduleSolution | null> => {
-      if (!currentCase) throw new Error('No case selected');
-      const data = await getSelectedScheduleAction(currentCase.caseId, currentCase.monthYear);
+      const data = await getSelectedScheduleAction(caseId, monthYear);
       
       // Return null if no schedule exists yet
       if (!data.solution) return null;
@@ -53,26 +49,24 @@ export function useSchedule() {
       // Parse the raw solution data
       return parseSolutionFile(data.solution);
     },
-    enabled: !!currentCase,
   });
 }
 
 /**
  * Hook to fetch a specific schedule solution by ID.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @param scheduleId - The ID of the schedule to fetch
  * @returns React Query result with parsed schedule data
  */
-export function useScheduleById(scheduleId: string | null) {
-  const { currentCase } = useCase();
-  
+export function useScheduleById(caseId: number, monthYear: string, scheduleId: string | null) {
   return useQuery({
-    queryKey: ['schedule', scheduleId, currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['schedule', scheduleId, caseId, monthYear],
     queryFn: async (): Promise<ScheduleSolution | null> => {
       if (!scheduleId) return null;
-      if (!currentCase) throw new Error('No case selected');
       
-      const data = await getScheduleByIdAction(currentCase.caseId, currentCase.monthYear, scheduleId);
+      const data = await getScheduleByIdAction(caseId, monthYear, scheduleId);
       
       if (!data.solution) return null;
       
@@ -86,10 +80,11 @@ export function useScheduleById(scheduleId: string | null) {
  * Hook to save a new schedule solution with optional description.
  * Invalidates relevant query caches on success.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns Mutation function to save schedule
  */
-export function useSaveSchedule() {
-  const { currentCase } = useCase();
+export function useSaveSchedule(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
@@ -99,10 +94,9 @@ export function useSaveSchedule() {
       solution: ScheduleSolutionRaw;
       autoSelect?: boolean;
     }) => {
-      if (!currentCase) throw new Error('No case selected');
       return saveScheduleAction(
-        currentCase.caseId,
-        currentCase.monthYear,
+        caseId,
+        monthYear,
         params.scheduleId,
         params.solution,
         params.description,
@@ -110,8 +104,8 @@ export function useSaveSchedule() {
       );
     },
     onSuccess: () => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedule', currentCase.caseId, currentCase.monthYear] });
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedules-metadata', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedule', caseId, monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedules-metadata', caseId, monthYear] });
     },
   });
 }
@@ -120,20 +114,20 @@ export function useSaveSchedule() {
  * Hook to select a schedule as the active one.
  * Invalidates relevant query caches on success.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns Mutation function to select schedule
  */
-export function useSelectSchedule() {
-  const { currentCase } = useCase();
+export function useSelectSchedule(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (scheduleId: string) => {
-      if (!currentCase) throw new Error('No case selected');
-      return selectScheduleAction(currentCase.caseId, currentCase.monthYear, scheduleId);
+      return selectScheduleAction(caseId, monthYear, scheduleId);
     },
     onSuccess: () => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedule', currentCase.caseId, currentCase.monthYear] });
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedules-metadata', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedule', caseId, monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedules-metadata', caseId, monthYear] });
     },
   });
 }
@@ -142,20 +136,20 @@ export function useSelectSchedule() {
  * Hook to delete a specific schedule.
  * Invalidates relevant query caches on success.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns Mutation function to delete schedule
  */
-export function useDeleteSchedule() {
-  const { currentCase } = useCase();
+export function useDeleteSchedule(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (scheduleId: string) => {
-      if (!currentCase) throw new Error('No case selected');
-      return deleteScheduleAction(currentCase.caseId, currentCase.monthYear, scheduleId);
+      return deleteScheduleAction(caseId, monthYear, scheduleId);
     },
     onSuccess: () => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedule', currentCase.caseId, currentCase.monthYear] });
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedules-metadata', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedule', caseId, monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedules-metadata', caseId, monthYear] });
     },
   });
 }
@@ -164,24 +158,24 @@ export function useDeleteSchedule() {
  * Hook to update schedule metadata (e.g., description).
  * Invalidates relevant query caches on success.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns Mutation function to update schedule
  */
-export function useUpdateSchedule() {
-  const { currentCase } = useCase();
+export function useUpdateSchedule(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
   
   return useMutation({
     mutationFn: async (params: { scheduleId: string; description?: string; comment?: string }) => {
-      if (!currentCase) throw new Error('No case selected');
       return updateScheduleMetadataAction(
-        currentCase.caseId,
-        currentCase.monthYear,
+        caseId,
+        monthYear,
         params.scheduleId,
         { description: params.description, comment: params.comment },
       );
     },
     onSuccess: () => {
-       currentCase && queryClient.invalidateQueries({ queryKey: ['schedules-metadata', currentCase.caseId, currentCase.monthYear] });
+       queryClient.invalidateQueries({ queryKey: ['schedules-metadata', caseId, monthYear] });
     },
   });
 }
@@ -190,19 +184,18 @@ export function useUpdateSchedule() {
  * Hook to fetch multiple schedule solutions by their IDs.
  * Used for comparing multiple schedules side by side.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @param scheduleIds - Array of schedule IDs to fetch
  * @returns React Query result with array of parsed schedule data
  */
-export function useMultipleSchedules(scheduleIds: string[]) {
-  const { currentCase } = useCase();
-  
+export function useMultipleSchedules(caseId: number, monthYear: string, scheduleIds: string[]) {
   return useQuery({
-    queryKey: ['schedules', 'multiple', scheduleIds.sort(), currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['schedules', 'multiple', scheduleIds.sort(), caseId, monthYear],
     queryFn: async (): Promise<(ScheduleSolution & { scheduleId: string; description?: string })[]> => {
       if (scheduleIds.length === 0) return [];
-      if (!currentCase) throw new Error('No case selected');
       const schedulePromises = scheduleIds.map(async (scheduleId) => {
-        const data = await getScheduleByIdAction(currentCase.caseId, currentCase.monthYear, scheduleId);
+        const data = await getScheduleByIdAction(caseId, monthYear, scheduleId);
         if (!data.solution) return null;
         
         const parsedSolution = parseSolutionFile(data.solution);

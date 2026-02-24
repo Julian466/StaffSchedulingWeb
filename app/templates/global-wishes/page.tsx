@@ -45,11 +45,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { getEmployeeNamesSummary } from '@/lib/utils/employee-matching';
 import { GlobalWishesTemplateMetadata } from '@/types/template';
+import { useCase } from '@/components/case-provider';
 
 export default function GlobalWishesTemplatesPage() {
-  const { data: templates = [], isLoading, error } = useGlobalWishesTemplates();
-  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateGlobalWishesTemplate();
-  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteGlobalWishesTemplate();
+  const { currentCase } = useCase();
+  const { data: templates = [], isLoading, error } = useGlobalWishesTemplates(currentCase?.caseId ?? 0);
+  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateGlobalWishesTemplate(currentCase?.caseId ?? 0);
+  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteGlobalWishesTemplate(currentCase?.caseId ?? 0);
 
   const [editingTemplate, setEditingTemplate] = useState<{
     id: string;
@@ -57,7 +59,7 @@ export default function GlobalWishesTemplatesPage() {
   } | null>(null);
 
   const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
-  const { data: viewingTemplate } = useGlobalWishesTemplate(viewingTemplateId);
+  const { data: viewingTemplate } = useGlobalWishesTemplate(currentCase?.caseId ?? 0, viewingTemplateId);
 
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 

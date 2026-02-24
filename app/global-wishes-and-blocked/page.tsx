@@ -22,25 +22,27 @@ import { useGlobalWishesTemplates, useGlobalWishesTemplate, useCreateGlobalWishe
 import { useEmployees } from '@/features/employees/hooks/use-employees';
 import { toast } from 'sonner';
 import { matchTemplateEmployees } from '@/lib/utils/employee-matching';
+import { useCase } from '@/components/case-provider';
 
 export default function GlobalWishesAndBlockedPage() {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
+    const { currentCase } = useCase();
 
-    const { data: employees = [] as WishesAndBlockedEmployee[], isLoading } = useGlobalWishesAndBlocked();
-    const createMutation = useCreateGlobalWishesAndBlocked();
-    const updateMutation = useUpdateGlobalWishesAndBlocked();
-    const deleteMutation = useDeleteGlobalWishesAndBlocked();
+    const { data: employees = [] as WishesAndBlockedEmployee[], isLoading } = useGlobalWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const createMutation = useCreateGlobalWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const updateMutation = useUpdateGlobalWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const deleteMutation = useDeleteGlobalWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
     // Template functionality
     const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
     const [importTemplateDialogOpen, setImportTemplateDialogOpen] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
     
-    const { data: templates = [] } = useGlobalWishesTemplates();
-    const { data: selectedTemplate } = useGlobalWishesTemplate(selectedTemplateId);
-    const { mutate: createTemplate, isPending: isCreatingTemplate } = useCreateGlobalWishesTemplate();
-    const { data: currentEmployees = [] } = useEmployees();
+    const { data: templates = [] } = useGlobalWishesTemplates(currentCase?.caseId ?? 0);
+    const { data: selectedTemplate } = useGlobalWishesTemplate(currentCase?.caseId ?? 0, selectedTemplateId);
+    const { mutate: createTemplate, isPending: isCreatingTemplate } = useCreateGlobalWishesTemplate(currentCase?.caseId ?? 0);
+    const { data: currentEmployees = [] } = useEmployees(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
     const handleCreate = () => {
         setEditingEmployee(undefined);
@@ -53,7 +55,7 @@ export default function GlobalWishesAndBlockedPage() {
     };
 
     // State for conflict dialog
-    const { data: monthlyEmployees = [] } = useWishesAndBlocked();
+    const { data: monthlyEmployees = [] } = useWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
     const [conflictOpen, setConflictOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState<{
         data: Omit<WishesAndBlockedEmployee, 'key'>;

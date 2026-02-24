@@ -8,7 +8,6 @@ import {
   SolverJob,
 } from '@/types/solver';
 import { toast } from 'sonner';
-import { useCase } from '@/components/case-provider';
 import { PythonConfigValidation } from '@/lib/config/app-config';
 import {
   validateConfig,
@@ -53,20 +52,19 @@ export function useValidateConfig() {
 
 /**
  * Hook to execute fetch command.
+ *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  */
-export function useFetch() {
-  const { currentCase } = useCase();
+export function useFetch(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: FetchParams): Promise<{ job: SolverJob }> => {
-      if (!currentCase) throw new Error('No case selected');
-      return await solverFetch(currentCase.caseId, currentCase.monthYear, params);
+      return await solverFetch(caseId, monthYear, params);
     },
     onSuccess: (data) => {
-      if (currentCase) {
-        queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
       if (data.job.status === 'completed') {
         toast.success('Daten erfolgreich von der Datenbank abgerufen');
       } else {
@@ -76,9 +74,7 @@ export function useFetch() {
       }
     },
     onError: (error) => {
-      if (currentCase) {
-        queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
       toast.error('Fehler beim Ausführen des Fetch-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -90,19 +86,20 @@ export function useFetch() {
  * Hook to execute solve command.
  * Returns mutation result with success callback that includes solve parameters
  * for potential automatic import.
+ *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  */
-export function useSolve() {
-  const { currentCase } = useCase();
+export function useSolve(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: SolveParams): Promise<{ job: SolverJob; params: SolveParams }> => {
-      if (!currentCase) throw new Error('No case selected');
-      const data = await solverSolve(currentCase.caseId, currentCase.monthYear, params);
+      const data = await solverSolve(caseId, monthYear, params);
       return { ...data, params };
     },
     onSuccess: (data) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
 
       if (data.job.status === 'completed') {
         toast.success('Dienstplan erfolgreich erstellt');
@@ -113,7 +110,7 @@ export function useSolve() {
       }
     },
     onError: (error) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
       toast.error('Fehler beim Ausführen des Solve-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -125,9 +122,11 @@ export function useSolve() {
  * Hook to execute solve-multiple command.
  * Returns mutation result with success callback that includes solve parameters
  * for potential automatic import.
+ *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  */
-export function useSolveMultiple() {
-  const { currentCase } = useCase();
+export function useSolveMultiple(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -140,12 +139,11 @@ export function useSolveMultiple() {
       };
       params: SolveMultipleParams;
     }> => {
-      if (!currentCase) throw new Error('No case selected');
-      const data = await solverSolveMultiple(currentCase.caseId, currentCase.monthYear, params);
+      const data = await solverSolveMultiple(caseId, monthYear, params);
       return { ...data, params };
     },
     onSuccess: (data) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
 
       if (data.job.status === 'completed') {
         const successCount = data.scheduleInfo.solutionsGenerated;
@@ -177,7 +175,7 @@ export function useSolveMultiple() {
       }
     },
     onError: (error) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
       toast.error('Fehler beim Ausführen des Solve-Multiple-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -187,18 +185,19 @@ export function useSolveMultiple() {
 
 /**
  * Hook to execute insert command.
+ *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  */
-export function useInsert() {
-  const { currentCase } = useCase();
+export function useInsert(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: InsertParams): Promise<{ job: SolverJob }> => {
-      if (!currentCase) throw new Error('No case selected');
-      return await solverInsert(currentCase.caseId, currentCase.monthYear, params);
+      return await solverInsert(caseId, monthYear, params);
     },
     onSuccess: (data) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
 
       if (data.job.status === 'completed') {
         toast.success('Daten erfolgreich in die Datenbank eingefügt');
@@ -209,7 +208,7 @@ export function useInsert() {
       }
     },
     onError: (error) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
       toast.error('Fehler beim Ausführen des Insert-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -219,18 +218,19 @@ export function useInsert() {
 
 /**
  * Hook to execute delete command.
+ *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  */
-export function useDelete() {
-  const { currentCase } = useCase();
+export function useDelete(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: DeleteParams): Promise<{ job: SolverJob }> => {
-      if (!currentCase) throw new Error('No case selected');
-      return await solverDelete(currentCase.caseId, currentCase.monthYear, params);
+      return await solverDelete(caseId, monthYear, params);
     },
     onSuccess: (data) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
 
       if (data.job.status === 'completed') {
         toast.success('Daten erfolgreich aus der Datenbank gelöscht');
@@ -241,7 +241,7 @@ export function useDelete() {
       }
     },
     onError: (error) => {
-      currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', caseId, monthYear] });
       toast.error('Fehler beim Ausführen des Delete-Befehls', {
         description: error instanceof Error ? error.message : String(error),
       });
@@ -252,9 +252,11 @@ export function useDelete() {
 /**
  * Hook to import a processed solution file.
  * Reads the solution from StaffScheduling/processed_solutions and saves it as a schedule.
+ *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  */
-export function useImportSolution() {
-  const { currentCase } = useCase();
+export function useImportSolution(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -269,13 +271,12 @@ export function useImportSolution() {
       filename: string;
       message: string;
     }> => {
-      if (!currentCase) throw new Error('No case selected');
-      return await importSolution(currentCase.caseId, currentCase.monthYear, params);
+      return await importSolution(caseId, monthYear, params);
     },
     onSuccess: (data) => {
       // Invalidate schedules to refresh the list
-      currentCase && queryClient.invalidateQueries({ queryKey: ['schedules', currentCase.caseId, currentCase.monthYear] });
-      currentCase && queryClient.invalidateQueries({ queryKey: ['selectedSchedule', currentCase.caseId, currentCase.monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['schedules', caseId, monthYear] });
+      queryClient.invalidateQueries({ queryKey: ['selectedSchedule', caseId, monthYear] });
 
       toast.success('Lösung erfolgreich importiert', {
         description: `Schedule ID: ${data.scheduleId}`,

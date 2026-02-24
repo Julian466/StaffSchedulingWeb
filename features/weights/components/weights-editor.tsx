@@ -29,6 +29,7 @@ import {
   useCreateWeightTemplate,
   useWeightTemplate,
 } from '@/features/weights/hooks/use-weight-templates';
+import { useCase } from '@/components/case-provider';
 
 interface WeightsEditorProps {
   weights: Weights;
@@ -41,6 +42,7 @@ interface WeightsEditorProps {
  * Provides numeric inputs (no fixed min/max) for all weight values.
  */
 export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps) {
+  const { currentCase } = useCase();
   const [editedWeights, setEditedWeights] = useState<Weights>(weights);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
@@ -48,9 +50,9 @@ export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps)
   const [importConfirmed, setImportConfirmed] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
-  const { data: templates = [] } = useWeightTemplates();
-  const { mutate: createTemplate, isPending: isCreating } = useCreateWeightTemplate();
-  const { data: templateToImport } = useWeightTemplate(selectedTemplateId);
+  const { data: templates = [] } = useWeightTemplates(currentCase?.caseId ?? 0);
+  const { mutate: createTemplate, isPending: isCreating } = useCreateWeightTemplate(currentCase?.caseId ?? 0);
+  const { data: templateToImport } = useWeightTemplate(currentCase?.caseId ?? 0, selectedTemplateId);
 
   // Update local state when props change (deferred to avoid synchronous setState in effect)
   useEffect(() => {

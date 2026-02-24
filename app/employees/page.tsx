@@ -5,10 +5,13 @@ import { EmployeeList } from '@/features/employees/components/employee-list';
 import {
   useEmployees,
 } from '@/features/employees/hooks/use-employees';
+import { useCase } from '@/components/case-provider';
 
 export default function EmployeesPage() {
+  const { currentCase } = useCase();
+
   // TanStack Query Hooks
-  const { data: employees = [], isLoading } = useEmployees();
+  const { data: employees = [], isLoading } = useEmployees(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
   return (
     <div className="py-6">

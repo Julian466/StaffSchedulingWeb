@@ -24,22 +24,24 @@ import {
 import { ScheduleSolutionRaw } from '@/types/schedule';
 import { toast } from 'sonner';
 import { Root as Switch, Thumb as SwitchThumb } from '@radix-ui/react-switch';
+import { useCase } from '@/components/case-provider';
 
 export default function SchedulePage() {
-  const { data: schedule, isLoading, refetch: refetchSchedule } = useSchedule();
-  const { data: schedulesMetadata, isLoading: isMetadataLoading, refetch: refetchMetadata } = useSchedulesMetadata();
+  const { currentCase } = useCase();
+  const { data: schedule, isLoading, refetch: refetchSchedule } = useSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const { data: schedulesMetadata, isLoading: isMetadataLoading, refetch: refetchMetadata } = useSchedulesMetadata(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
   const [reducedView, setReducedView] = useState(false);
-  const saveSchedule = useSaveSchedule();
-  const deleteSchedule = useDeleteSchedule();
-  const selectSchedule = useSelectSchedule();
-  const updateSchedule = useUpdateSchedule();
+  const saveSchedule = useSaveSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const deleteSchedule = useDeleteSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const selectSchedule = useSelectSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const updateSchedule = useUpdateSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
   const [pendingSolution, setPendingSolution] = useState<ScheduleSolutionRaw | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [selectedScheduleIds, setSelectedScheduleIds] = useState<string[]>([]);
-  const { data: multipleSchedules, isLoading: isMultipleSchedulesLoading } = useMultipleSchedules(selectedScheduleIds);
+  const { data: multipleSchedules, isLoading: isMultipleSchedulesLoading } = useMultipleSchedules(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '', selectedScheduleIds);
 
   const handleFileLoaded = async (solutionData: ScheduleSolutionRaw) => {
     setPendingSolution(solutionData);

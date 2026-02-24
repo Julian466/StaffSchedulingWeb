@@ -2,25 +2,22 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
-import { useCase } from '@/components/case-provider';
 import { getAllGlobalWishesAction, createGlobalWishesAction, updateGlobalWishesAction, deleteGlobalWishesAction } from '../global-wishes-and-blocked.actions';
 
 /**
  * Hook to fetch all employees with their wishes and blocked data for the current case.
  * Includes wish days, wish shifts, blocked days, and blocked shifts.
  *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query result with wishes and blocked employee data
  */
-export function useGlobalWishesAndBlocked() {
-    const { currentCase } = useCase();
-
+export function useGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     return useQuery({
-        queryKey: ['global-wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear],
+        queryKey: ['global-wishes-and-blocked', caseId, monthYear],
         queryFn: async () => {
-            if (!currentCase) throw new Error('No case selected');
-            return getAllGlobalWishesAction(currentCase.caseId, currentCase.monthYear);
+            return getAllGlobalWishesAction(caseId, monthYear);
         },
-        enabled: !!currentCase,
     });
 }
 
@@ -28,54 +25,54 @@ export function useGlobalWishesAndBlocked() {
  * Hook to create a new wishes and blocked employee entry.
  * Note: This is typically called automatically when creating an employee.
  *
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query mutation for creating a wishes and blocked entry
  */
-export function useCreateGlobalWishesAndBlocked() {
+export function useCreateGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
-    const { currentCase } = useCase();
     return useMutation({
         mutationFn: async (payload: { data: Omit<WishesAndBlockedEmployee, 'key'>; options?: { skipSyncToMonthly?: boolean } }) => {
-            if (!currentCase) throw new Error('No case selected');
             const { data, options } = payload;
-            return createGlobalWishesAction(currentCase.caseId, currentCase.monthYear, data, options);
+            return createGlobalWishesAction(caseId, monthYear, data, options);
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear] });
-            qc.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear] });
+            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', caseId, monthYear] });
+            qc.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
         },
     });
 }
 
-export function useUpdateGlobalWishesAndBlocked() {
+/**
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
+ */
+export function useUpdateGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
-    const { currentCase } = useCase();
 
     return useMutation({
         mutationFn: async ({ id, data, options }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>; options?: { skipSyncToMonthly?: boolean } }): Promise<WishesAndBlockedEmployee> => {
-            if (!currentCase) throw new Error('No case selected');
-            return updateGlobalWishesAction(currentCase.caseId, currentCase.monthYear, id, data, options);
+            return updateGlobalWishesAction(caseId, monthYear, id, data, options);
         },
         onSuccess: () => {
-            if (currentCase) {
-                qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
-                qc.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
-            }
+            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', caseId, monthYear] });
+            qc.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
         },
     });
 }
 
-export function useDeleteGlobalWishesAndBlocked() {
+/**
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
+ */
+export function useDeleteGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
-    const { currentCase } = useCase();
     return useMutation({
         mutationFn: async (id: number) => {
-            if (!currentCase) throw new Error('No case selected');
-            return deleteGlobalWishesAction(currentCase.caseId, currentCase.monthYear, id);
+            return deleteGlobalWishesAction(caseId, monthYear, id);
         },
-        onSuccess: () => { 
-            if (currentCase) {
-                qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
-            }
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', caseId, monthYear] });
         },
     });
 }

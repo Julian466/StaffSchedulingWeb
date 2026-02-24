@@ -115,9 +115,9 @@ export function EmployeeSummaryDialog({
                                           container,
                                       }: EmployeeSummaryDialogProps) {
     const {currentCase} = useCase();
-    const {data: employeesData, isLoading: isLoadingEmployees} = useEmployees();
-    const {data: wishesAndBlockedData, isLoading: isLoadingWishes} = useWishesAndBlocked();
-    const {data: scheduleData, isLoading: isLoadingSchedule} = useSchedule();
+    const {data: employeesData, isLoading: isLoadingEmployees} = useEmployees(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const {data: wishesAndBlockedData, isLoading: isLoadingWishes} = useWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const {data: scheduleData, isLoading: isLoadingSchedule} = useSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
     const toastShownRef = useRef(false);
     const lastCheckedKeyRef = useRef<string | null>(null);
 

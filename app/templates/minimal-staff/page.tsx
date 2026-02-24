@@ -41,11 +41,13 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
+import { useCase } from '@/components/case-provider';
 
 export default function MinimalStaffTemplatesPage() {
-  const { data: templates = [], isLoading, error } = useMinimalStaffTemplates();
-  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateMinimalStaffTemplate();
-  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteMinimalStaffTemplate();
+  const { currentCase } = useCase();
+  const { data: templates = [], isLoading, error } = useMinimalStaffTemplates(currentCase?.caseId ?? 0);
+  const { mutate: updateTemplate, isPending: isUpdating } = useUpdateMinimalStaffTemplate(currentCase?.caseId ?? 0);
+  const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteMinimalStaffTemplate(currentCase?.caseId ?? 0);
 
   const [editingTemplate, setEditingTemplate] = useState<{
     id: string;
@@ -53,7 +55,7 @@ export default function MinimalStaffTemplatesPage() {
   } | null>(null);
 
   const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
-  const { data: viewingTemplate } = useMinimalStaffTemplate(viewingTemplateId);
+  const { data: viewingTemplate } = useMinimalStaffTemplate(currentCase?.caseId ?? 0, viewingTemplateId);
 
   const viewingTemplateForPreview = viewingTemplate
     ? {

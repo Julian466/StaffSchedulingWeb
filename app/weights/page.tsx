@@ -5,10 +5,12 @@ import { useWeights, useUpdateWeights } from '@/features/weights/hooks/use-weigh
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Scale, Info } from 'lucide-react';
+import { useCase } from '@/components/case-provider';
 
 export default function WeightsPage() {
-  const { data: weights, isLoading, error } = useWeights();
-  const { mutate: updateWeights, isPending } = useUpdateWeights();
+  const { currentCase } = useCase();
+  const { data: weights, isLoading, error } = useWeights(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const { mutate: updateWeights, isPending } = useUpdateWeights(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
   if (error) {
     return (

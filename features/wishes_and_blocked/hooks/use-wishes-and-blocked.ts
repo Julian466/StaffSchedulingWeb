@@ -2,25 +2,22 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
-import { useCase } from '@/components/case-provider';
 import { getAllWishesAction, createWishesAction, updateWishesAction, deleteWishesAction } from '../wishes-and-blocked.actions';
 
 /**
  * Hook to fetch all employees with their wishes and blocked data for the current case.
  * Includes wish days, wish shifts, blocked days, and blocked shifts.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query result with wishes and blocked employee data
  */
-export function useWishesAndBlocked() {
-  const { currentCase } = useCase();
-  
+export function useWishesAndBlocked(caseId: number, monthYear: string) {
   return useQuery({
-    queryKey: ['wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['wishes-and-blocked', caseId, monthYear],
     queryFn: async (): Promise<WishesAndBlockedEmployee[]> => {
-      if (!currentCase) throw new Error('No case selected');
-      return getAllWishesAction(currentCase.caseId, currentCase.monthYear);
+      return getAllWishesAction(caseId, monthYear);
     },
-    enabled: !!currentCase,
   });
 }
 
@@ -28,21 +25,19 @@ export function useWishesAndBlocked() {
  * Hook to create a new wishes and blocked employee entry.
  * Note: This is typically called automatically when creating an employee.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query mutation for creating a wishes and blocked entry
  */
-export function useCreateWishesAndBlocked() {
+export function useCreateWishesAndBlocked(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
-  const { currentCase } = useCase();
   
   return useMutation({
     mutationFn: async (data: Omit<WishesAndBlockedEmployee, 'key'>): Promise<WishesAndBlockedEmployee> => {
-      if (!currentCase) throw new Error('No case selected');
-      return createWishesAction(currentCase.caseId, currentCase.monthYear, data);
+      return createWishesAction(caseId, monthYear, data);
     },
     onSuccess: () => {
-      if (currentCase) {
-        queryClient.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
     },
   });
 }
@@ -51,11 +46,12 @@ export function useCreateWishesAndBlocked() {
  * Hook to update an employee's wishes and blocked data.
  * Can update wish days, wish shifts, blocked days, and blocked shifts.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query mutation for updating wishes and blocked data
  */
-export function useUpdateWishesAndBlocked() {
+export function useUpdateWishesAndBlocked(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
-  const { currentCase } = useCase();
   
   return useMutation({
     mutationFn: async ({ 
@@ -65,13 +61,10 @@ export function useUpdateWishesAndBlocked() {
       id: number;
       data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>
     }): Promise<WishesAndBlockedEmployee> => {
-      if (!currentCase) throw new Error('No case selected');
-      return updateWishesAction(currentCase.caseId, currentCase.monthYear, id, data);
+      return updateWishesAction(caseId, monthYear, id, data);
     },
     onSuccess: () => {
-      if (currentCase) {
-        queryClient.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
     },
   });
 }
@@ -80,21 +73,19 @@ export function useUpdateWishesAndBlocked() {
  * Hook to delete a wishes and blocked employee entry.
  * Note: This is typically called automatically when deleting an employee.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query mutation for deleting a wishes and blocked entry
  */
-export function useDeleteWishesAndBlocked() {
+export function useDeleteWishesAndBlocked(caseId: number, monthYear: string) {
   const queryClient = useQueryClient();
-  const { currentCase } = useCase();
   
   return useMutation({
     mutationFn: async (id: number): Promise<void> => {
-      if (!currentCase) throw new Error('No case selected');
-      return deleteWishesAction(currentCase.caseId, currentCase.monthYear, id);
+      return deleteWishesAction(caseId, monthYear, id);
     },
     onSuccess: () => {
-      if (currentCase) {
-        queryClient.invalidateQueries({ queryKey: ['wishes-and-blocked', currentCase.caseId, currentCase.monthYear] });
-      }
+      queryClient.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
     },
   });
 }

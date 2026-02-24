@@ -14,19 +14,21 @@ import {
   useUpdateWishesAndBlocked,
   useDeleteWishesAndBlocked,
 } from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
+import { useCase } from '@/components/case-provider';
 
 export default function WishesAndBlockedPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
+  const { currentCase } = useCase();
 
   // TanStack Query Hooks
-  const { data: employees = [], isLoading } = useWishesAndBlocked();
+  const { data: employees = [], isLoading } = useWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
   
   // Get list of employee keys that already have wishes
   const existingEmployeeKeys = employees.map(emp => emp.key);
-  const createMutation = useCreateWishesAndBlocked();
-  const updateMutation = useUpdateWishesAndBlocked();
-  const deleteMutation = useDeleteWishesAndBlocked();
+  const createMutation = useCreateWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const updateMutation = useUpdateWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const deleteMutation = useDeleteWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
   const handleCreate = () => {
     setEditingEmployee(undefined);

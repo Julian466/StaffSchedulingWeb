@@ -1,6 +1,7 @@
 'use client';
 
 import { useJobHistory } from '@/features/solver/hooks/use-jobs';
+import { useCase } from '@/components/case-provider';
 import {
   Table,
   TableBody,
@@ -105,7 +106,8 @@ function JobRow({ job }: { job: SolverJob }) {
 }
 
 export function JobHistoryTable() {
-  const { data, isLoading, isError } = useJobHistory();
+  const { currentCase } = useCase();
+  const { data, isLoading, isError } = useJobHistory(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
   if (isLoading) {
     return (

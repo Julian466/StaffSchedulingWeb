@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useCase } from '@/components/case-provider';
 import { toast } from 'sonner';
 import {
   Template,
@@ -23,52 +22,50 @@ import {
 export function createTemplateHooks<T>(templateType: string) {
   /**
    * Hook to fetch all templates for the current case.
+   *
+   * @param caseId - The case ID
    */
-  function useTemplates() {
-    const { currentCase } = useCase();
-
+  function useTemplates(caseId: number) {
     return useQuery({
-      queryKey: [templateType, 'templates', currentCase?.caseId],
+      queryKey: [templateType, 'templates', caseId],
       queryFn: async (): Promise<TemplateSummary[]> => {
-        if (!currentCase) throw new Error('No case selected');
-        return listTemplatesAction(templateType, currentCase.caseId);
+        return listTemplatesAction(templateType, caseId);
       },
-      enabled: !!currentCase,
     });
   }
 
   /**
    * Hook to fetch a single template by ID.
+   *
+   * @param caseId - The case ID
+   * @param templateId - The template ID or null
    */
-  function useTemplate(templateId: string | null) {
-    const { currentCase } = useCase();
-
+  function useTemplate(caseId: number, templateId: string | null) {
     return useQuery({
-      queryKey: [templateType, 'template', currentCase?.caseId, templateId],
+      queryKey: [templateType, 'template', caseId, templateId],
       queryFn: async (): Promise<Template<T>> => {
-        if (!currentCase) throw new Error('No case selected');
         if (!templateId) throw new Error('No template ID provided');
-        return getTemplateAction<T>(templateType, currentCase.caseId, templateId);
+        return getTemplateAction<T>(templateType, caseId, templateId);
       },
-      enabled: !!currentCase && !!templateId,
+      enabled: !!templateId,
     });
   }
 
   /**
    * Hook to create a new template.
+   *
+   * @param caseId - The case ID
    */
-  function useCreateTemplate() {
-    const { currentCase } = useCase();
+  function useCreateTemplate(caseId: number) {
     const queryClient = useQueryClient();
 
     return useMutation({
       mutationFn: async (request: CreateTemplateRequest<T>) => {
-        if (!currentCase) throw new Error('No case selected');
-        return createTemplateAction(templateType, currentCase.caseId, request.content, request.description);
+        return createTemplateAction(templateType, caseId, request.content, request.description);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({
-          queryKey: [templateType, 'templates', currentCase?.caseId],
+          queryKey: [templateType, 'templates', caseId],
         });
         toast.success('Template erfolgreich erstellt');
       },
@@ -80,9 +77,10 @@ export function createTemplateHooks<T>(templateType: string) {
 
   /**
    * Hook to update a template's content or metadata.
+   *
+   * @param caseId - The case ID
    */
-  function useUpdateTemplate() {
-    const { currentCase } = useCase();
+  function useUpdateTemplate(caseId: number) {
     const queryClient = useQueryClient();
 
     return useMutation({
@@ -95,15 +93,14 @@ export function createTemplateHooks<T>(templateType: string) {
         content?: T;
         description?: string;
       }) => {
-        if (!currentCase) throw new Error('No case selected');
-        return updateTemplateAction(templateType, currentCase.caseId, templateId, { content, description });
+        return updateTemplateAction(templateType, caseId, templateId, { content, description });
       },
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries({
-          queryKey: [templateType, 'templates', currentCase?.caseId],
+          queryKey: [templateType, 'templates', caseId],
         });
         queryClient.invalidateQueries({
-          queryKey: [templateType, 'template', currentCase?.caseId, variables.templateId],
+          queryKey: [templateType, 'template', caseId, variables.templateId],
         });
         toast.success('Template erfolgreich aktualisiert');
       },
@@ -115,19 +112,19 @@ export function createTemplateHooks<T>(templateType: string) {
 
   /**
    * Hook to delete a template.
+   *
+   * @param caseId - The case ID
    */
-  function useDeleteTemplate() {
-    const { currentCase } = useCase();
+  function useDeleteTemplate(caseId: number) {
     const queryClient = useQueryClient();
 
     return useMutation({
       mutationFn: async (templateId: string) => {
-        if (!currentCase) throw new Error('No case selected');
-        return deleteTemplateAction(templateType, currentCase.caseId, templateId);
+        return deleteTemplateAction(templateType, caseId, templateId);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({
-          queryKey: [templateType, 'templates', currentCase?.caseId],
+          queryKey: [templateType, 'templates', caseId],
         });
         toast.success('Template erfolgreich gelöscht');
       },

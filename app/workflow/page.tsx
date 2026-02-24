@@ -59,7 +59,7 @@ interface ConfigCheck {
 export default function WorkflowPage() {
     const router = useRouter();
     const {workflowData, isLoading: workflowLoading} = useWorkflow();
-    const {switchCase, currentCaseId} = useCase();
+    const {switchCase, currentCaseId, currentCase} = useCase();
     const queryClient = useQueryClient();
 
     // Use workflow data from server environment
@@ -89,7 +89,7 @@ export default function WorkflowPage() {
         end: string;
         solutionType: string;
     } | null>(null);
-    const importSolutionMutation = useImportSolution();
+    const importSolutionMutation = useImportSolution(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
     // Multiple import dialog state
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);

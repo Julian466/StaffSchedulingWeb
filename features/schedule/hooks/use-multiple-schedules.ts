@@ -2,25 +2,23 @@
 
 import { useQueries } from '@tanstack/react-query';
 import { ScheduleSolution } from '@/types/schedule';
-import { useCase } from '@/components/case-provider';
 import { parseSolutionFile } from '@/lib/services/schedule-parser';
 import { getScheduleByIdAction } from '@/features/schedule/schedule.actions';
 
 /**
  * Hook to fetch multiple schedules by their IDs simultaneously.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @param scheduleIds - Array of schedule IDs to fetch
  * @returns Array of query results with parsed schedule data
  */
-export function useMultipleSchedules(scheduleIds: string[]) {
-  const { currentCase } = useCase();
-  
+export function useMultipleSchedules(caseId: number, monthYear: string, scheduleIds: string[]) {
   return useQueries({
     queries: scheduleIds.map((scheduleId) => ({
-      queryKey: ['schedule', scheduleId, currentCase?.caseId, currentCase?.monthYear],
+      queryKey: ['schedule', scheduleId, caseId, monthYear],
       queryFn: async (): Promise<ScheduleSolution | null> => {
-        if (!currentCase) throw new Error('No case selected');
-        const data = await getScheduleByIdAction(currentCase.caseId, currentCase.monthYear, scheduleId);
+        const data = await getScheduleByIdAction(caseId, monthYear, scheduleId);
         
         if (!data.solution) return null;
         

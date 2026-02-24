@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { SolverJob } from '@/types/solver';
-import { useCase } from '@/components/case-provider';
 import { getJobs, getJob } from '@/features/solver/solver.actions';
 
 /**
@@ -15,18 +14,16 @@ import { getJobs, getJob } from '@/features/solver/solver.actions';
  * Hook to get job history for the current case.
  * Returns all jobs ordered by creation date (newest first).
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query result with jobs array
  */
-export function useJobHistory() {
-  const { currentCase } = useCase();
-
+export function useJobHistory(caseId: number, monthYear: string) {
   return useQuery({
-    queryKey: ['solver', 'jobs', currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['solver', 'jobs', caseId, monthYear],
     queryFn: async (): Promise<{ jobs: SolverJob[] }> => {
-      if (!currentCase) throw new Error('No case selected');
-      return await getJobs(currentCase.caseId, currentCase.monthYear);
+      return await getJobs(caseId, monthYear);
     },
-    enabled: !!currentCase,
   });
 }
 
@@ -34,18 +31,17 @@ export function useJobHistory() {
  * Hook to get a specific job by ID.
  * Useful for monitoring job status or retrieving job results.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @param jobId - The job ID to fetch, or null to disable the query
  * @returns React Query result with job data
  */
-export function useJob(jobId: string | null) {
-  const { currentCase } = useCase();
-
+export function useJob(caseId: number, monthYear: string, jobId: string | null) {
   return useQuery({
-    queryKey: ['solver', 'jobs', jobId, currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['solver', 'jobs', jobId, caseId, monthYear],
     queryFn: async (): Promise<{ job: SolverJob }> => {
       if (!jobId) throw new Error('No job ID provided');
-      if (!currentCase) throw new Error('No case selected');
-      return await getJob(currentCase.caseId, currentCase.monthYear, jobId);
+      return await getJob(caseId, monthYear, jobId);
     },
     enabled: !!jobId,
     staleTime: 5000,

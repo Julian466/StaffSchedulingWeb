@@ -70,12 +70,12 @@ export function SolverControlPanel() {
         feasibleSolutions?: number[];
     } | null>(null);
 
-    const fetchMutation = useFetch();
-    const solveMutation = useSolve();
-    const solveMultipleMutation = useSolveMultiple();
-    const insertMutation = useInsert();
-    const deleteMutation = useDelete();
-    const importSolutionMutation = useImportSolution();
+    const fetchMutation = useFetch(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const solveMutation = useSolve(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const solveMultipleMutation = useSolveMultiple(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const insertMutation = useInsert(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const deleteMutation = useDelete(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const importSolutionMutation = useImportSolution(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
 
     const isExecuting =
         fetchMutation.isPending ||

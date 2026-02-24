@@ -2,25 +2,21 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { Employee } from '@/types/employee';
-import { useCase } from '@/components/case-provider';
 import { getAllEmployeesAction } from '../employees.actions';
 
 /**
  * Hook to fetch all employees for the current case.
- * Automatically includes the case ID from context in the request headers.
  * 
+ * @param caseId - The case ID
+ * @param monthYear - The month/year string
  * @returns React Query result with employee data
  */
-export function useEmployees() {
-  const { currentCase } = useCase();
-  
+export function useEmployees(caseId: number, monthYear: string) {
   return useQuery({
-    queryKey: ['employees', currentCase?.caseId, currentCase?.monthYear],
+    queryKey: ['employees', caseId, monthYear],
     queryFn: async (): Promise<Employee[]> => {
-      if (!currentCase) throw new Error('No case selected');
-      return getAllEmployeesAction(currentCase.caseId, currentCase.monthYear);
+      return getAllEmployeesAction(caseId, monthYear);
     },
-    enabled: !!currentCase,
   });
 }
 
