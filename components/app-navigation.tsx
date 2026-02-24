@@ -21,7 +21,7 @@ export function AppNavigation() {
   const caseBase = currentCase ? `/cases/${currentCase.caseId}/${currentCase.monthYear}` : '';
 
   const isActive = (path: string) => {
-    return pathname === path || pathname === `${caseBase}${path}` || pathname.endsWith(path);
+    return pathname === path || pathname === `${caseBase}${path}`;
   };
 
   return (
