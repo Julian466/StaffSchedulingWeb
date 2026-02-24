@@ -1,14 +1,20 @@
-'use client';
-
-import { useCaseParams } from '@/hooks/use-case-params';
 import { SolverPageClient } from './solver-page-client';
 
-export default function SolverPage() {
-  const caseParams = useCaseParams();
-  
-  if (!caseParams) {
+export default async function SolverPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+}) {
+  const { caseId: caseIdStr, monthYear } = await searchParams;
+
+  if (!caseIdStr || !monthYear) {
     return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
   }
-  
-  return <SolverPageClient caseId={caseParams.caseId} monthYear={caseParams.monthYear} />;
+
+  const caseId = Number(caseIdStr);
+  if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
+  }
+
+  return <SolverPageClient caseId={caseId} monthYear={monthYear} />;
 }
