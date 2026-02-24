@@ -1,25 +1,24 @@
-import { makeDeleteWishesUseCase, IDeleteWishesUseCase } from '@/src/application/use-cases/wishes-and-blocked/delete-wishes.use-case';
-import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
+import type { IDeleteWishesUseCase } from '@/src/application/use-cases/wishes-and-blocked/delete-wishes.use-case';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
-export class DeleteWishesController {
-  private readonly deleteWishes: IDeleteWishesUseCase;
+export interface IDeleteWishesController {
+  (input: { caseId: number; monthYear: string; key: number }): Promise<
+    { data: void } | { error: string }
+  >;
+}
 
-  constructor(wishesRepository: IWishesAndBlockedRepository) {
-    this.deleteWishes = makeDeleteWishesUseCase(wishesRepository);
-  }
-
-  async execute(caseId: number, monthYear: string, key: number): Promise<{ data: void } | { error: string }> {
+export function makeDeleteWishesController(
+  deleteWishesUseCase: IDeleteWishesUseCase
+): IDeleteWishesController {
+  return async ({ caseId, monthYear, key }) => {
     try {
       validateMonthYear(monthYear);
-      await this.deleteWishes({ caseId, monthYear, key });
+      await deleteWishesUseCase({ caseId, monthYear, key });
       return { data: undefined };
     } catch (error) {
-      if (isDomainError(error)) {
-        return { error: error.message };
-      }
+      if (isDomainError(error)) return { error: error.message };
       throw error;
     }
-  }
+  };
 }

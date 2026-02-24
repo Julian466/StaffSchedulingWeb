@@ -1,26 +1,25 @@
-import { makeDeleteScheduleUseCase, IDeleteScheduleUseCase } from '@/src/application/use-cases/schedule/delete-schedule.use-case';
-import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
+import type { IDeleteScheduleUseCase } from '@/src/application/use-cases/schedule/delete-schedule.use-case';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
 
-export class DeleteScheduleController {
-  private readonly deleteSchedule: IDeleteScheduleUseCase;
+export interface IDeleteScheduleController {
+  (input: { caseId: number; monthYear: string; scheduleId: string }): Promise<
+    { data: void } | { error: string }
+  >;
+}
 
-  constructor(scheduleRepository: IScheduleRepository) {
-    this.deleteSchedule = makeDeleteScheduleUseCase(scheduleRepository);
-  }
-
-  async execute(caseId: number, monthYear: string, scheduleId: string): Promise<{ data: void } | { error: string }> {
+export function makeDeleteScheduleController(
+  deleteScheduleUseCase: IDeleteScheduleUseCase
+): IDeleteScheduleController {
+  return async ({ caseId, monthYear, scheduleId }) => {
     try {
       validateMonthYear(monthYear);
       validateScheduleId(scheduleId);
-      await this.deleteSchedule({ caseId, monthYear, scheduleId });
+      await deleteScheduleUseCase({ caseId, monthYear, scheduleId });
       return { data: undefined };
     } catch (error) {
-      if (isDomainError(error)) {
-        return { error: error.message };
-      }
+      if (isDomainError(error)) return { error: error.message };
       throw error;
     }
-  }
+  };
 }

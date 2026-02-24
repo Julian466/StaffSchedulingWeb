@@ -633,7 +633,7 @@ export async function getJobs(
     apiLogger.info('Fetching job history', { caseId, monthYear });
 
     const controller = getInjection('GetAllJobsController');
-    const result = await controller.execute(caseId, monthYear);
+    const result = await controller({ caseId, monthYear });
 
     if ('error' in result) {
       throw new Error(result.error);
@@ -663,7 +663,7 @@ export async function getJob(
     apiLogger.info('Fetching job', { caseId, monthYear, jobId });
 
     const controller = getInjection('GetJobController');
-    const result = await controller.execute(caseId, monthYear, jobId);
+    const result = await controller({ caseId, monthYear, jobId });
 
     if ('error' in result) {
       throw new Error('Job not found');

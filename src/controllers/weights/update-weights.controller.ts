@@ -1,26 +1,25 @@
-import { makeUpdateWeightsUseCase, IUpdateWeightsUseCase } from '@/src/application/use-cases/weights/update-weights.use-case';
-import { IWeightsRepository } from '@/src/application/ports/weights.repository';
-import { Weights } from '@/src/entities/models/weights.model';
+import type { IUpdateWeightsUseCase } from '@/src/application/use-cases/weights/update-weights.use-case';
+import type { Weights } from '@/src/entities/models/weights.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
-export class UpdateWeightsController {
-  private readonly updateWeights: IUpdateWeightsUseCase;
+export interface IUpdateWeightsController {
+  (input: { caseId: number; monthYear: string; weights: Weights }): Promise<
+    { data: void } | { error: string }
+  >;
+}
 
-  constructor(weightsRepository: IWeightsRepository) {
-    this.updateWeights = makeUpdateWeightsUseCase(weightsRepository);
-  }
-
-  async execute(caseId: number, monthYear: string, weights: Weights): Promise<{ data: void } | { error: string }> {
+export function makeUpdateWeightsController(
+  updateWeightsUseCase: IUpdateWeightsUseCase
+): IUpdateWeightsController {
+  return async ({ caseId, monthYear, weights }) => {
     try {
       validateMonthYear(monthYear);
-      await this.updateWeights({ caseId, monthYear, weights });
+      await updateWeightsUseCase({ caseId, monthYear, weights });
       return { data: undefined };
     } catch (error) {
-      if (isDomainError(error)) {
-        return { error: error.message };
-      }
+      if (isDomainError(error)) return { error: error.message };
       throw error;
     }
-  }
+  };
 }

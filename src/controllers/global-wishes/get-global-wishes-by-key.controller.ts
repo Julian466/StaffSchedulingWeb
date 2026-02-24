@@ -1,26 +1,25 @@
-import { makeGetGlobalWishesByKeyUseCase, IGetGlobalWishesByKeyUseCase } from '@/src/application/use-cases/global-wishes/get-global-wishes-by-key.use-case';
-import { IGlobalWishesAndBlockedRepository } from '@/src/application/ports/global-wishes-and-blocked.repository';
-import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
+import type { IGetGlobalWishesByKeyUseCase } from '@/src/application/use-cases/global-wishes/get-global-wishes-by-key.use-case';
+import type { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
-export class GetGlobalWishesByKeyController {
-  private readonly getGlobalWishesByKey: IGetGlobalWishesByKeyUseCase;
+export interface IGetGlobalWishesByKeyController {
+  (input: { caseId: number; monthYear: string; key: number }): Promise<
+    { data: WishesAndBlockedEmployee } | { error: string }
+  >;
+}
 
-  constructor(globalWishesRepository: IGlobalWishesAndBlockedRepository) {
-    this.getGlobalWishesByKey = makeGetGlobalWishesByKeyUseCase(globalWishesRepository);
-  }
-
-  async execute(caseId: number, monthYear: string, key: number): Promise<{ data: WishesAndBlockedEmployee } | { error: string }> {
+export function makeGetGlobalWishesByKeyController(
+  getGlobalWishesByKeyUseCase: IGetGlobalWishesByKeyUseCase
+): IGetGlobalWishesByKeyController {
+  return async ({ caseId, monthYear, key }) => {
     try {
       validateMonthYear(monthYear);
-      const wishes = await this.getGlobalWishesByKey({ caseId, monthYear, key });
+      const wishes = await getGlobalWishesByKeyUseCase({ caseId, monthYear, key });
       return { data: wishes };
     } catch (error) {
-      if (isDomainError(error)) {
-        return { error: error.message };
-      }
+      if (isDomainError(error)) return { error: error.message };
       throw error;
     }
-  }
+  };
 }

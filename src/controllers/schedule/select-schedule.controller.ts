@@ -1,26 +1,25 @@
-import { makeSelectScheduleUseCase, ISelectScheduleUseCase } from '@/src/application/use-cases/schedule/select-schedule.use-case';
-import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
+import type { ISelectScheduleUseCase } from '@/src/application/use-cases/schedule/select-schedule.use-case';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
 
-export class SelectScheduleController {
-  private readonly selectSchedule: ISelectScheduleUseCase;
+export interface ISelectScheduleController {
+  (input: { caseId: number; monthYear: string; scheduleId: string }): Promise<
+    { data: void } | { error: string }
+  >;
+}
 
-  constructor(scheduleRepository: IScheduleRepository) {
-    this.selectSchedule = makeSelectScheduleUseCase(scheduleRepository);
-  }
-
-  async execute(caseId: number, monthYear: string, scheduleId: string): Promise<{ data: void } | { error: string }> {
+export function makeSelectScheduleController(
+  selectScheduleUseCase: ISelectScheduleUseCase
+): ISelectScheduleController {
+  return async ({ caseId, monthYear, scheduleId }) => {
     try {
       validateMonthYear(monthYear);
       validateScheduleId(scheduleId);
-      await this.selectSchedule({ caseId, monthYear, scheduleId });
+      await selectScheduleUseCase({ caseId, monthYear, scheduleId });
       return { data: undefined };
     } catch (error) {
-      if (isDomainError(error)) {
-        return { error: error.message };
-      }
+      if (isDomainError(error)) return { error: error.message };
       throw error;
     }
-  }
+  };
 }

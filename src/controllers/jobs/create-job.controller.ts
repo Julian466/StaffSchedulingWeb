@@ -1,26 +1,25 @@
-import { makeCreateJobUseCase, ICreateJobUseCase } from '@/src/application/use-cases/jobs/create-job.use-case';
-import { IJobRepository } from '@/src/application/ports/job.repository';
-import { SolverJob } from '@/src/entities/models/solver.model';
+import type { ICreateJobUseCase } from '@/src/application/use-cases/jobs/create-job.use-case';
+import type { SolverJob } from '@/src/entities/models/solver.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
-export class CreateJobController {
-  private readonly createJob: ICreateJobUseCase;
+export interface ICreateJobController {
+  (input: { caseId: number; monthYear: string; job: SolverJob }): Promise<
+    { data: void } | { error: string }
+  >;
+}
 
-  constructor(jobRepository: IJobRepository) {
-    this.createJob = makeCreateJobUseCase(jobRepository);
-  }
-
-  async execute(caseId: number, monthYear: string, job: SolverJob): Promise<{ data: void } | { error: string }> {
+export function makeCreateJobController(
+  createJobUseCase: ICreateJobUseCase
+): ICreateJobController {
+  return async ({ caseId, monthYear, job }) => {
     try {
       validateMonthYear(monthYear);
-      await this.createJob({ caseId, monthYear, job });
+      await createJobUseCase({ caseId, monthYear, job });
       return { data: undefined };
     } catch (error) {
-      if (isDomainError(error)) {
-        return { error: error.message };
-      }
+      if (isDomainError(error)) return { error: error.message };
       throw error;
     }
-  }
+  };
 }

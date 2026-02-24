@@ -7,14 +7,14 @@ import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export async function getAllGlobalWishesAction(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {
   const controller = getInjection('GetAllGlobalWishesController');
-  const result = await controller.execute(caseId, monthYear);
+  const result = await controller({ caseId, monthYear });
   if ('error' in result) throw new Error(result.error);
   return result.data;
 }
 
 export async function getGlobalWishesByKeyAction(caseId: number, monthYear: string, key: number): Promise<WishesAndBlockedEmployee | null> {
   const controller = getInjection('GetGlobalWishesByKeyController');
-  const result = await controller.execute(caseId, monthYear, key);
+  const result = await controller({ caseId, monthYear, key });
   if ('error' in result) return null;
   return result.data;
 }
@@ -44,6 +44,6 @@ export async function updateGlobalWishesAction(
 
 export async function deleteGlobalWishesAction(caseId: number, monthYear: string, key: number): Promise<void> {
   const controller = getInjection('DeleteGlobalWishesController');
-  const result = await controller.execute(caseId, monthYear, key);
+  const result = await controller({ caseId, monthYear, key });
   if ('error' in result) throw new Error(result.error);
 }

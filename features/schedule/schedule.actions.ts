@@ -6,7 +6,7 @@ import { ScheduleRepository } from '@/features/schedule/api/schedule-repository'
 
 export async function getSchedulesMetadataAction(caseId: number, monthYear: string): Promise<SchedulesMetadata> {
   const controller = getInjection('GetSchedulesMetadataController');
-  const result = await controller.execute(caseId, monthYear);
+  const result = await controller({ caseId, monthYear });
   if ('error' in result) throw new Error(result.error);
   return result.data;
 }
@@ -22,14 +22,14 @@ export async function getScheduleByIdAction(caseId: number, monthYear: string, s
   generatedAt?: string;
 }> {
   const scheduleController = getInjection('GetScheduleController');
-  const scheduleResult = await scheduleController.execute(caseId, monthYear, scheduleId);
+  const scheduleResult = await scheduleController({ caseId, monthYear, scheduleId });
 
   if ('error' in scheduleResult) {
     throw new Error('Schedule not found');
   }
 
   const metadataController = getInjection('GetSchedulesMetadataController');
-  const metadataResult = await metadataController.execute(caseId, monthYear);
+  const metadataResult = await metadataController({ caseId, monthYear });
   const scheduleMetadata = 'data' in metadataResult
     ? metadataResult.data.schedules.find(s => s.scheduleId === scheduleId)
     : undefined;
@@ -50,12 +50,12 @@ export async function saveScheduleAction(
   autoSelect: boolean = false
 ): Promise<{ success: boolean }> {
   const saveController = getInjection('SaveScheduleController');
-  const result = await saveController.execute(caseId, monthYear, scheduleId, solution, description);
+  const result = await saveController({ caseId, monthYear, scheduleId, solution, description });
   if ('error' in result) throw new Error(result.error);
 
   if (autoSelect) {
     const selectController = getInjection('SelectScheduleController');
-    await selectController.execute(caseId, monthYear, scheduleId);
+    await selectController({ caseId, monthYear, scheduleId });
   }
 
   return { success: true };
@@ -63,14 +63,14 @@ export async function saveScheduleAction(
 
 export async function selectScheduleAction(caseId: number, monthYear: string, scheduleId: string): Promise<{ success: boolean }> {
   const controller = getInjection('SelectScheduleController');
-  const result = await controller.execute(caseId, monthYear, scheduleId);
+  const result = await controller({ caseId, monthYear, scheduleId });
   if ('error' in result) throw new Error(result.error);
   return { success: true };
 }
 
 export async function deleteScheduleAction(caseId: number, monthYear: string, scheduleId: string): Promise<{ success: boolean }> {
   const controller = getInjection('DeleteScheduleController');
-  const result = await controller.execute(caseId, monthYear, scheduleId);
+  const result = await controller({ caseId, monthYear, scheduleId });
   if ('error' in result) throw new Error(result.error);
   return { success: true };
 }
@@ -82,7 +82,7 @@ export async function updateScheduleMetadataAction(
   updates: { description?: string; comment?: string }
 ): Promise<{ success: boolean }> {
   const controller = getInjection('UpdateScheduleMetadataController');
-  const result = await controller.execute(caseId, monthYear, scheduleId, updates);
+  const result = await controller({ caseId, monthYear, scheduleId, updates });
   if ('error' in result) throw new Error(result.error);
   return { success: true };
 }
