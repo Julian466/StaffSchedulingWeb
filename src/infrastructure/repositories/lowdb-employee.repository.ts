@@ -1,6 +1,6 @@
 import { IEmployeeRepository } from '@/src/application/ports/employee.repository';
 import { Employee } from '@/src/entities/models/employee.model';
-import { getEmployeeDb } from '@/lib/data/employees/db-employee';
+import { getEmployeeDb } from '@/src/infrastructure/persistence/lowdb/employees.db';
 
 export class LowdbEmployeeRepository implements IEmployeeRepository {
   async getAll(caseId: number, monthYear: string): Promise<Employee[]> {

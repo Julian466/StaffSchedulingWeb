@@ -1,5 +1,5 @@
 import { ScheduleSolutionRaw, SchedulesMetadata, ScheduleMetadata } from '@/types/schedule';
-import { getScheduleDb, getSchedulesMetadataDb, deleteSchedule as deleteScheduleFile } from '@/lib/data/schedule/db-schedule';
+import { getScheduleDb, getSchedulesMetadataDb, deleteSchedule as deleteScheduleFile } from '@/src/infrastructure/persistence/lowdb/schedule.db';
 import { RepositoryError } from '@/lib/errors/repository-errors';
 import { logger } from '@/lib/logging/logger';
 

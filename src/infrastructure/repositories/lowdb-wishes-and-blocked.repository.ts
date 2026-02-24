@@ -1,6 +1,6 @@
 import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
 import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { getWishesAndBlockedDb } from '@/lib/data/wishes-and-blocked/db-wishes-and-blocked';
+import { getWishesAndBlockedDb } from '@/src/infrastructure/persistence/lowdb/wishes-and-blocked.db';
 
 export class LowdbWishesAndBlockedRepository implements IWishesAndBlockedRepository {
   async getAll(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {

@@ -1,6 +1,6 @@
 import { IWeightsRepository } from '@/src/application/ports/weights.repository';
 import { Weights } from '@/src/entities/models/weights.model';
-import { getWeightsDb } from '@/lib/data/weights/db-weights';
+import { getWeightsDb } from '@/src/infrastructure/persistence/lowdb/weights.db';
 
 export class LowdbWeightsRepository implements IWeightsRepository {
   async get(caseId: number, monthYear: string): Promise<Weights> {

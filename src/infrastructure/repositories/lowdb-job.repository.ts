@@ -1,6 +1,6 @@
 import { IJobRepository } from '@/src/application/ports/job.repository';
 import { SolverJob } from '@/src/entities/models/solver.model';
-import { getJobHistoryDb } from '@/lib/data/jobs/db-jobs';
+import { getJobHistoryDb } from '@/src/infrastructure/persistence/lowdb/jobs.db';
 
 const DEFAULT_MAX_JOBS = 10;
 

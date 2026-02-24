@@ -1,4 +1,4 @@
-import { getMinimalStaffDb } from '@/lib/data/minimal-staff/db-minimal-staff';
+import { getMinimalStaffDb } from '@/src/infrastructure/persistence/lowdb/minimal-staff.db';
 import { MinimalStaffRequirements } from '@/types/minimal-staff';
 
 /**

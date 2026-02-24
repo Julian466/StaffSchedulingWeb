@@ -1,18 +1,8 @@
-import { join } from 'path';
-import { Low } from 'lowdb';
-import { JSONFile } from 'lowdb/node';
-import { CaseUnit } from '@/types/case';
+import {join} from 'path';
+import {CaseUnit} from '@/types/case';
 import fs from 'fs/promises';
-import { getCasesDirectory } from '@/lib/config/app-config';
-import { parseMonthYear, formatMonthYear } from '@/lib/utils/case-utils';
-
-/**
- * Root directory where all case data is stored.
- * Each case has its own subdirectory named by its case ID.
- * Within each case directory are month folders in MM_YYYY format.
- * The path is loaded from config.template.json.
- */
-const CASES_DIR = getCasesDirectory();
+import {CASES_DIR} from '@/lib/config/app-config';
+import {formatMonthYear} from '@/lib/utils/case-utils';
 
 /**
  * Lists all existing planning units with their available months.
@@ -79,35 +69,4 @@ export async function createCase(unitId: number, month: number, year: number): P
   await fs.mkdir(casePath, { recursive: true });
   
   return monthYear;
-}
-
-/**
- * Gets the absolute file system path for a specific case directory.
- * 
- * @param caseId - The planning unit ID
- * @param monthYear - The month/year in MM_YYYY format
- * @returns The absolute path to the case directory
- * 
- * @example
- * const path = getCasePath(77, "11_2024");
- * console.log(path); // '/path/to/project/cases/77/11_2024'
- */
-export function getCasePath(caseId: number, monthYear: string): string {
-  return join(CASES_DIR, caseId.toString(), monthYear);
-}
-
-/**
- * Gets the absolute file path for a specific file within a case directory.
- * 
- * @param caseId - The planning unit ID
- * @param monthYear - The month/year in MM_YYYY format
- * @param filename - The name of the file
- * @returns The absolute path to the file
- * 
- * @example
- * const path = getDbFilePath(77, "11_2024", 'employees.json');
- * console.log(path); // '/path/to/project/cases/77/11_2024/employees.json'
- */
-export function getDbFilePath(caseId: number, monthYear: string, filename: string): string {
-  return join(CASES_DIR, caseId.toString(), monthYear, filename);
 }

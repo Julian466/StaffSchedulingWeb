@@ -1,5 +1,5 @@
-import { join } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import {join} from 'path';
+import {existsSync, readFileSync} from 'fs';
 
 /**
  * Application configuration structure.
@@ -58,8 +58,7 @@ function loadConfig(): AppConfig {
   
   try {
     const configContent = readFileSync(pathToUse, 'utf-8');
-    const config = JSON.parse(configContent) as AppConfig;
-    return config;
+    return JSON.parse(configContent) as AppConfig;
   } catch (error) {
     throw new Error(
       `Failed to load config file (${pathToUse}): ${error instanceof Error ? error.message : String(error)}`
@@ -190,4 +189,27 @@ export function validatePythonConfig(): PythonConfigValidation {
   }
   
   return result;
+}
+
+/**
+ * Root directory where all case data is stored.
+ * Each case has its own subdirectory named by its case ID.
+ * Within each case directory are month folders in MM_YYYY format.
+ * The path is loaded from config.template.json.
+ */
+export const CASES_DIR = getCasesDirectory();
+
+/**
+ * Gets the absolute file system path for a specific case directory.
+ *
+ * @param caseId - The planning unit ID
+ * @param monthYear - The month/year in MM_YYYY format
+ * @returns The absolute path to the case directory
+ *
+ * @example
+ * const path = getCasePath(77, "11_2024");
+ * console.log(path); // '/path/to/project/cases/77/11_2024'
+ */
+export function getCasePath(caseId: number, monthYear: string): string {
+  return join(CASES_DIR, caseId.toString(), monthYear);
 }

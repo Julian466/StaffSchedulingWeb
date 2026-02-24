@@ -1,6 +1,6 @@
 import { IGlobalWishesAndBlockedRepository } from '@/src/application/ports/global-wishes-and-blocked.repository';
 import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { getGlobalWishesAndBlockedDb } from '@/lib/data/global-wishes-and-blocked/db-global-wishes-and-blocked';
+import { getGlobalWishesAndBlockedDb } from '@/src/infrastructure/persistence/lowdb/global-wishes-and-blocked.db';
 
 export class LowdbGlobalWishesAndBlockedRepository implements IGlobalWishesAndBlockedRepository {
   async getAll(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {

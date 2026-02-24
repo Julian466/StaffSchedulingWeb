@@ -1,6 +1,6 @@
-import { getGlobalWishesAndBlockedDb as getDb } from "@/lib/data/global-wishes-and-blocked/db-global-wishes-and-blocked";
+import { getGlobalWishesAndBlockedDb as getDb } from "@/src/infrastructure/persistence/lowdb/global-wishes-and-blocked.db";
 import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
-import {getEmployeeDb} from "@/lib/data/employees/db-employee";
+import {getEmployeeDb} from "@/src/infrastructure/persistence/lowdb/employees.db";
 import {wishesAndBlockedRepository} from "@/features/wishes_and_blocked/api/wishes-and-blocked-repository";
 
 /**

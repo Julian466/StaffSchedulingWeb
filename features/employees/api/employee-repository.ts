@@ -1,4 +1,4 @@
-import { getEmployeeDb as getDb} from '@/lib/data/employees/db-employee';
+import { getEmployeeDb as getDb} from '@/src/infrastructure/persistence/lowdb/employees.db';
 import { Employee } from '@/types/employee';
 
 

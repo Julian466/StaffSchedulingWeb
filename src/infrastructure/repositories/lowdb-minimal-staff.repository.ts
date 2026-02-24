@@ -1,6 +1,6 @@
 import { IMinimalStaffRepository } from '@/src/application/ports/minimal-staff.repository';
 import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
-import { getMinimalStaffDb } from '@/lib/data/minimal-staff/db-minimal-staff';
+import { getMinimalStaffDb } from '@/src/infrastructure/persistence/lowdb/minimal-staff.db';
 
 export class LowdbMinimalStaffRepository implements IMinimalStaffRepository {
   async get(caseId: number, monthYear: string): Promise<MinimalStaffRequirements> {

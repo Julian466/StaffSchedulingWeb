@@ -8,7 +8,7 @@ import {
   getSchedulesMetadataDb,
   getScheduleDb,
   deleteSchedule,
-} from '@/lib/data/schedule/db-schedule';
+} from '@/src/infrastructure/persistence/lowdb/schedule.db';
 
 export class LowdbScheduleRepository implements IScheduleRepository {
   async getMetadata(caseId: number, monthYear: string): Promise<SchedulesMetadata> {
