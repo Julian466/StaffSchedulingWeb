@@ -41,6 +41,7 @@ import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {useQueryClient} from '@tanstack/react-query';
 import {validateConfig, findSolutionFile, solverDelete, solverFetch, solverSolve, solverSolveMultiple, solverInsert, saveSolution} from '@/features/solver/solver.actions';
+import {SolverJob} from '@/types/solver';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -215,7 +216,7 @@ export default function WorkflowPage() {
             const folderName = getFolderName(startDate!);
             const numericCaseId = parseInt(caseId!);
 
-            let result: { job: any; scheduleInfo?: any; message?: string };
+            let result: { job: SolverJob; scheduleInfo?: { solutionsGenerated: number; feasibleSolutions: number[]; scheduleFiles: string[] }; message?: string };
 
             switch (action) {
                 case 'delete':
