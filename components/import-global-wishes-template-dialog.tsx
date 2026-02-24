@@ -83,7 +83,7 @@ export function ImportGlobalWishesTemplateDialog({
                 <DialogHeader>
                     <DialogTitle>Global Wishes Template laden</DialogTitle>
                     <DialogDescription>
-                        WÃ¤hlen Sie ein Template aus. Es werden nur WÃ¼nsche fÃ¼r Mitarbeiter importiert, die im aktuellen
+                        Wählen Sie ein Template aus. Es werden nur Wünsche für Mitarbeiter importiert, die im aktuellen
                         Monat vorhanden sind.
                     </DialogDescription>
                 </DialogHeader>
@@ -94,20 +94,20 @@ export function ImportGlobalWishesTemplateDialog({
                         className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3 flex items-start gap-2">
                         <TriangleAlert className="h-4 w-4 text-amber-600 mt-0.5 shrink-0"/>
                         <p className="text-sm text-amber-800 dark:text-amber-200">
-                            <strong>Achtung:</strong> Alle bestehenden globalen und monatlichen WÃ¼nsche werden
-                            vollstÃ¤ndig gelÃ¶scht und durch die Daten aus dem Template ersetzt.
+                            <strong>Achtung:</strong> Alle bestehenden globalen und monatlichen Wünsche werden
+                            vollständig gelöscht und durch die Daten aus dem Template ersetzt.
                         </p>
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="template-select">Template auswÃ¤hlen</Label>
+                        <Label htmlFor="template-select">Template auswählen</Label>
                         <Select
                             value={selectedTemplateId}
                             onValueChange={handleSelectTemplate}
                             disabled={isImporting}
                         >
                             <SelectTrigger id="template-select" className="w-full">
-                                <SelectValue placeholder="WÃ¤hlen Sie ein Template..."/>
+                                <SelectValue placeholder="Wählen Sie ein Template..."/>
                             </SelectTrigger>
                             <SelectContent className="w-full" align="start">
                                 {templates.map((template) => {
@@ -151,7 +151,7 @@ export function ImportGlobalWishesTemplateDialog({
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock className="h-3.5 w-3.5"/>
                                 <span>
-                  Zuletzt geÃ¤ndert:{' '}
+                  Zuletzt geändert:{' '}
                                     {formatDistanceToNow(new Date(selectedTemplate.last_modified), {
                                         addSuffix: true,
                                         locale: de,

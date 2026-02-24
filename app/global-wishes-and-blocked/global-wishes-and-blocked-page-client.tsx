@@ -39,6 +39,21 @@ interface GlobalWishesAndBlockedPageClientProps {
     templates: TemplateSummary[];
 }
 
+/**
+ * Client component for managing *global* wishes and blocked periods.
+ *
+ * This view is shown inside a case for a given month/year and allows the
+ * user to create, edit and delete global wish/blocked entries for employees.
+ * It also integrates template operations so that common configurations can
+ * be persisted and applied across months.
+ *
+ * Props:
+ *  - caseId: numeric identifier of the case (used by backend actions)
+ *  - monthYear: string representation of the target month ("MM_YYYY")
+ *  - employees: list of existing global entries for the month
+ *  - currentEmployees: full directory of employees used to resolve keys
+ *  - templates: summaries of available global-wishes templates for this case
+ */
 export function GlobalWishesAndBlockedPageClient({
     caseId,
     monthYear,
@@ -46,50 +61,71 @@ export function GlobalWishesAndBlockedPageClient({
     currentEmployees,
     templates,
 }: GlobalWishesAndBlockedPageClientProps) {
+    // dialog state for the add/edit form
     const [dialogOpen, setDialogOpen] = useState(false);
+    // currently edited entry when editing; undefined when creating new
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
+    // transitions for async actions to keep UI responsive
     const [isSubmitting, startSubmitTransition] = useTransition();
     const [isDeleting, startDeleteTransition] = useTransition();
 
-    // Template functionality
+    // ---------- Template-related state and helpers ----------
+    // Controls visibility of the "save as template" dialog
     const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
+    // Controls visibility of the "import template" dialog
     const [importTemplateDialogOpen, setImportTemplateDialogOpen] = useState(false);
+
+    // content of a template that has been loaded for previewing inside the
+    // import dialog; null when no template is selected
     const [selectedTemplate, setSelectedTemplate] = useState<Template<GlobalWishesTemplateContent> | null>(null);
+
+    // transitions for various template operations
     const [isCreatingTemplate, startCreateTemplateTransition] = useTransition();
     const [isImporting, startImportTransition] = useTransition();
     const [, startLoadTemplateTransition] = useTransition();
 
-    // Confirmation dialog for save (create / edit)
+    // Confirmation dialog for saving a change.  The save operation has side
+    // effects: it resets the monthly wishes, so we ask the user to confirm.
     const [confirmSaveOpen, setConfirmSaveOpen] = useState(false);
     const [pendingEntry, setPendingEntry] = useState<{
         entry: WishesAndBlockedEmployee;
         isEdit: boolean;
     } | null>(null);
 
-    // Confirmation dialog for delete
+    // When deleting, we also show a confirmation; we store the ID of the entry
+    // to delete (or null if none is pending)
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
+    // user clicked "New entry" – clear any existing editing state
     const handleCreate = () => {
         setEditingEmployee(undefined);
         setDialogOpen(true);
     };
 
+    // user clicked edit on a row – populate the form with that employee
     const handleEdit = (employee: WishesAndBlockedEmployee) => {
         setEditingEmployee(employee);
         setDialogOpen(true);
     };
 
     /**
-     * Called when the form is submitted.
-     * Resolves the employee key and opens the confirmation dialog.
+     * Form submission handler triggered by the dialog component.
+     *
+     * Because the dialog only collects the human-readable name we must convert
+     * it to the internal key.  When creating, the key is looked up in the
+     * currentEmployees list; when editing, we already know the key.
+     * Once we have a fully formed entry we stash it in `pendingEntry` and open
+     * the confirmation dialog instead of immediately calling the backend.
      */
     const handleSubmit = (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
         const isEdit = !!editingEmployee;
 
         let key: number;
         if (isEdit) {
+            // editing existing entry – preserve its key
             key = editingEmployee!.key;
         } else {
+            // create: locate the employee by name
             const found = currentEmployees.find(
                 (e) => e.firstname === data.firstname && e.name === data.name
             );
@@ -105,6 +141,12 @@ export function GlobalWishesAndBlockedPageClient({
         setConfirmSaveOpen(true);
     };
 
+    /**
+     * User confirmed the save operation in the dialog.  Dispatches the
+     * appropriate create or update action and shows a toast result.  Note that
+     * both flows include the message about resetting monthly wishes since the
+     * backend will recompute them.
+     */
     const handleConfirmSave = async () => {
         if (!pendingEntry) return;
         const {entry, isEdit} = pendingEntry;
@@ -126,10 +168,12 @@ export function GlobalWishesAndBlockedPageClient({
         });
     };
 
+    // when the delete button is pressed, open the confirmation dialog
     const handleDeleteRequest = (id: number) => {
         setConfirmDeleteId(id);
     };
 
+    // actually perform deletion after user confirms
     const handleConfirmDelete = async () => {
         if (confirmDeleteId === null) return;
         startDeleteTransition(async () => {
@@ -144,6 +188,10 @@ export function GlobalWishesAndBlockedPageClient({
     };
 
     // Template handlers
+    /**
+     * Gather the current global wishes entries and send them to the server as a
+     * new template.  The description is provided by the save dialog.
+     */
     const handleSaveAsTemplate = (description: string) => {
         const content = {
             employees: employees.map((emp: WishesAndBlockedEmployee) => ({
@@ -168,6 +216,8 @@ export function GlobalWishesAndBlockedPageClient({
         });
     };
 
+    // loads the full template data when user selects an entry in the
+    // import dialog; this allows previewing before import
     const handleSelectTemplate = (templateId: string) => {
         startLoadTemplateTransition(async () => {
             try {
@@ -179,6 +229,10 @@ export function GlobalWishesAndBlockedPageClient({
         });
     };
 
+    /**
+     * Import the selected template into the current month.  The backend returns
+     * a summary of how many entries matched, which we display in a toast.
+     */
     const handleImport = async (templateId: string) => {
         startImportTransition(async () => {
             try {
