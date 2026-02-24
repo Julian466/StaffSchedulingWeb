@@ -7,16 +7,20 @@ import {
   Template,
   TemplateSummary,
   CreateTemplateRequest,
-  UpdateTemplateMetadataRequest,
 } from '@/types/template';
+import {
+  listTemplatesAction,
+  getTemplateAction,
+  createTemplateAction,
+  updateTemplateAction,
+  deleteTemplateAction,
+} from '@/features/templates/templates.actions';
 
 /**
  * Generic hook factory for template operations.
  * Creates typed hooks for any template type.
  */
 export function createTemplateHooks<T>(templateType: string) {
-  const API_URL = `/api/templates/${templateType}`;
-
   /**
    * Hook to fetch all templates for the current case.
    */
@@ -27,13 +31,7 @@ export function createTemplateHooks<T>(templateType: string) {
       queryKey: [templateType, 'templates', currentCase?.caseId],
       queryFn: async (): Promise<TemplateSummary[]> => {
         if (!currentCase) throw new Error('No case selected');
-        const res = await fetch(API_URL, {
-          headers: {
-            'x-case-id': currentCase.caseId.toString(),
-          },
-        });
-        if (!res.ok) throw new Error(`Failed to fetch ${templateType} templates`);
-        return res.json();
+        return listTemplatesAction(templateType, currentCase.caseId);
       },
       enabled: !!currentCase,
     });
@@ -50,13 +48,7 @@ export function createTemplateHooks<T>(templateType: string) {
       queryFn: async (): Promise<Template<T>> => {
         if (!currentCase) throw new Error('No case selected');
         if (!templateId) throw new Error('No template ID provided');
-        const res = await fetch(`${API_URL}/${templateId}`, {
-          headers: {
-            'x-case-id': currentCase.caseId.toString(),
-          },
-        });
-        if (!res.ok) throw new Error(`Failed to fetch ${templateType} template`);
-        return res.json();
+        return getTemplateAction<T>(templateType, currentCase.caseId, templateId);
       },
       enabled: !!currentCase && !!templateId,
     });
@@ -72,16 +64,7 @@ export function createTemplateHooks<T>(templateType: string) {
     return useMutation({
       mutationFn: async (request: CreateTemplateRequest<T>) => {
         if (!currentCase) throw new Error('No case selected');
-        const res = await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-case-id': currentCase.caseId.toString(),
-          },
-          body: JSON.stringify(request),
-        });
-        if (!res.ok) throw new Error(`Failed to create ${templateType} template`);
-        return res.json();
+        return createTemplateAction(templateType, currentCase.caseId, request.content, request.description);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({
@@ -113,16 +96,7 @@ export function createTemplateHooks<T>(templateType: string) {
         description?: string;
       }) => {
         if (!currentCase) throw new Error('No case selected');
-        const res = await fetch(`${API_URL}/${templateId}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-case-id': currentCase.caseId.toString(),
-          },
-          body: JSON.stringify({ content, description }),
-        });
-        if (!res.ok) throw new Error(`Failed to update ${templateType} template`);
-        return res.json();
+        return updateTemplateAction(templateType, currentCase.caseId, templateId, { content, description });
       },
       onSuccess: (_, variables) => {
         queryClient.invalidateQueries({
@@ -149,14 +123,7 @@ export function createTemplateHooks<T>(templateType: string) {
     return useMutation({
       mutationFn: async (templateId: string) => {
         if (!currentCase) throw new Error('No case selected');
-        const res = await fetch(`${API_URL}/${templateId}`, {
-          method: 'DELETE',
-          headers: {
-            'x-case-id': currentCase.caseId.toString(),
-          },
-        });
-        if (!res.ok) throw new Error(`Failed to delete ${templateType} template`);
-        return res.json();
+        return deleteTemplateAction(templateType, currentCase.caseId, templateId);
       },
       onSuccess: () => {
         queryClient.invalidateQueries({

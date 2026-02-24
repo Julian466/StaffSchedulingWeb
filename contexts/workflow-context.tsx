@@ -1,6 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { getWorkflowEnvAction } from '@/features/workflow/workflow.actions';
 
 interface WorkflowData {
   caseId: string;
@@ -41,8 +42,7 @@ export function WorkflowProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkWorkflowMode = async () => {
       try {
-        const response = await fetch('/api/workflow/env');
-        const data = await response.json();
+        const data = await getWorkflowEnvAction();
         
         if (data.isWorkflowMode && data.caseId && data.startDate && data.endDate) {
           // Derive monthYear from startDate
