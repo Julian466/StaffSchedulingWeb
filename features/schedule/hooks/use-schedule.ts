@@ -4,8 +4,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ScheduleSolution, ScheduleSolutionRaw, SchedulesMetadata } from '@/types/schedule';
 import { useCase } from '@/components/case-provider';
 import { parseSolutionFile } from '@/lib/services/schedule-parser';
-
-const API_URL = '/api/schedule';
+import {
+  getSchedulesMetadataAction,
+  getSelectedScheduleAction,
+  getScheduleByIdAction,
+  saveScheduleAction,
+  selectScheduleAction,
+  deleteScheduleAction,
+  updateScheduleMetadataAction,
+} from '@/features/schedule/schedule.actions';
 
 /**
  * Hook to fetch all schedules metadata for the current case.
@@ -19,11 +26,7 @@ export function useSchedulesMetadata() {
     queryKey: ['schedules-metadata', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<SchedulesMetadata> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        headers: { 'x-case-id': currentCase.caseId.toString(), 'x-month-year': currentCase.monthYear },
-      });
-      if (!res.ok) throw new Error('Failed to fetch schedules metadata');
-      return res.json();
+      return getSchedulesMetadataAction(currentCase.caseId, currentCase.monthYear);
     },
     enabled: !!currentCase,
   });
@@ -42,12 +45,7 @@ export function useSchedule() {
     queryKey: ['schedule', 'selected', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<ScheduleSolution | null> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(`${API_URL}/selected`, {
-        headers: { 'x-case-id': currentCase.caseId.toString(), 'x-month-year': currentCase.monthYear },
-      });
-      if (!res.ok) throw new Error('Failed to fetch schedule');
-      
-      const data = await res.json();
+      const data = await getSelectedScheduleAction(currentCase.caseId, currentCase.monthYear);
       
       // Return null if no schedule exists yet
       if (!data.solution) return null;
@@ -74,12 +72,7 @@ export function useScheduleById(scheduleId: string | null) {
       if (!scheduleId) return null;
       if (!currentCase) throw new Error('No case selected');
       
-      const res = await fetch(`${API_URL}/${scheduleId}`, {
-        headers: { 'x-case-id': currentCase.caseId.toString(), 'x-month-year': currentCase.monthYear },
-      });
-      if (!res.ok) throw new Error('Failed to fetch schedule');
-      
-      const data = await res.json();
+      const data = await getScheduleByIdAction(currentCase.caseId, currentCase.monthYear, scheduleId);
       
       if (!data.solution) return null;
       
@@ -107,18 +100,14 @@ export function useSaveSchedule() {
       autoSelect?: boolean;
     }) => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify(params),
-      });
-      
-      if (!res.ok) throw new Error('Failed to save schedule');
-      return res.json();
+      return saveScheduleAction(
+        currentCase.caseId,
+        currentCase.monthYear,
+        params.scheduleId,
+        params.solution,
+        params.description,
+        params.autoSelect,
+      );
     },
     onSuccess: () => {
       currentCase && queryClient.invalidateQueries({ queryKey: ['schedule', currentCase.caseId, currentCase.monthYear] });
@@ -140,13 +129,7 @@ export function useSelectSchedule() {
   return useMutation({
     mutationFn: async (scheduleId: string) => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(`${API_URL}/${scheduleId}/select`, {
-        method: 'POST',
-        headers: { 'x-case-id': currentCase.caseId.toString(), 'x-month-year': currentCase.monthYear },
-      });
-      
-      if (!res.ok) throw new Error('Failed to select schedule');
-      return res.json();
+      return selectScheduleAction(currentCase.caseId, currentCase.monthYear, scheduleId);
     },
     onSuccess: () => {
       currentCase && queryClient.invalidateQueries({ queryKey: ['schedule', currentCase.caseId, currentCase.monthYear] });
@@ -168,13 +151,7 @@ export function useDeleteSchedule() {
   return useMutation({
     mutationFn: async (scheduleId: string) => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(`${API_URL}/${scheduleId}`, {
-        method: 'DELETE',
-        headers: { 'x-case-id': currentCase.caseId.toString(), 'x-month-year': currentCase.monthYear },
-      });
-      
-      if (!res.ok) throw new Error('Failed to delete schedule');
-      return res.json();
+      return deleteScheduleAction(currentCase.caseId, currentCase.monthYear, scheduleId);
     },
     onSuccess: () => {
       currentCase && queryClient.invalidateQueries({ queryKey: ['schedule', currentCase.caseId, currentCase.monthYear] });
@@ -196,18 +173,12 @@ export function useUpdateSchedule() {
   return useMutation({
     mutationFn: async (params: { scheduleId: string; description?: string; comment?: string }) => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch(`${API_URL}/${params.scheduleId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify({ description: params.description, comment: params.comment }),
-      });
-      
-      if (!res.ok) throw new Error('Failed to update schedule');
-      return res.json();
+      return updateScheduleMetadataAction(
+        currentCase.caseId,
+        currentCase.monthYear,
+        params.scheduleId,
+        { description: params.description, comment: params.comment },
+      );
     },
     onSuccess: () => {
        currentCase && queryClient.invalidateQueries({ queryKey: ['schedules-metadata', currentCase.caseId, currentCase.monthYear] });
@@ -231,12 +202,7 @@ export function useMultipleSchedules(scheduleIds: string[]) {
       if (scheduleIds.length === 0) return [];
       if (!currentCase) throw new Error('No case selected');
       const schedulePromises = scheduleIds.map(async (scheduleId) => {
-        const res = await fetch(`${API_URL}/${scheduleId}`, {
-          headers: { 'x-case-id': currentCase.caseId.toString(), 'x-month-year': currentCase.monthYear },
-        });
-        if (!res.ok) throw new Error(`Failed to fetch schedule ${scheduleId}`);
-        
-        const data = await res.json();
+        const data = await getScheduleByIdAction(currentCase.caseId, currentCase.monthYear, scheduleId);
         if (!data.solution) return null;
         
         const parsedSolution = parseSolutionFile(data.solution);
