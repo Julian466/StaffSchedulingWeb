@@ -1,14 +1,14 @@
 import 'server-only';
-import { createContainer } from '@evyweb/ioctopus';
-import { DI_RETURN_TYPES, DI_SYMBOLS } from '@/di/types';
-import { createEmployeesModule } from '@/di/modules/employees.module';
-import { createWeightsModule } from '@/di/modules/weights.module';
-import { createMinimalStaffModule } from '@/di/modules/minimal-staff.module';
-import { createWishesAndBlockedModule } from '@/di/modules/wishes-and-blocked.module';
-import { createGlobalWishesModule } from '@/di/modules/global-wishes.module';
-import { createSchedulesModule } from '@/di/modules/schedules.module';
-import { createJobsModule } from '@/di/modules/jobs.module';
-import { createCasesModule } from '@/di/modules/cases.module';
+import {createContainer} from '@evyweb/ioctopus';
+import {DI_RETURN_TYPES, DI_SYMBOLS} from '@/di/types';
+import {createEmployeesModule} from '@/di/modules/employees.module';
+import {createWeightsModule} from '@/di/modules/weights.module';
+import {createMinimalStaffModule} from '@/di/modules/minimal-staff.module';
+import {createWishesAndBlockedModule} from '@/di/modules/wishes-and-blocked.module';
+import {createGlobalWishesModule} from '@/di/modules/global-wishes.module';
+import {createSchedulesModule} from '@/di/modules/schedules.module';
+import {createJobsModule} from '@/di/modules/jobs.module';
+import {createCasesModule} from '@/di/modules/cases.module';
 
 const ApplicationContainer = createContainer();
 
@@ -22,7 +22,7 @@ ApplicationContainer.load(Symbol('JobsModule'), createJobsModule());
 ApplicationContainer.load(Symbol('CasesModule'), createCasesModule());
 
 export function getInjection<K extends keyof typeof DI_SYMBOLS>(
-  symbol: K
+    symbol: K
 ): DI_RETURN_TYPES[K] {
-  return ApplicationContainer.get(DI_SYMBOLS[symbol]);
+    return ApplicationContainer.get(DI_SYMBOLS[symbol]);
 }

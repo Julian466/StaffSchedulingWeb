@@ -3,14 +3,14 @@
  * Extends the standard Error class with HTTP status code support.
  */
 export class RepositoryError extends Error {
-  constructor(
-    message: string,
-    public statusCode: number = 500
-  ) {
-    super(message);
-    this.name = this.constructor.name;
-    Error.captureStackTrace(this, this.constructor);
-  }
+    constructor(
+        message: string,
+        public statusCode: number = 500
+    ) {
+        super(message);
+        this.name = this.constructor.name;
+        Error.captureStackTrace(this, this.constructor);
+    }
 }
 
 /**
@@ -18,9 +18,9 @@ export class RepositoryError extends Error {
  * Returns HTTP 409 (Conflict) status code.
  */
 export class DuplicateResourceError extends RepositoryError {
-  constructor(message: string) {
-    super(message, 409);
-  }
+    constructor(message: string) {
+        super(message, 409);
+    }
 }
 
 /**
@@ -28,9 +28,9 @@ export class DuplicateResourceError extends RepositoryError {
  * Returns HTTP 404 (Not Found) status code.
  */
 export class ResourceNotFoundError extends RepositoryError {
-  constructor(message: string) {
-    super(message, 404);
-  }
+    constructor(message: string) {
+        super(message, 404);
+    }
 }
 
 /**
@@ -38,14 +38,14 @@ export class ResourceNotFoundError extends RepositoryError {
  * Returns HTTP 400 (Bad Request) status code.
  */
 export class ValidationError extends RepositoryError {
-  constructor(message: string) {
-    super(message, 400);
-  }
+    constructor(message: string) {
+        super(message, 400);
+    }
 }
 
 /**
  * Type guard to check if an error is a RepositoryError
  */
 export function isRepositoryError(error: unknown): error is RepositoryError {
-  return error instanceof RepositoryError;
+    return error instanceof RepositoryError;
 }

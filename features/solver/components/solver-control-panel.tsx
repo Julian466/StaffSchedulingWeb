@@ -1,29 +1,23 @@
 'use client';
 
 import React, {useState} from 'react';
-import {useSearchParams, usePathname, useRouter} from 'next/navigation';
+import {usePathname, useRouter, useSearchParams} from 'next/navigation';
 import {parseMonthYear} from '@/lib/utils/case-utils';
 import {
+    useDelete,
     useFetch,
+    useImportSolution,
+    useInsert,
     useSolve,
     useSolveMultiple,
-    useInsert,
-    useDelete,
-    useImportSolution,
 } from '@/features/solver/hooks/use-solver';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Progress} from '@/components/ui/progress';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {Loader2, Database, Play, Trash2, Upload} from 'lucide-react';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
+import {Database, Loader2, Play, Trash2, Upload} from 'lucide-react';
 import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
@@ -44,7 +38,7 @@ export function SolverControlPanel() {
     // Month and year state
     const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
     const [selectedYear, setSelectedYear] = useState<number | null>(null);
-    
+
     // Progress tracking
     const [progress, setProgress] = useState(0);
     const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
@@ -52,7 +46,7 @@ export function SolverControlPanel() {
     // Set default month and year from URL params
     React.useEffect(() => {
         if (caseId && monthYear && selectedMonth === null && selectedYear === null) {
-            const { month, year } = parseMonthYear(monthYear);
+            const {month, year} = parseMonthYear(monthYear);
             setSelectedMonth(month);
             setSelectedYear(year);
         }
@@ -66,7 +60,7 @@ export function SolverControlPanel() {
         end: string;
         solutionType: string;
     } | null>(null);
-    
+
     // Multiple import dialog state
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
     const [multipleImportParams, setMultipleImportParams] = useState<{
@@ -313,12 +307,12 @@ export function SolverControlPanel() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="month">Monat</Label>
-                            <Select 
-                                value={selectedMonth?.toString() || ''} 
+                            <Select
+                                value={selectedMonth?.toString() || ''}
                                 onValueChange={(v) => setSelectedMonth(parseInt(v))}
                             >
                                 <SelectTrigger id="month">
-                                    <SelectValue placeholder="Monat wählen" />
+                                    <SelectValue placeholder="Monat wählen"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="1">Januar</SelectItem>
@@ -338,15 +332,15 @@ export function SolverControlPanel() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="year">Jahr</Label>
-                            <Select 
-                                value={selectedYear?.toString() || ''} 
+                            <Select
+                                value={selectedYear?.toString() || ''}
                                 onValueChange={(v) => setSelectedYear(parseInt(v))}
                             >
                                 <SelectTrigger id="year">
-                                    <SelectValue placeholder="Jahr wählen" />
+                                    <SelectValue placeholder="Jahr wählen"/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                                    {Array.from({length: 15}, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
                                         <SelectItem key={year} value={year.toString()}>
                                             {year}
                                         </SelectItem>
@@ -406,7 +400,7 @@ export function SolverControlPanel() {
                                     {progress.toFixed(0)}%
                                 </span>
                             </div>
-                            <Progress value={progress} className="h-2" />
+                            <Progress value={progress} className="h-2"/>
                         </div>
                         <p className="text-xs text-center text-muted-foreground">
                             {command === 'solve' && `Geschätzte Laufzeit: ${timeout}s`}
@@ -435,7 +429,7 @@ export function SolverControlPanel() {
                     isImporting={importSolutionMutation.isPending}
                 />
             )}
-            
+
             {/* Import Multiple Solutions Dialog */}
             {multipleImportParams && (
                 <ImportMultipleSolutionsDialog

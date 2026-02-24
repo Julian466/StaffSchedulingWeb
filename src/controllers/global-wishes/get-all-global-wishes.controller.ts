@@ -1,25 +1,27 @@
-import type { IGetAllGlobalWishesUseCase } from '@/src/application/use-cases/global-wishes/get-all-global-wishes.use-case';
-import type { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { isDomainError } from '@/src/entities/errors/base.errors';
-import { validateMonthYear } from '@/src/entities/validation/input-validators';
+import type {
+    IGetAllGlobalWishesUseCase
+} from '@/src/application/use-cases/global-wishes/get-all-global-wishes.use-case';
+import type {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
+import {isDomainError} from '@/src/entities/errors/base.errors';
+import {validateMonthYear} from '@/src/entities/validation/input-validators';
 
 export interface IGetAllGlobalWishesController {
-  (input: { caseId: number; monthYear: string }): Promise<
-    { data: WishesAndBlockedEmployee[] } | { error: string }
-  >;
+    (input: { caseId: number; monthYear: string }): Promise<
+        { data: WishesAndBlockedEmployee[] } | { error: string }
+    >;
 }
 
 export function makeGetAllGlobalWishesController(
-  getAllGlobalWishesUseCase: IGetAllGlobalWishesUseCase
+    getAllGlobalWishesUseCase: IGetAllGlobalWishesUseCase
 ): IGetAllGlobalWishesController {
-  return async ({ caseId, monthYear }) => {
-    try {
-      validateMonthYear(monthYear);
-      const wishes = await getAllGlobalWishesUseCase({ caseId, monthYear });
-      return { data: wishes };
-    } catch (error) {
-      if (isDomainError(error)) return { error: error.message };
-      throw error;
-    }
-  };
+    return async ({caseId, monthYear}) => {
+        try {
+            validateMonthYear(monthYear);
+            const wishes = await getAllGlobalWishesUseCase({caseId, monthYear});
+            return {data: wishes};
+        } catch (error) {
+            if (isDomainError(error)) return {error: error.message};
+            throw error;
+        }
+    };
 }

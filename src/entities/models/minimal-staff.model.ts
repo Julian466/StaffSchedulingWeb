@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import {z} from 'zod';
 
 export const ShiftTypeSchema = z.enum(['F', 'S', 'N']);
 export type ShiftType = z.infer<typeof ShiftTypeSchema>;
@@ -10,29 +10,29 @@ export const EmployeeCategorySchema = z.enum(['Fachkraft', 'Azubi', 'Hilfskraft'
 export type EmployeeCategory = z.infer<typeof EmployeeCategorySchema>;
 
 export const DayRequirementsSchema = z.object({
-  F: z.number(),
-  S: z.number(),
-  N: z.number(),
+    F: z.number(),
+    S: z.number(),
+    N: z.number(),
 });
 
 export type DayRequirements = z.infer<typeof DayRequirementsSchema>;
 
 export const CategoryRequirementsSchema = z.object({
-  Mo: DayRequirementsSchema,
-  Di: DayRequirementsSchema,
-  Mi: DayRequirementsSchema,
-  Do: DayRequirementsSchema,
-  Fr: DayRequirementsSchema,
-  Sa: DayRequirementsSchema,
-  So: DayRequirementsSchema,
+    Mo: DayRequirementsSchema,
+    Di: DayRequirementsSchema,
+    Mi: DayRequirementsSchema,
+    Do: DayRequirementsSchema,
+    Fr: DayRequirementsSchema,
+    Sa: DayRequirementsSchema,
+    So: DayRequirementsSchema,
 });
 
 export type CategoryRequirements = z.infer<typeof CategoryRequirementsSchema>;
 
 export const MinimalStaffRequirementsSchema = z.object({
-  Fachkraft: CategoryRequirementsSchema,
-  Azubi: CategoryRequirementsSchema,
-  Hilfskraft: CategoryRequirementsSchema,
+    Fachkraft: CategoryRequirementsSchema,
+    Azubi: CategoryRequirementsSchema,
+    Hilfskraft: CategoryRequirementsSchema,
 });
 
 export type MinimalStaffRequirements = z.infer<typeof MinimalStaffRequirementsSchema>;

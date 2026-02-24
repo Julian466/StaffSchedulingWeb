@@ -9,7 +9,7 @@ interface SolverPageClientProps {
     monthYear: string;
 }
 
-export function SolverPageClient({ caseId, monthYear }: SolverPageClientProps) {
+export function SolverPageClient({caseId, monthYear}: SolverPageClientProps) {
     return (
         <div className="space-y-6 py-6">
             <div>

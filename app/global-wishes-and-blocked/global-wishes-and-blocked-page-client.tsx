@@ -1,38 +1,47 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus, Upload, Save } from 'lucide-react';
-import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { WishesAndBlockedList } from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
-import { WishesAndBlockedDialog } from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
+import {useState} from 'react';
+import {Button} from '@/components/ui/button';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
+import {Plus, Save, Upload} from 'lucide-react';
+import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
+import {WishesAndBlockedList} from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
+import {WishesAndBlockedDialog} from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
 
 import {
-    useGlobalWishesAndBlocked,
     useCreateGlobalWishesAndBlocked,
-    useUpdateGlobalWishesAndBlocked,
     useDeleteGlobalWishesAndBlocked,
+    useGlobalWishesAndBlocked,
+    useUpdateGlobalWishesAndBlocked,
 } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-and-blocked';
-import { useWishesAndBlocked } from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
-import { GlobalWishesConflictDialog } from '@/features/global_wishes_and_blocked/components/global-wishes-conflict-dialog';
-import { SaveTemplateDialog } from '@/components/save-template-dialog';
-import { ImportGlobalWishesTemplateDialog } from '@/components/import-global-wishes-template-dialog';
-import { useGlobalWishesTemplates, useGlobalWishesTemplate, useCreateGlobalWishesTemplate } from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-templates';
-import { useEmployees } from '@/features/employees/hooks/use-employees';
-import { toast } from 'sonner';
-import { matchTemplateEmployees } from '@/lib/utils/employee-matching';
+import {useWishesAndBlocked} from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
+import {
+    GlobalWishesConflictDialog
+} from '@/features/global_wishes_and_blocked/components/global-wishes-conflict-dialog';
+import {SaveTemplateDialog} from '@/components/save-template-dialog';
+import {ImportGlobalWishesTemplateDialog} from '@/components/import-global-wishes-template-dialog';
+import {
+    useCreateGlobalWishesTemplate,
+    useGlobalWishesTemplate,
+    useGlobalWishesTemplates
+} from '@/features/global_wishes_and_blocked/hooks/use-global-wishes-templates';
+import {useEmployees} from '@/features/employees/hooks/use-employees';
+import {toast} from 'sonner';
+import {matchTemplateEmployees} from '@/lib/utils/employee-matching';
 
 interface GlobalWishesAndBlockedPageClientProps {
-  caseId: number;
-  monthYear: string;
+    caseId: number;
+    monthYear: string;
 }
 
-export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWishesAndBlockedPageClientProps) {
+export function GlobalWishesAndBlockedPageClient({caseId, monthYear}: GlobalWishesAndBlockedPageClientProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
 
-    const { data: employees = [] as WishesAndBlockedEmployee[], isLoading } = useGlobalWishesAndBlocked(caseId, monthYear);
+    const {
+        data: employees = [] as WishesAndBlockedEmployee[],
+        isLoading
+    } = useGlobalWishesAndBlocked(caseId, monthYear);
     const createMutation = useCreateGlobalWishesAndBlocked(caseId, monthYear);
     const updateMutation = useUpdateGlobalWishesAndBlocked(caseId, monthYear);
     const deleteMutation = useDeleteGlobalWishesAndBlocked(caseId, monthYear);
@@ -41,11 +50,11 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
     const [saveTemplateDialogOpen, setSaveTemplateDialogOpen] = useState(false);
     const [importTemplateDialogOpen, setImportTemplateDialogOpen] = useState(false);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-    
-    const { data: templates = [] } = useGlobalWishesTemplates(caseId);
-    const { data: selectedTemplate } = useGlobalWishesTemplate(caseId, selectedTemplateId);
-    const { mutate: createTemplate, isPending: isCreatingTemplate } = useCreateGlobalWishesTemplate(caseId);
-    const { data: currentEmployees = [] } = useEmployees(caseId, monthYear);
+
+    const {data: templates = []} = useGlobalWishesTemplates(caseId);
+    const {data: selectedTemplate} = useGlobalWishesTemplate(caseId, selectedTemplateId);
+    const {mutate: createTemplate, isPending: isCreatingTemplate} = useCreateGlobalWishesTemplate(caseId);
+    const {data: currentEmployees = []} = useEmployees(caseId, monthYear);
 
     const handleCreate = () => {
         setEditingEmployee(undefined);
@@ -58,7 +67,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
     };
 
     // State for conflict dialog
-    const { data: monthlyEmployees = [] } = useWishesAndBlocked(caseId, monthYear);
+    const {data: monthlyEmployees = []} = useWishesAndBlocked(caseId, monthYear);
     const [conflictOpen, setConflictOpen] = useState(false);
     const [pendingPayload, setPendingPayload] = useState<{
         data: Omit<WishesAndBlockedEmployee, 'key'>;
@@ -82,15 +91,20 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
         );
 
         if (hasMonthlyWishes) {
-            setPendingPayload({ data, isEdit: !!editingEmployee, employeeKey: editingEmployee?.key, employeeName: `${data.firstname} ${data.name}` });
+            setPendingPayload({
+                data,
+                isEdit: !!editingEmployee,
+                employeeKey: editingEmployee?.key,
+                employeeName: `${data.firstname} ${data.name}`
+            });
             setConflictOpen(true);
             return;
         }
 
         if (editingEmployee) {
-            await updateMutation.mutateAsync({ id: editingEmployee.key, data });
+            await updateMutation.mutateAsync({id: editingEmployee.key, data});
         } else {
-            await createMutation.mutateAsync({ data, options: {} });
+            await createMutation.mutateAsync({data, options: {}});
         }
         setDialogOpen(false);
         setEditingEmployee(undefined);
@@ -119,7 +133,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
         };
 
         createTemplate(
-            { content, description },
+            {content, description},
             {
                 onSuccess: () => {
                     setSaveTemplateDialogOpen(false);
@@ -153,9 +167,9 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
 
         try {
             // Merge mode: update existing, create new, keep unmatched current employees
-            for (const { templateEmployee, currentEmployee } of matchResult.matched) {
+            for (const {templateEmployee, currentEmployee} of matchResult.matched) {
                 const existingGlobal = employees.find((e: WishesAndBlockedEmployee) => e.key === currentEmployee.key);
-                
+
                 if (existingGlobal) {
                     // Update existing
                     await updateMutation.mutateAsync({
@@ -168,7 +182,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                             blocked_days: templateEmployee.blocked_days,
                             blocked_shifts: templateEmployee.blocked_shifts,
                         },
-                        options: { skipSyncToMonthly: false },
+                        options: {skipSyncToMonthly: false},
                     });
                 } else {
                     // Create new
@@ -181,7 +195,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                             blocked_days: templateEmployee.blocked_days,
                             blocked_shifts: templateEmployee.blocked_shifts,
                         },
-                        options: { skipSyncToMonthly: false },
+                        options: {skipSyncToMonthly: false},
                     });
                 }
             }
@@ -220,7 +234,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                 await deleteMutation.mutateAsync(employee.key);
             }
 
-            for (const { templateEmployee } of matchResult.matched) {
+            for (const {templateEmployee} of matchResult.matched) {
                 await createMutation.mutateAsync({
                     data: {
                         firstname: templateEmployee.firstname,
@@ -230,7 +244,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                         blocked_days: templateEmployee.blocked_days,
                         blocked_shifts: templateEmployee.blocked_shifts,
                     },
-                    options: { skipSyncToMonthly: false },
+                    options: {skipSyncToMonthly: false},
                 });
             }
 
@@ -256,7 +270,8 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                         <div>
                             <CardTitle>Globale Wünsche & Blockierungen</CardTitle>
                             <CardDescription>
-                                Verwalte allgemeine Wunsch-Tage, Wunsch-Schichten, blockierte Tage und blockierte Schichten für Mitarbeiter
+                                Verwalte allgemeine Wunsch-Tage, Wunsch-Schichten, blockierte Tage und blockierte
+                                Schichten für Mitarbeiter
                             </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -265,7 +280,7 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                                 onClick={() => setImportTemplateDialogOpen(true)}
                                 disabled={templates.length === 0}
                             >
-                                <Upload className="mr-2 h-4 w-4" />
+                                <Upload className="mr-2 h-4 w-4"/>
                                 Template laden
                             </Button>
                             <Button
@@ -273,11 +288,11 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                                 onClick={() => setSaveTemplateDialogOpen(true)}
                                 disabled={employees.length === 0}
                             >
-                                <Save className="mr-2 h-4 w-4" />
+                                <Save className="mr-2 h-4 w-4"/>
                                 Als Template speichern
                             </Button>
                             <Button onClick={handleCreate}>
-                                <Plus className="mr-2 h-4 w-4" />
+                                <Plus className="mr-2 h-4 w-4"/>
                                 Neuer Eintrag
                             </Button>
                         </div>
@@ -311,19 +326,23 @@ export function GlobalWishesAndBlockedPageClient({ caseId, monthYear }: GlobalWi
                 onOpenChange={setConflictOpen}
                 onChoice={async (choice) => {
                     if (!pendingPayload) return;
-                    const { data, isEdit, employeeKey } = pendingPayload;
+                    const {data, isEdit, employeeKey} = pendingPayload;
 
                     if (choice === 'overwrite') {
                         if (isEdit && employeeKey) {
-                            await updateMutation.mutateAsync({ id: employeeKey, data });
+                            await updateMutation.mutateAsync({id: employeeKey, data});
                         } else {
-                            await createMutation.mutateAsync({ data, options: {} });
+                            await createMutation.mutateAsync({data, options: {}});
                         }
                     } else if (choice === 'keep-monthly') {
                         if (isEdit && employeeKey) {
-                            await updateMutation.mutateAsync({ id: employeeKey, data, options: { skipSyncToMonthly: true } });
+                            await updateMutation.mutateAsync({
+                                id: employeeKey,
+                                data,
+                                options: {skipSyncToMonthly: true}
+                            });
                         } else {
-                            await createMutation.mutateAsync({ data, options: { skipSyncToMonthly: true } });
+                            await createMutation.mutateAsync({data, options: {skipSyncToMonthly: true}});
                         }
                     } else {
                         // cancel -> do nothing

@@ -1,13 +1,13 @@
-import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
+import {IWishesAndBlockedRepository} from '@/src/application/ports/wishes-and-blocked.repository';
 
 export interface IDeleteWishesUseCase {
-  (input: { caseId: number; monthYear: string; key: number }): Promise<void>;
+    (input: { caseId: number; monthYear: string; key: number }): Promise<void>;
 }
 
 export function makeDeleteWishesUseCase(
-  wishesRepository: IWishesAndBlockedRepository
+    wishesRepository: IWishesAndBlockedRepository
 ): IDeleteWishesUseCase {
-  return async ({ caseId, monthYear, key }) => {
-    return wishesRepository.delete(caseId, monthYear, key);
-  };
+    return async ({caseId, monthYear, key}) => {
+        return wishesRepository.delete(caseId, monthYear, key);
+    };
 }

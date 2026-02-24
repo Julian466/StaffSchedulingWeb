@@ -1,23 +1,17 @@
 'use client';
 
 import {useEffect, useRef} from 'react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from '@/components/ui/dialog';
+import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,} from '@/components/ui/dialog';
 import {Badge} from '@/components/ui/badge';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardHeader, CardTitle} from '@/components/ui/card';
 import {Tabs, TabsContent, TabsList, TabsTrigger} from '@/components/ui/tabs';
-import {InteractiveCalendar, DayData} from '@/components/InteractiveCalendar';
-import {User, Calendar as CalendarIcon, Briefcase, ChevronLeft, ChevronRight} from 'lucide-react';
+import {DayData, InteractiveCalendar} from '@/components/InteractiveCalendar';
+import {Briefcase, Calendar as CalendarIcon, ChevronLeft, ChevronRight, User} from 'lucide-react';
 import {useWishesAndBlocked} from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
 import {useSchedule} from '@/features/schedule/hooks/use-schedule';
 import {useEmployees} from '@/features/employees/hooks/use-employees';
-import { useSearchParams } from 'next/navigation';
+import {useSearchParams} from 'next/navigation';
 import {getShiftForCell} from '@/lib/services/schedule-parser';
 import {parseMonthYear} from '@/lib/utils/case-utils';
 import {cn} from '@/lib/utils';
@@ -178,7 +172,10 @@ export function EmployeeSummaryDialog({
     };
 
     // Get year and month from URL search params or use current date
-    const { month, year } = monthYear ? parseMonthYear(monthYear) : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
+    const {month, year} = monthYear ? parseMonthYear(monthYear) : {
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear()
+    };
 
     // Show toast notifications when data is missing
     useEffect(() => {

@@ -1,26 +1,26 @@
-import type { IGetScheduleUseCase } from '@/src/application/use-cases/schedule/get-schedule.use-case';
-import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
-import { isDomainError } from '@/src/entities/errors/base.errors';
-import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
+import type {IGetScheduleUseCase} from '@/src/application/use-cases/schedule/get-schedule.use-case';
+import type {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
+import {isDomainError} from '@/src/entities/errors/base.errors';
+import {validateMonthYear, validateScheduleId} from '@/src/entities/validation/input-validators';
 
 export interface IGetScheduleController {
-  (input: { caseId: number; monthYear: string; scheduleId: string }): Promise<
-    { data: ScheduleSolutionRaw } | { error: string }
-  >;
+    (input: { caseId: number; monthYear: string; scheduleId: string }): Promise<
+        { data: ScheduleSolutionRaw } | { error: string }
+    >;
 }
 
 export function makeGetScheduleController(
-  getScheduleUseCase: IGetScheduleUseCase
+    getScheduleUseCase: IGetScheduleUseCase
 ): IGetScheduleController {
-  return async ({ caseId, monthYear, scheduleId }) => {
-    try {
-      validateMonthYear(monthYear);
-      validateScheduleId(scheduleId);
-      const schedule = await getScheduleUseCase({ caseId, monthYear, scheduleId });
-      return { data: schedule };
-    } catch (error) {
-      if (isDomainError(error)) return { error: error.message };
-      throw error;
-    }
-  };
+    return async ({caseId, monthYear, scheduleId}) => {
+        try {
+            validateMonthYear(monthYear);
+            validateScheduleId(scheduleId);
+            const schedule = await getScheduleUseCase({caseId, monthYear, scheduleId});
+            return {data: schedule};
+        } catch (error) {
+            if (isDomainError(error)) return {error: error.message};
+            throw error;
+        }
+    };
 }

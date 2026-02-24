@@ -1,17 +1,17 @@
 'use server';
 
-import { getInjection } from '@/di/container';
-import { Weights } from '@/src/entities/models/weights.model';
+import {getInjection} from '@/di/container';
+import {Weights} from '@/src/entities/models/weights.model';
 
 export async function getWeightsAction(caseId: number, monthYear: string): Promise<Weights> {
-  const controller = getInjection('IGetWeightsController');
-  const result = await controller({ caseId, monthYear });
-  if ('error' in result) throw new Error(result.error);
-  return result.data;
+    const controller = getInjection('IGetWeightsController');
+    const result = await controller({caseId, monthYear});
+    if ('error' in result) throw new Error(result.error);
+    return result.data;
 }
 
 export async function updateWeightsAction(caseId: number, monthYear: string, weights: Weights): Promise<void> {
-  const controller = getInjection('IUpdateWeightsController');
-  const result = await controller({ caseId, monthYear, weights });
-  if ('error' in result) throw new Error(result.error);
+    const controller = getInjection('IUpdateWeightsController');
+    const result = await controller({caseId, monthYear, weights});
+    if ('error' in result) throw new Error(result.error);
 }

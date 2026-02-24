@@ -1,8 +1,13 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { getAllGlobalWishesAction, createGlobalWishesAction, updateGlobalWishesAction, deleteGlobalWishesAction } from '../global-wishes-and-blocked.actions';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
+import {
+    createGlobalWishesAction,
+    deleteGlobalWishesAction,
+    getAllGlobalWishesAction,
+    updateGlobalWishesAction
+} from '../global-wishes-and-blocked.actions';
 
 /**
  * Hook to fetch all employees with their wishes and blocked data for the current case.
@@ -33,13 +38,16 @@ export function useGlobalWishesAndBlocked(caseId: number, monthYear: string) {
 export function useCreateGlobalWishesAndBlocked(caseId: number, monthYear: string) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: async (payload: { data: Omit<WishesAndBlockedEmployee, 'key'>; options?: { skipSyncToMonthly?: boolean } }) => {
-            const { data, options } = payload;
+        mutationFn: async (payload: {
+            data: Omit<WishesAndBlockedEmployee, 'key'>;
+            options?: { skipSyncToMonthly?: boolean }
+        }) => {
+            const {data, options} = payload;
             return createGlobalWishesAction(caseId, monthYear, data, options);
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', caseId, monthYear] });
-            qc.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
+            qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', caseId, monthYear]});
+            qc.invalidateQueries({queryKey: ['wishes-and-blocked', caseId, monthYear]});
         },
     });
 }
@@ -52,12 +60,16 @@ export function useUpdateGlobalWishesAndBlocked(caseId: number, monthYear: strin
     const qc = useQueryClient();
 
     return useMutation({
-        mutationFn: async ({ id, data, options }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>; options?: { skipSyncToMonthly?: boolean } }): Promise<WishesAndBlockedEmployee> => {
+        mutationFn: async ({id, data, options}: {
+            id: number;
+            data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>;
+            options?: { skipSyncToMonthly?: boolean }
+        }): Promise<WishesAndBlockedEmployee> => {
             return updateGlobalWishesAction(caseId, monthYear, id, data, options);
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', caseId, monthYear] });
-            qc.invalidateQueries({ queryKey: ['wishes-and-blocked', caseId, monthYear] });
+            qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', caseId, monthYear]});
+            qc.invalidateQueries({queryKey: ['wishes-and-blocked', caseId, monthYear]});
         },
     });
 }
@@ -73,7 +85,7 @@ export function useDeleteGlobalWishesAndBlocked(caseId: number, monthYear: strin
             return deleteGlobalWishesAction(caseId, monthYear, id);
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', caseId, monthYear] });
+            qc.invalidateQueries({queryKey: ['global-wishes-and-blocked', caseId, monthYear]});
         },
     });
 }

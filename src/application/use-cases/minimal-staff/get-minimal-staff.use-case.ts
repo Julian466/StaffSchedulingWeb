@@ -1,14 +1,14 @@
-import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
-import { IMinimalStaffRepository } from '@/src/application/ports/minimal-staff.repository';
+import {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
+import {IMinimalStaffRepository} from '@/src/application/ports/minimal-staff.repository';
 
 export interface IGetMinimalStaffUseCase {
-  (input: { caseId: number; monthYear: string }): Promise<MinimalStaffRequirements>;
+    (input: { caseId: number; monthYear: string }): Promise<MinimalStaffRequirements>;
 }
 
 export function makeGetMinimalStaffUseCase(
-  minimalStaffRepository: IMinimalStaffRepository
+    minimalStaffRepository: IMinimalStaffRepository
 ): IGetMinimalStaffUseCase {
-  return async ({ caseId, monthYear }) => {
-    return minimalStaffRepository.get(caseId, monthYear);
-  };
+    return async ({caseId, monthYear}) => {
+        return minimalStaffRepository.get(caseId, monthYear);
+    };
 }

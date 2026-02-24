@@ -1,25 +1,25 @@
-import type { ICreateWishesUseCase } from '@/src/application/use-cases/wishes-and-blocked/create-wishes.use-case';
-import type { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { isDomainError } from '@/src/entities/errors/base.errors';
-import { validateMonthYear } from '@/src/entities/validation/input-validators';
+import type {ICreateWishesUseCase} from '@/src/application/use-cases/wishes-and-blocked/create-wishes.use-case';
+import type {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
+import {isDomainError} from '@/src/entities/errors/base.errors';
+import {validateMonthYear} from '@/src/entities/validation/input-validators';
 
 export interface ICreateWishesController {
-  (input: { caseId: number; monthYear: string; entry: WishesAndBlockedEmployee }): Promise<
-    { data: void } | { error: string }
-  >;
+    (input: { caseId: number; monthYear: string; entry: WishesAndBlockedEmployee }): Promise<
+        { data: void } | { error: string }
+    >;
 }
 
 export function makeCreateWishesController(
-  createWishesUseCase: ICreateWishesUseCase
+    createWishesUseCase: ICreateWishesUseCase
 ): ICreateWishesController {
-  return async ({ caseId, monthYear, entry }) => {
-    try {
-      validateMonthYear(monthYear);
-      await createWishesUseCase({ caseId, monthYear, entry });
-      return { data: undefined };
-    } catch (error) {
-      if (isDomainError(error)) return { error: error.message };
-      throw error;
-    }
-  };
+    return async ({caseId, monthYear, entry}) => {
+        try {
+            validateMonthYear(monthYear);
+            await createWishesUseCase({caseId, monthYear, entry});
+            return {data: undefined};
+        } catch (error) {
+            if (isDomainError(error)) return {error: error.message};
+            throw error;
+        }
+    };
 }

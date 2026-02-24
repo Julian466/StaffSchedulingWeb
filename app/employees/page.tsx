@@ -1,20 +1,22 @@
-import { EmployeesPageClient } from './employees-page-client';
+import {EmployeesPageClient} from './employees-page-client';
 
 export default async function EmployeesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+                                                searchParams,
+                                            }: {
+    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
 }) {
-  const { caseId: caseIdStr, monthYear } = await searchParams;
+    const {caseId: caseIdStr, monthYear} = await searchParams;
 
-  if (!caseIdStr || !monthYear) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
-  }
+    if (!caseIdStr || !monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  const caseId = Number(caseIdStr);
-  if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
-    return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
-  }
+    const caseId = Number(caseIdStr);
+    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  return <EmployeesPageClient caseId={caseId} monthYear={monthYear} />;
+    return <EmployeesPageClient caseId={caseId} monthYear={monthYear}/>;
 }

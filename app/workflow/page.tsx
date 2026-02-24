@@ -17,19 +17,19 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-    Trash2,
+    AlertCircle,
+    AlertTriangle,
+    Calendar,
+    CheckCircle2,
     Download,
+    Edit,
+    FileCheck,
+    FolderOpen,
+    Loader2,
     Play,
     PlayCircle,
-    Upload,
-    CheckCircle2,
-    AlertCircle,
-    Loader2,
-    Calendar,
-    FolderOpen,
-    Edit,
-    AlertTriangle,
-    FileCheck
+    Trash2,
+    Upload
 } from 'lucide-react';
 import {toast} from 'sonner';
 import {useWorkflow} from '@/contexts/workflow-context';
@@ -39,7 +39,16 @@ import {useImportSolution} from '@/features/solver/hooks/use-solver';
 import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {useQueryClient} from '@tanstack/react-query';
-import {validateConfig, findSolutionFile, solverDelete, solverFetch, solverSolve, solverSolveMultiple, solverInsert, saveSolution} from '@/features/solver/solver.actions';
+import {
+    findSolutionFile,
+    saveSolution,
+    solverDelete,
+    solverFetch,
+    solverInsert,
+    solverSolve,
+    solverSolveMultiple,
+    validateConfig
+} from '@/features/solver/solver.actions';
 import {SolverJob} from '@/src/entities/models/solver.model';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
@@ -215,20 +224,42 @@ export default function WorkflowPage() {
             const folderName = getFolderName(startDate!);
             const numericCaseId = parseInt(caseId!);
 
-            let result: { job: SolverJob; scheduleInfo?: { solutionsGenerated: number; feasibleSolutions: number[]; scheduleFiles: string[] }; message?: string };
+            let result: {
+                job: SolverJob;
+                scheduleInfo?: { solutionsGenerated: number; feasibleSolutions: number[]; scheduleFiles: string[] };
+                message?: string
+            };
 
             switch (action) {
                 case 'delete':
-                    result = await solverDelete(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd});
+                    result = await solverDelete(numericCaseId, folderName, {
+                        unit: numericCaseId,
+                        start: isoStart,
+                        end: isoEnd
+                    });
                     break;
                 case 'fetch':
-                    result = await solverFetch(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd});
+                    result = await solverFetch(numericCaseId, folderName, {
+                        unit: numericCaseId,
+                        start: isoStart,
+                        end: isoEnd
+                    });
                     break;
                 case 'solve':
-                    result = await solverSolve(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd, timeout: timeout || 60});
+                    result = await solverSolve(numericCaseId, folderName, {
+                        unit: numericCaseId,
+                        start: isoStart,
+                        end: isoEnd,
+                        timeout: timeout || 60
+                    });
                     break;
                 case 'multi-solve':
-                    result = await solverSolveMultiple(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd, timeout: timeout || 60});
+                    result = await solverSolveMultiple(numericCaseId, folderName, {
+                        unit: numericCaseId,
+                        start: isoStart,
+                        end: isoEnd,
+                        timeout: timeout || 60
+                    });
                     break;
                 case 'insert': {
                     // First, save the currently selected schedule before exporting
@@ -239,7 +270,11 @@ export default function WorkflowPage() {
                     toast.success(`Dienstplan gespeichert als ${saveResult.filename}`);
 
                     // Then insert
-                    result = await solverInsert(numericCaseId, folderName, {unit: numericCaseId, start: isoStart, end: isoEnd});
+                    result = await solverInsert(numericCaseId, folderName, {
+                        unit: numericCaseId,
+                        start: isoStart,
+                        end: isoEnd
+                    });
                     break;
                 }
                 default:

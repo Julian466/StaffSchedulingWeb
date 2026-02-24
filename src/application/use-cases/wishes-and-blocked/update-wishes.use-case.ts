@@ -1,14 +1,14 @@
-import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
-import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
+import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
+import {IWishesAndBlockedRepository} from '@/src/application/ports/wishes-and-blocked.repository';
 
 export interface IUpdateWishesUseCase {
-  (input: { caseId: number; monthYear: string; key: number; data: Partial<WishesAndBlockedEmployee> }): Promise<void>;
+    (input: { caseId: number; monthYear: string; key: number; data: Partial<WishesAndBlockedEmployee> }): Promise<void>;
 }
 
 export function makeUpdateWishesUseCase(
-  wishesRepository: IWishesAndBlockedRepository
+    wishesRepository: IWishesAndBlockedRepository
 ): IUpdateWishesUseCase {
-  return async ({ caseId, monthYear, key, data }) => {
-    return wishesRepository.update(caseId, monthYear, key, data);
-  };
+    return async ({caseId, monthYear, key, data}) => {
+        return wishesRepository.update(caseId, monthYear, key, data);
+    };
 }

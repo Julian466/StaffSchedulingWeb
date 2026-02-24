@@ -1,5 +1,7 @@
-import { getGlobalWishesAndBlockedDb as getDb } from "@/src/infrastructure/persistence/lowdb/global-wishes-and-blocked.db";
-import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
+import {
+    getGlobalWishesAndBlockedDb as getDb
+} from "@/src/infrastructure/persistence/lowdb/global-wishes-and-blocked.db";
+import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {getEmployeeDb} from "@/src/infrastructure/persistence/lowdb/employees.db";
 import {wishesAndBlockedRepository} from "@/features/wishes_and_blocked/api/wishes-and-blocked-repository";
 
@@ -55,7 +57,9 @@ export const globalWishesAndBlockedRepository = {
      * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to the newly created employee wishes and blocked data
      */
-    async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number, monthYear: string, options?: { skipSyncToMonthly?: boolean }): Promise<WishesAndBlockedEmployee> {
+    async create(data: Omit<WishesAndBlockedEmployee, 'key'>, caseId: number, monthYear: string, options?: {
+        skipSyncToMonthly?: boolean
+    }): Promise<WishesAndBlockedEmployee> {
         const db = await getDb(caseId, monthYear);
         const employeeDb = await getEmployeeDb(caseId, monthYear);
         await db.read();
@@ -69,7 +73,7 @@ export const globalWishesAndBlockedRepository = {
         }
 
         const newEmployee: WishesAndBlockedEmployee = {
-            key: existingEmployee.key ,
+            key: existingEmployee.key,
             ...data
         };
 
@@ -93,7 +97,9 @@ export const globalWishesAndBlockedRepository = {
      * @param monthYear - The month/year in MM_YYYY format
      * @returns Promise resolving to the updated employee data, or null if not found
      */
-    async update(key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>, caseId: number, monthYear: string, options?: { skipSyncToMonthly?: boolean }): Promise<WishesAndBlockedEmployee | null> {
+    async update(key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>, caseId: number, monthYear: string, options?: {
+        skipSyncToMonthly?: boolean
+    }): Promise<WishesAndBlockedEmployee | null> {
         const db = await getDb(caseId, monthYear);
         await db.read();
 

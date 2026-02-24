@@ -2,12 +2,12 @@ import {spawnSync, SpawnSyncReturns} from 'child_process';
 import {getPythonConfig} from '@/lib/config/app-config';
 import {createApiLogger} from '@/lib/logging/logger';
 import {
-    PythonCommandResult,
-    FetchParams,
-    SolveParams,
-    SolveMultipleParams,
-    InsertParams,
     DeleteParams,
+    FetchParams,
+    InsertParams,
+    PythonCommandResult,
+    SolveMultipleParams,
+    SolveParams,
 } from '@/src/entities/models/solver.model';
 
 const logger = createApiLogger('python-cli-service');
