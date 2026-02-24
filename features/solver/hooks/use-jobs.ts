@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { SolverJob } from '@/types/solver';
 import { useCase } from '@/components/case-provider';
+import { getJobs, getJob } from '@/features/solver/solver.actions';
 
 /**
  * React Query hooks for managing solver job data.
@@ -23,16 +24,7 @@ export function useJobHistory() {
     queryKey: ['solver', 'jobs', currentCase?.caseId, currentCase?.monthYear],
     queryFn: async (): Promise<{ jobs: SolverJob[] }> => {
       if (!currentCase) throw new Error('No case selected');
-      const res = await fetch('/api/solver/jobs', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch job history');
-      return await res.json();
+      return await getJobs(currentCase.caseId, currentCase.monthYear);
     },
     enabled: !!currentCase,
   });
@@ -53,23 +45,7 @@ export function useJob(jobId: string | null) {
     queryFn: async (): Promise<{ job: SolverJob }> => {
       if (!jobId) throw new Error('No job ID provided');
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch(`/api/solver/jobs/${jobId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          throw new Error('Job not found');
-        }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
+      return await getJob(currentCase.caseId, currentCase.monthYear, jobId);
     },
     enabled: !!jobId,
     staleTime: 5000,

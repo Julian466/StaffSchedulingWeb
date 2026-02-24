@@ -10,7 +10,15 @@ import {
 import { toast } from 'sonner';
 import { useCase } from '@/components/case-provider';
 import { PythonConfigValidation } from '@/lib/config/app-config';
-import { th } from 'date-fns/locale';
+import {
+  validateConfig,
+  solverFetch,
+  solverSolve,
+  solverSolveMultiple,
+  solverInsert,
+  solverDelete,
+  importSolution,
+} from '@/features/solver/solver.actions';
 
 /**
  * React Query hooks for solver configuration validation and command execution.
@@ -36,18 +44,7 @@ export function useValidateConfig() {
         } | null;
       }
     > => {
-      const response = await fetch('/api/solver/validate-config', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      return await response.json();
+      return await validateConfig();
     },
     staleTime: 30000, // 30 seconds
     retry: false,
@@ -64,23 +61,7 @@ export function useFetch() {
   return useMutation({
     mutationFn: async (params: FetchParams): Promise<{ job: SolverJob }> => {
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch('/api/solver/fetch', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear,
-        },
-        body: JSON.stringify(params),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch from DB');
-      }
-
-      return data;
+      return await solverFetch(currentCase.caseId, currentCase.monthYear, params);
     },
     onSuccess: (data) => {
       if (currentCase) {
@@ -117,22 +98,7 @@ export function useSolve() {
   return useMutation({
     mutationFn: async (params: SolveParams): Promise<{ job: SolverJob; params: SolveParams }> => {
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch('/api/solver/solve', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear
-        },
-        body: JSON.stringify(params),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to solve scheduling problem');
-      }
-
+      const data = await solverSolve(currentCase.caseId, currentCase.monthYear, params);
       return { ...data, params };
     },
     onSuccess: (data) => {
@@ -175,24 +141,7 @@ export function useSolveMultiple() {
       params: SolveMultipleParams;
     }> => {
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch('/api/solver/solve-multiple', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear
-        },
-        body: JSON.stringify(params),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          data.error || 'Failed to solve scheduling problem (multiple)'
-        );
-      }
-
+      const data = await solverSolveMultiple(currentCase.caseId, currentCase.monthYear, params);
       return { ...data, params };
     },
     onSuccess: (data) => {
@@ -246,23 +195,7 @@ export function useInsert() {
   return useMutation({
     mutationFn: async (params: InsertParams): Promise<{ job: SolverJob }> => {
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch('/api/solver/insert', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear
-        },
-        body: JSON.stringify(params),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to insert to DB');
-      }
-
-      return data;
+      return await solverInsert(currentCase.caseId, currentCase.monthYear, params);
     },
     onSuccess: (data) => {
       currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
@@ -294,23 +227,7 @@ export function useDelete() {
   return useMutation({
     mutationFn: async (params: DeleteParams): Promise<{ job: SolverJob }> => {
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch('/api/solver/delete', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear
-        },
-        body: JSON.stringify(params),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete from DB');
-      }
-
-      return data;
+      return await solverDelete(currentCase.caseId, currentCase.monthYear, params);
     },
     onSuccess: (data) => {
       currentCase && queryClient.invalidateQueries({ queryKey: ['solver', 'jobs', currentCase.caseId, currentCase.monthYear] });
@@ -353,23 +270,7 @@ export function useImportSolution() {
       message: string;
     }> => {
       if (!currentCase) throw new Error('No case selected');
-      const response = await fetch('/api/solver/import-solution', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-case-id': currentCase.caseId.toString(),
-          'x-month-year': currentCase.monthYear
-        },
-        body: JSON.stringify(params),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to import solution');
-      }
-
-      return data;
+      return await importSolution(currentCase.caseId, currentCase.monthYear, params);
     },
     onSuccess: (data) => {
       // Invalidate schedules to refresh the list
