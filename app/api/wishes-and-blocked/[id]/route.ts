@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { wishesAndBlockedRepository } from '@/features/wishes_and_blocked/api/wishes-and-blocked-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
@@ -33,8 +33,9 @@ export async function GET(
     const key = parseInt(id, 10);
     apiLogger.info('Fetching wishes-and-blocked employee by key', { method, caseId, monthYear, key });
     
-    const employee = await wishesAndBlockedRepository.getByKey(key, caseId, monthYear);
-    if (!employee) {
+    const controller = getInjection('GetWishesByKeyController');
+    const result = await controller.execute(caseId, monthYear, key);
+    if ('error' in result) {
       apiLogger.warn('Wishes-and-blocked employee not found', { method, caseId, monthYear, key });
       return NextResponse.json(
         { error: 'Employee not found' }, 
@@ -43,7 +44,7 @@ export async function GET(
     }
     
     apiLogger.info('Fetched wishes-and-blocked employee', { method, caseId, monthYear, key });
-    return NextResponse.json(employee);
+    return NextResponse.json(result.data);
   } catch (error) {
     apiLogger.error('Failed to fetch wishes-and-blocked employee', { method, caseId, monthYear, error });
     return NextResponse.json(
@@ -82,15 +83,21 @@ export async function PUT(
     const body = await request.json();
     
     apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, monthYear, key });
-    const employee = await wishesAndBlockedRepository.update(key, body, caseId, monthYear);
+    const controller = getInjection('UpdateWishesController');
+    const result = await controller.execute(caseId, monthYear, key, body);
     
-    if (!employee) {
+    if ('error' in result) {
       apiLogger.warn('Wishes-and-blocked employee not found for update', { method, caseId, monthYear, key });
       return NextResponse.json(
         { error: 'Employee not found' }, 
         { status: 404 }
       );
     }
+    
+    // Fetch updated entity to return in the response
+    const getController = getInjection('GetWishesByKeyController');
+    const getResult = await getController.execute(caseId, monthYear, key);
+    const employee = 'data' in getResult ? getResult.data : body;
     
     apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, monthYear, key });
     return NextResponse.json(employee);
@@ -133,9 +140,10 @@ export async function DELETE(
     const key = parseInt(id, 10);
     
     apiLogger.info('Deleting wishes-and-blocked employee', { method, caseId, monthYear, key });
-    const deleted = await wishesAndBlockedRepository.delete(key, caseId, monthYear);
+    const controller = getInjection('DeleteWishesController');
+    const result = await controller.execute(caseId, monthYear, key);
     
-    if (!deleted) {
+    if ('error' in result) {
       apiLogger.warn('Wishes-and-blocked employee not found for deletion', { method, caseId, monthYear, key });
       return NextResponse.json(
         { error: 'Employee not found' }, 

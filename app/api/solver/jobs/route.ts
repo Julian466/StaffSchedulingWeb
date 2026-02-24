@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
-import { jobRepository } from '@/features/solver/api/job-repository';
 
 const apiLogger = createApiLogger('/api/solver/jobs');
 
@@ -27,15 +27,20 @@ export async function GET() {
 
     apiLogger.info('Fetching job history', { method, caseId, monthYear });
 
-    const jobs = await jobRepository.getAll(caseId, monthYear);
+    const controller = getInjection('GetAllJobsController');
+    const result = await controller.execute(caseId, monthYear);
+
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
 
     apiLogger.info('Job history retrieved', {
       caseId,
       monthYear,
-      jobCount: jobs.length,
+      jobCount: result.data.length,
     });
 
-    return NextResponse.json({ jobs });
+    return NextResponse.json({ jobs: result.data });
   } catch (error) {
     apiLogger.error('Error fetching job history', { method, caseId, monthYear, error });
     return NextResponse.json(

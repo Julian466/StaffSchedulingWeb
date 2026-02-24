@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { employeeRepository } from '@/features/employees/api/employee-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
@@ -26,9 +26,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
     }
     apiLogger.info('Fetching employees', { method, caseId, monthYear });
-    const employees = await employeeRepository.getAll(caseId, monthYear);
-    apiLogger.info('Fetched employees', { method, caseId, monthYear, count: employees.length });
-    return NextResponse.json(employees);
+    const controller = getInjection('GetAllEmployeesController');
+    const result = await controller.execute(caseId, monthYear);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    apiLogger.info('Fetched employees', { method, caseId, monthYear, count: result.data.length });
+    return NextResponse.json(result.data);
   } catch (error) {
     apiLogger.error('Failed to fetch employees', { method, caseId, monthYear, error });
     return NextResponse.json(

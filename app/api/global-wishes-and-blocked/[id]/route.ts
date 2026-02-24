@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { globalWishesAndBlockedRepository} from "@/features/global_wishes_and_blocked/api/global-wishes-and-blocked-repository";
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
@@ -33,8 +33,9 @@ export async function GET(
         const key = parseInt(id, 10);
         apiLogger.info('Fetching wishes-and-blocked employee by key', { method, caseId, monthYear, key });
 
-        const employee = await globalWishesAndBlockedRepository.getByKey(key, caseId, monthYear);
-        if (!employee) {
+        const controller = getInjection('GetGlobalWishesByKeyController');
+        const result = await controller.execute(caseId, monthYear, key);
+        if ('error' in result) {
             apiLogger.warn('Wishes-and-blocked employee not found', { method, caseId, monthYear, key });
             return NextResponse.json(
                 { error: 'Employee not found' },
@@ -43,7 +44,7 @@ export async function GET(
         }
 
         apiLogger.info('Fetched wishes-and-blocked employee', { method, caseId, monthYear, key });
-        return NextResponse.json(employee);
+        return NextResponse.json(result.data);
     } catch (error) {
         apiLogger.error('Failed to fetch wishes-and-blocked employee', { method, caseId, monthYear, error });
         return NextResponse.json(
@@ -56,6 +57,7 @@ export async function GET(
 /**
  * PUT /api/global-wishes-and-blocked/[id]
  * Updates a specific employee's wishes and blocked data.
+ * TODO: x-skip-sync-to-monthly header support should be migrated to a use case
  *
  * @param request - The request containing the updated data
  * @param params - Route parameters containing the employee key
@@ -80,13 +82,12 @@ export async function PUT(
         const { id } = await params;
         const key = parseInt(id, 10);
         const body = await request.json();
-        const skipHeader = request.headers.get('x-skip-sync-to-monthly');
-        const skipSyncToMonthly = skipHeader === '1' || skipHeader === 'true';
 
-        apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, monthYear, key, skipSyncToMonthly });
-        const employee = await globalWishesAndBlockedRepository.update(key, body, caseId, monthYear, { skipSyncToMonthly });
+        apiLogger.info('Updating wishes-and-blocked employee', { method, caseId, monthYear, key });
+        const controller = getInjection('UpdateGlobalWishesController');
+        const result = await controller.execute(caseId, monthYear, key, body);
 
-        if (!employee) {
+        if ('error' in result) {
             apiLogger.warn('Wishes-and-blocked employee not found for update', { method, caseId, monthYear, key });
             return NextResponse.json(
                 { error: 'Employee not found' },
@@ -94,7 +95,12 @@ export async function PUT(
             );
         }
 
-        apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, monthYear, key, skipSyncToMonthly });
+        // Fetch updated entity to return in the response
+        const getController = getInjection('GetGlobalWishesByKeyController');
+        const getResult = await getController.execute(caseId, monthYear, key);
+        const employee = 'data' in getResult ? getResult.data : body;
+
+        apiLogger.info('Updated wishes-and-blocked employee', { method, caseId, monthYear, key });
         return NextResponse.json(employee);
     } catch (error) {
         apiLogger.error('Failed to update wishes-and-blocked employee', { method, caseId, monthYear, error });
@@ -113,7 +119,7 @@ export async function PUT(
  *
  * @param request - The request object
  * @param params - Route parameters containing the employee key
- * @returns 204 No Content on success
+ * @returns 200 with success message
  * @returns 404 error if the employee is not found
  * @returns 500 error if the operation fails
  */
@@ -135,9 +141,10 @@ export async function DELETE(
         const key = parseInt(id, 10);
 
         apiLogger.info('Deleting wishes-and-blocked employee', { method, caseId, monthYear, key });
-        const deleted = await globalWishesAndBlockedRepository.delete(key, caseId, monthYear);
+        const controller = getInjection('DeleteGlobalWishesController');
+        const result = await controller.execute(caseId, monthYear, key);
 
-        if (!deleted) {
+        if ('error' in result) {
             apiLogger.warn('Wishes-and-blocked employee not found for deletion', { method, caseId, monthYear, key });
             return NextResponse.json(
                 { error: 'Employee not found' },

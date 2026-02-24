@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { employeeRepository } from '@/features/employees/api/employee-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
@@ -37,9 +37,10 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid id' }, { status: 400 });
     }
     apiLogger.info('Fetching employee', { method, caseId, monthYear, employeeKey: idNum });
-    const employee = await employeeRepository.getByKey(idNum, caseId, monthYear);
-    
-    if (!employee) {
+    const controller = getInjection('GetEmployeeController');
+    const result = await controller.execute(caseId, monthYear, idNum);
+
+    if ('error' in result) {
       return NextResponse.json(
         { error: 'Employee not found' }, 
         { status: 404 }
@@ -47,7 +48,7 @@ export async function GET(
     }
     
     apiLogger.info('Fetched employee', { method, caseId, monthYear, employeeKey: idNum });
-    return NextResponse.json(employee);
+    return NextResponse.json(result.data);
   } catch (error) {
     apiLogger.error('Failed to fetch employee', { method, caseId, monthYear, employeeKey: idNum, error });
     return NextResponse.json(

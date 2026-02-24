@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { listCases, createCase } from '@/lib/data/case/db-case';
+import { getInjection } from '@/src/di/container';
 import { createApiLogger } from '@/lib/logging/logger';
 
 const apiLogger = createApiLogger('/api/cases');
@@ -18,9 +18,13 @@ export async function GET() {
   const method = 'GET';
   try {
     apiLogger.info('Listing cases', { method });
-    const units = await listCases();
-    apiLogger.info('Listed cases', { method, unitCount: units.length });
-    return NextResponse.json({ units });
+    const controller = getInjection('ListCasesController');
+    const result = await controller.execute();
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    apiLogger.info('Listed cases', { method, unitCount: result.data.length });
+    return NextResponse.json({ units: result.data });
   } catch (error) {
     apiLogger.error('Failed to list cases', { method, error });
     return NextResponse.json({ error: 'Failed to list cases' }, { status: 500 });
@@ -56,7 +60,12 @@ export async function POST(request: Request) {
     }
     
     apiLogger.info('Creating case', { method, unitId, month, year });
-    const monthYear = await createCase(unitId, month, year);
+    const controller = getInjection('CreateCaseController');
+    const result = await controller.execute(unitId, month, year);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    const monthYear = `${String(month).padStart(2, '0')}_${year}`;
     apiLogger.info('Created case', { method, unitId, monthYear });
     return NextResponse.json({ unitId, monthYear });
   } catch (error) {

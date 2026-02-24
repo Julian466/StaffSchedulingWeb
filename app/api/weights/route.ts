@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { weightsRepository } from '@/features/weights/api/weights-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
-import { Weights } from '@/types/weights';
 
 const apiLogger = createApiLogger('/api/weights');
 
@@ -28,9 +27,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
     }
     apiLogger.info('Fetching weights configuration', { method, caseId, monthYear });
-    const weights = await weightsRepository.get(caseId, monthYear);
+    const controller = getInjection('GetWeightsController');
+    const result = await controller.execute(caseId, monthYear);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
     apiLogger.info('Fetched weights configuration', { method, caseId, monthYear });
-    return NextResponse.json(weights);
+    return NextResponse.json(result.data);
   } catch (error) {
     apiLogger.error('Failed to fetch weights configuration', { method, caseId, monthYear, error });
     return NextResponse.json(
@@ -63,9 +66,13 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
     }
     
-    const weights: Weights = await request.json();
+    const weights = await request.json();
     apiLogger.info('Updating weights configuration', { method, caseId, monthYear });
-    await weightsRepository.update(weights, caseId, monthYear);
+    const controller = getInjection('UpdateWeightsController');
+    const result = await controller.execute(caseId, monthYear, weights);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
     apiLogger.info('Updated weights configuration', { method, caseId, monthYear });
     return NextResponse.json({ success: true });
   } catch (error) {

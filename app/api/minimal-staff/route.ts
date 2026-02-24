@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { minimalStaffRepository } from '@/features/minimal-staff/api/minimal-staff-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 import { MinimalStaffRequirements } from '@/types/minimal-staff';
@@ -28,9 +28,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
     }
     apiLogger.info('Fetching minimal staff requirements', { method, caseId, monthYear });
-    const requirements = await minimalStaffRepository.get(caseId, monthYear);
+    const controller = getInjection('GetMinimalStaffController');
+    const result = await controller.execute(caseId, monthYear);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
     apiLogger.info('Fetched minimal staff requirements', { method, caseId, monthYear });
-    return NextResponse.json(requirements);
+    return NextResponse.json(result.data);
   } catch (error) {
     apiLogger.error('Failed to fetch minimal staff requirements', { method, caseId, monthYear, error });
     return NextResponse.json(
@@ -65,13 +69,17 @@ export async function PUT(request: Request) {
     
     const requirements: MinimalStaffRequirements = await request.json();
     
-    // Basic validation
+    // Basic validation (HTTP concern - kept in route handler)
     if (!requirements.Fachkraft || !requirements.Azubi || !requirements.Hilfskraft) {
       return NextResponse.json({ error: 'Invalid requirements structure' }, { status: 400 });
     }
     
     apiLogger.info('Updating minimal staff requirements', { method, caseId, monthYear });
-    await minimalStaffRepository.update(requirements, caseId, monthYear);
+    const controller = getInjection('UpdateMinimalStaffController');
+    const result = await controller.execute(caseId, monthYear, requirements);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
     apiLogger.info('Updated minimal staff requirements', { method, caseId, monthYear });
     return NextResponse.json({ message: 'Requirements updated successfully' });
   } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 
 /**
@@ -12,9 +12,13 @@ export async function GET() {
     if (!monthYear) {
       return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
     }
-    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId, monthYear);
+    const controller = getInjection('GetSchedulesMetadataController');
+    const result = await controller.execute(caseId, monthYear);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
     
-    return NextResponse.json(metadata);
+    return NextResponse.json(result.data);
   } catch (error) {
     console.error('Error fetching schedules metadata:', error);
     return NextResponse.json(
@@ -45,7 +49,16 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    await ScheduleRepository.saveSchedule(caseId, monthYear, scheduleId, description, solution, autoSelect);
+    const saveController = getInjection('SaveScheduleController');
+    const result = await saveController.execute(caseId, monthYear, scheduleId, solution, description);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+
+    if (autoSelect) {
+      const selectController = getInjection('SelectScheduleController');
+      await selectController.execute(caseId, monthYear, scheduleId);
+    }
     
     return NextResponse.json({ success: true });
   } catch (error) {

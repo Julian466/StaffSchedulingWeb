@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { globalWishesAndBlockedRepository} from "@/features/global_wishes_and_blocked/api/global-wishes-and-blocked-repository";
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
@@ -30,9 +30,13 @@ export async function GET() {
             return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
         }
         apiLogger.info('Fetching wishes-and-blocked employees', { method, caseId, monthYear });
-        const employees = await globalWishesAndBlockedRepository.getAll(caseId, monthYear);
-        apiLogger.info('Fetched wishes-and-blocked employees', { method, caseId, monthYear, count: employees.length });
-        return NextResponse.json(employees);
+        const controller = getInjection('GetAllGlobalWishesController');
+        const result = await controller.execute(caseId, monthYear);
+        if ('error' in result) {
+            return NextResponse.json({ error: result.error }, { status: 500 });
+        }
+        apiLogger.info('Fetched wishes-and-blocked employees', { method, caseId, monthYear, count: result.data.length });
+        return NextResponse.json(result.data);
     } catch (error) {
         apiLogger.error('Failed to fetch wishes and blocked employees', { method, caseId, monthYear, error });
         return NextResponse.json(
@@ -47,6 +51,7 @@ export async function GET() {
  * Creates a new wishes and blocked employee entry for the current case.
  *
  * Note: This is typically called automatically when creating a new employee.
+ * TODO: x-skip-sync-to-monthly header support should be migrated to a use case
  *
  * @param request - The request containing the wishes and blocked employee data
  * @returns JSON of the created employee with 201 status
@@ -64,12 +69,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
         }
         const body = await request.json();
-        const skipHeader = request.headers.get('x-skip-sync-to-monthly');
-        const skipSyncToMonthly = skipHeader === '1' || skipHeader === 'true';
-        apiLogger.info('Creating wishes-and-blocked employee', { method, caseId, monthYear, skipSyncToMonthly });
-        const employee = await globalWishesAndBlockedRepository.create(body, caseId, monthYear, { skipSyncToMonthly });
-        apiLogger.info('Created wishes-and-blocked employee', { method, caseId, monthYear, employeeKey: employee?.key, skipSyncToMonthly });
-        return NextResponse.json(employee, { status: 201 });
+        apiLogger.info('Creating wishes-and-blocked employee', { method, caseId, monthYear });
+        const controller = getInjection('CreateGlobalWishesController');
+        const result = await controller.execute(caseId, monthYear, body);
+        if ('error' in result) {
+            return NextResponse.json({ error: result.error }, { status: 400 });
+        }
+        apiLogger.info('Created wishes-and-blocked employee', { method, caseId, monthYear, employeeKey: body?.key });
+        return NextResponse.json(body, { status: 201 });
     } catch (error) {
         apiLogger.error('Failed to create wishes and blocked employee', { method, caseId, monthYear, error });
         return NextResponse.json(

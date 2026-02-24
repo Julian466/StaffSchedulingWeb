@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { wishesAndBlockedRepository } from '@/features/wishes_and_blocked/api/wishes-and-blocked-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
 
@@ -30,9 +30,13 @@ export async function GET() {
       return NextResponse.json({ error: 'Missing x-month-year header' }, { status: 400 });
     }
     apiLogger.info('Fetching wishes-and-blocked employees', { method, caseId, monthYear });
-    const employees = await wishesAndBlockedRepository.getAll(caseId, monthYear);
-    apiLogger.info('Fetched wishes-and-blocked employees', { method, caseId, monthYear, count: employees.length });
-    return NextResponse.json(employees);
+    const controller = getInjection('GetAllWishesController');
+    const result = await controller.execute(caseId, monthYear);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
+    apiLogger.info('Fetched wishes-and-blocked employees', { method, caseId, monthYear, count: result.data.length });
+    return NextResponse.json(result.data);
   } catch (error) {
     apiLogger.error('Failed to fetch wishes and blocked employees', { method, caseId, monthYear, error });
     return NextResponse.json(
@@ -65,9 +69,13 @@ export async function POST(request: Request) {
     }
     const body = await request.json();
     apiLogger.info('Creating wishes-and-blocked employee', { method, caseId, monthYear });
-    const employee = await wishesAndBlockedRepository.create(body, caseId, monthYear);
-    apiLogger.info('Created wishes-and-blocked employee', { method, caseId, monthYear, employeeKey: employee?.key });
-    return NextResponse.json(employee, { status: 201 });
+    const controller = getInjection('CreateWishesController');
+    const result = await controller.execute(caseId, monthYear, body);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 400 });
+    }
+    apiLogger.info('Created wishes-and-blocked employee', { method, caseId, monthYear, employeeKey: body?.key });
+    return NextResponse.json(body, { status: 201 });
   } catch (error) {
     apiLogger.error('Failed to create wishes and blocked employee', { method, caseId, monthYear, error });
     return NextResponse.json(

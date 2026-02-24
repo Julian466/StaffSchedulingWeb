@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 import { createApiLogger } from '@/lib/logging/logger';
-import { jobRepository } from '@/features/solver/api/job-repository';
 
 const apiLogger = createApiLogger('/api/solver/jobs/[jobId]');
 
@@ -28,9 +28,10 @@ export async function GET(
 
     apiLogger.info('Fetching job', { caseId, monthYear, jobId });
 
-    const job = await jobRepository.getByKey(jobId, caseId, monthYear);
+    const controller = getInjection('GetJobController');
+    const result = await controller.execute(caseId, monthYear, jobId);
 
-    if (!job) {
+    if ('error' in result) {
       apiLogger.warn('Job not found', { caseId, monthYear, jobId });
       return NextResponse.json(
         { error: 'Job not found' },
@@ -38,9 +39,9 @@ export async function GET(
       );
     }
 
-    apiLogger.info('Job retrieved', { caseId, monthYear, jobId, status: job.status });
+    apiLogger.info('Job retrieved', { caseId, monthYear, jobId, status: result.data.status });
 
-    return NextResponse.json({ job });
+    return NextResponse.json({ job: result.data });
   } catch (error) {
     apiLogger.error('Error fetching job', { error });
     return NextResponse.json(

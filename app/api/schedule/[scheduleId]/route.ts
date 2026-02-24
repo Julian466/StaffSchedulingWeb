@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ScheduleRepository } from '@/features/schedule/api/schedule-repository';
+import { getInjection } from '@/src/di/container';
 import { getCaseContextFromHeaders } from '@/lib/http/case-helper';
 
 /**
@@ -17,21 +17,25 @@ export async function GET(
     }
     const { scheduleId } = await params;
     
-    const schedule = await ScheduleRepository.getSchedule(caseId, monthYear, scheduleId);
+    const scheduleController = getInjection('GetScheduleController');
+    const scheduleResult = await scheduleController.execute(caseId, monthYear, scheduleId);
     
-    if (!schedule) {
+    if ('error' in scheduleResult) {
       return NextResponse.json(
         { error: 'Schedule not found' },
         { status: 404 }
       );
     }
     
-    // Get metadata to include description
-    const metadata = await ScheduleRepository.getSchedulesMetadata(caseId, monthYear);
-    const scheduleMetadata = metadata.schedules.find(s => s.scheduleId === scheduleId);
+    // Get metadata to include description and generatedAt
+    const metadataController = getInjection('GetSchedulesMetadataController');
+    const metadataResult = await metadataController.execute(caseId, monthYear);
+    const scheduleMetadata = 'data' in metadataResult
+      ? metadataResult.data.schedules.find(s => s.scheduleId === scheduleId)
+      : undefined;
     
     return NextResponse.json({ 
-      solution: schedule,
+      solution: scheduleResult.data,
       description: scheduleMetadata?.description,
       generatedAt: scheduleMetadata?.generatedAt,
     });
@@ -59,7 +63,11 @@ export async function DELETE(
     }
     const { scheduleId } = await params;
     
-    await ScheduleRepository.deleteSchedule(caseId, monthYear, scheduleId);
+    const controller = getInjection('DeleteScheduleController');
+    const result = await controller.execute(caseId, monthYear, scheduleId);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
+    }
     
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -87,12 +95,18 @@ export async function PATCH(
     const { scheduleId } = await params;
     const body = await request.json();
     
+    const updates: { description?: string; comment?: string } = {};
     if (body.description !== undefined) {
-      await ScheduleRepository.updateScheduleDescription(caseId, monthYear, scheduleId, body.description);
+      updates.description = body.description;
+    }
+    if (body.comment !== undefined) {
+      updates.comment = body.comment;
     }
     
-    if (body.comment !== undefined) {
-      await ScheduleRepository.updateScheduleComment(caseId, monthYear, scheduleId, body.comment);
+    const controller = getInjection('UpdateScheduleMetadataController');
+    const result = await controller.execute(caseId, monthYear, scheduleId, updates);
+    if ('error' in result) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
     
     return NextResponse.json({ success: true });
