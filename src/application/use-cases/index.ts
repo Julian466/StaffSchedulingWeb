@@ -67,3 +67,19 @@ export {makeDeleteGlobalWishesUseCase} from './global-wishes/delete-global-wishe
 // Cases
 export type {IListCasesUseCase} from './cases/list-cases.use-case';
 export {makeListCasesUseCase} from './cases/list-cases.use-case';
+
+// Schedule (extended)
+export type {IGetSelectedScheduleUseCase} from './schedule/get-selected-schedule.use-case';
+export {makeGetSelectedScheduleUseCase} from './schedule/get-selected-schedule.use-case';
+
+// Templates
+export type {IListTemplatesUseCase} from './templates/list-templates.use-case';
+export {makeListTemplatesUseCase} from './templates/list-templates.use-case';
+export type {IGetTemplateUseCase} from './templates/get-template.use-case';
+export {makeGetTemplateUseCase} from './templates/get-template.use-case';
+export type {ICreateTemplateUseCase} from './templates/create-template.use-case';
+export {makeCreateTemplateUseCase} from './templates/create-template.use-case';
+export type {IUpdateTemplateUseCase} from './templates/update-template.use-case';
+export {makeUpdateTemplateUseCase} from './templates/update-template.use-case';
+export type {IDeleteTemplateUseCase} from './templates/delete-template.use-case';
+export {makeDeleteTemplateUseCase} from './templates/delete-template.use-case';

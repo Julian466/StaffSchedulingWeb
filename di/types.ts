@@ -8,6 +8,7 @@ import type {IGlobalWishesTemplateRepository} from '@/src/application/ports/glob
 import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
 import type {IJobRepository} from '@/src/application/ports/job.repository';
 import type {ICaseRepository} from '@/src/application/ports/case.repository';
+import type {ITemplateRepository} from '@/src/application/ports/template.repository';
 
 // Service interfaces
 import type {ISolverService} from '@/src/application/ports/solver.service';
@@ -48,6 +49,12 @@ import type {IGetAllJobsUseCase} from '@/src/application/use-cases/jobs/get-all-
 import type {IGetJobUseCase} from '@/src/application/use-cases/jobs/get-job.use-case';
 import type {ICreateJobUseCase} from '@/src/application/use-cases/jobs/create-job.use-case';
 import type {IListCasesUseCase} from '@/src/application/use-cases/cases/list-cases.use-case';
+import type {IGetSelectedScheduleUseCase} from '@/src/application/use-cases/schedule/get-selected-schedule.use-case';
+import type {IListTemplatesUseCase} from '@/src/application/use-cases/templates/list-templates.use-case';
+import type {IGetTemplateUseCase} from '@/src/application/use-cases/templates/get-template.use-case';
+import type {ICreateTemplateUseCase} from '@/src/application/use-cases/templates/create-template.use-case';
+import type {IUpdateTemplateUseCase} from '@/src/application/use-cases/templates/update-template.use-case';
+import type {IDeleteTemplateUseCase} from '@/src/application/use-cases/templates/delete-template.use-case';
 
 // Use Case interfaces — Solver
 import type {IValidateConfigUseCase} from '@/src/application/use-cases/solver/validate-config.use-case';
@@ -93,6 +100,12 @@ import type {IGetAllJobsController} from '@/src/controllers/jobs/get-all-jobs.co
 import type {IGetJobController} from '@/src/controllers/jobs/get-job.controller';
 import type {ICreateJobController} from '@/src/controllers/jobs/create-job.controller';
 import type {IListCasesController} from '@/src/controllers/cases/list-cases.controller';
+import type {IGetSelectedScheduleController} from '@/src/controllers/schedule/get-selected-schedule.controller';
+import type {IListTemplatesController} from '@/src/controllers/templates/list-templates.controller';
+import type {IGetTemplateController} from '@/src/controllers/templates/get-template.controller';
+import type {ICreateTemplateController} from '@/src/controllers/templates/create-template.controller';
+import type {IUpdateTemplateController} from '@/src/controllers/templates/update-template.controller';
+import type {IDeleteTemplateController} from '@/src/controllers/templates/delete-template.controller';
 
 // Controller interfaces — Solver
 import type {IValidateConfigController} from '@/src/controllers/solver/validate-config.controller';
@@ -118,6 +131,7 @@ export const DI_SYMBOLS = {
     IScheduleRepository: Symbol.for('IScheduleRepository'),
     IJobRepository: Symbol.for('IJobRepository'),
     ICaseRepository: Symbol.for('ICaseRepository'),
+    ITemplateRepository: Symbol.for('ITemplateRepository'),
 
     // Use Cases — Employees
     IGetAllEmployeesUseCase: Symbol.for('IGetAllEmployeesUseCase'),
@@ -162,6 +176,16 @@ export const DI_SYMBOLS = {
 
     // Use Cases — Cases
     IListCasesUseCase: Symbol.for('IListCasesUseCase'),
+
+    // Use Cases — Schedule (extended)
+    IGetSelectedScheduleUseCase: Symbol.for('IGetSelectedScheduleUseCase'),
+
+    // Use Cases — Templates
+    IListTemplatesUseCase: Symbol.for('IListTemplatesUseCase'),
+    IGetTemplateUseCase: Symbol.for('IGetTemplateUseCase'),
+    ICreateTemplateUseCase: Symbol.for('ICreateTemplateUseCase'),
+    IUpdateTemplateUseCase: Symbol.for('IUpdateTemplateUseCase'),
+    IDeleteTemplateUseCase: Symbol.for('IDeleteTemplateUseCase'),
 
     // Services — Solver
     ISolverService: Symbol.for('ISolverService'),
@@ -222,6 +246,16 @@ export const DI_SYMBOLS = {
     // Controllers — Cases
     IListCasesController: Symbol.for('IListCasesController'),
 
+    // Controllers — Schedule (extended)
+    IGetSelectedScheduleController: Symbol.for('IGetSelectedScheduleController'),
+
+    // Controllers — Templates
+    IListTemplatesController: Symbol.for('IListTemplatesController'),
+    IGetTemplateController: Symbol.for('IGetTemplateController'),
+    ICreateTemplateController: Symbol.for('ICreateTemplateController'),
+    IUpdateTemplateController: Symbol.for('IUpdateTemplateController'),
+    IDeleteTemplateController: Symbol.for('IDeleteTemplateController'),
+
     // Controllers — Solver
     IValidateConfigController: Symbol.for('IValidateConfigController'),
     IExecuteSolverFetchController: Symbol.for('IExecuteSolverFetchController'),
@@ -245,6 +279,7 @@ export interface DI_RETURN_TYPES {
     IScheduleRepository: IScheduleRepository;
     IJobRepository: IJobRepository;
     ICaseRepository: ICaseRepository;
+    ITemplateRepository: ITemplateRepository;
 
     // Use Cases — Employees
     IGetAllEmployeesUseCase: IGetAllEmployeesUseCase;
@@ -289,6 +324,16 @@ export interface DI_RETURN_TYPES {
 
     // Use Cases — Cases
     IListCasesUseCase: IListCasesUseCase;
+
+    // Use Cases — Schedule (extended)
+    IGetSelectedScheduleUseCase: IGetSelectedScheduleUseCase;
+
+    // Use Cases — Templates
+    IListTemplatesUseCase: IListTemplatesUseCase;
+    IGetTemplateUseCase: IGetTemplateUseCase;
+    ICreateTemplateUseCase: ICreateTemplateUseCase;
+    IUpdateTemplateUseCase: IUpdateTemplateUseCase;
+    IDeleteTemplateUseCase: IDeleteTemplateUseCase;
 
     // Services — Solver
     ISolverService: ISolverService;
@@ -348,6 +393,16 @@ export interface DI_RETURN_TYPES {
 
     // Controllers — Cases
     IListCasesController: IListCasesController;
+
+    // Controllers — Schedule (extended)
+    IGetSelectedScheduleController: IGetSelectedScheduleController;
+
+    // Controllers — Templates
+    IListTemplatesController: IListTemplatesController;
+    IGetTemplateController: IGetTemplateController;
+    ICreateTemplateController: ICreateTemplateController;
+    IUpdateTemplateController: IUpdateTemplateController;
+    IDeleteTemplateController: IDeleteTemplateController;
 
     // Controllers — Solver
     IValidateConfigController: IValidateConfigController;

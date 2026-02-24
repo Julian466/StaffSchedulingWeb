@@ -8,3 +8,4 @@ export type {IJobRepository} from './job.repository';
 export type {ICaseRepository} from './case.repository';
 export type {ISolverService, SolverConfigResult} from './solver.service';
 export type {IScheduleParserService} from './schedule-parser.service';
+export type {ITemplateRepository} from './template.repository';

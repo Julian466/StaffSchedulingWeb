@@ -15,6 +15,8 @@ import {makeSaveScheduleController} from '@/src/controllers/schedule/save-schedu
 import {makeDeleteScheduleController} from '@/src/controllers/schedule/delete-schedule.controller';
 import {makeSelectScheduleController} from '@/src/controllers/schedule/select-schedule.controller';
 import {makeUpdateScheduleMetadataController} from '@/src/controllers/schedule/update-schedule-metadata.controller';
+import {makeGetSelectedScheduleUseCase} from '@/src/application/use-cases/schedule/get-selected-schedule.use-case';
+import {makeGetSelectedScheduleController} from '@/src/controllers/schedule/get-selected-schedule.controller';
 
 export function createSchedulesModule() {
     const m = createModule();
@@ -27,6 +29,7 @@ export function createSchedulesModule() {
     m.bind(DI_SYMBOLS.IDeleteScheduleUseCase).toHigherOrderFunction(makeDeleteScheduleUseCase, [DI_SYMBOLS.IScheduleRepository]);
     m.bind(DI_SYMBOLS.ISelectScheduleUseCase).toHigherOrderFunction(makeSelectScheduleUseCase, [DI_SYMBOLS.IScheduleRepository]);
     m.bind(DI_SYMBOLS.IUpdateScheduleMetadataUseCase).toHigherOrderFunction(makeUpdateScheduleMetadataUseCase, [DI_SYMBOLS.IScheduleRepository]);
+    m.bind(DI_SYMBOLS.IGetSelectedScheduleUseCase).toHigherOrderFunction(makeGetSelectedScheduleUseCase, [DI_SYMBOLS.IScheduleRepository]);
 
     m.bind(DI_SYMBOLS.IGetSchedulesMetadataController).toHigherOrderFunction(makeGetSchedulesMetadataController, [DI_SYMBOLS.IGetSchedulesMetadataUseCase]);
     m.bind(DI_SYMBOLS.IGetScheduleController).toHigherOrderFunction(makeGetScheduleController, [DI_SYMBOLS.IGetScheduleUseCase]);
@@ -34,6 +37,7 @@ export function createSchedulesModule() {
     m.bind(DI_SYMBOLS.IDeleteScheduleController).toHigherOrderFunction(makeDeleteScheduleController, [DI_SYMBOLS.IDeleteScheduleUseCase]);
     m.bind(DI_SYMBOLS.ISelectScheduleController).toHigherOrderFunction(makeSelectScheduleController, [DI_SYMBOLS.ISelectScheduleUseCase]);
     m.bind(DI_SYMBOLS.IUpdateScheduleMetadataController).toHigherOrderFunction(makeUpdateScheduleMetadataController, [DI_SYMBOLS.IUpdateScheduleMetadataUseCase]);
+    m.bind(DI_SYMBOLS.IGetSelectedScheduleController).toHigherOrderFunction(makeGetSelectedScheduleController, [DI_SYMBOLS.IGetSelectedScheduleUseCase]);
 
     return m;
 }

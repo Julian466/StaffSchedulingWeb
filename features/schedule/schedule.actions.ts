@@ -3,7 +3,6 @@
 import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import type {SchedulesMetadata, ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
-import {ScheduleRepository} from '@/features/schedule/api/schedule-repository';
 
 export async function getSchedulesMetadataAction(caseId: number, monthYear: string): Promise<SchedulesMetadata> {
     const controller = getInjection('IGetSchedulesMetadataController');
@@ -15,8 +14,10 @@ export async function getSchedulesMetadataAction(caseId: number, monthYear: stri
 export async function getSelectedScheduleAction(caseId: number, monthYear: string): Promise<{
     solution: ScheduleSolutionRaw | null
 }> {
-    const schedule = await ScheduleRepository.getSelectedSchedule(caseId, monthYear);
-    return {solution: schedule ?? null};
+    const controller = getInjection('IGetSelectedScheduleController');
+    const result = await controller({caseId, monthYear});
+    if ('error' in result) throw new Error(result.error);
+    return {solution: result.data};
 }
 
 export async function getScheduleByIdAction(caseId: number, monthYear: string, scheduleId: string): Promise<{
