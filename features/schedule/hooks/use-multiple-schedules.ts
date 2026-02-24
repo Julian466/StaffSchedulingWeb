@@ -24,7 +24,7 @@ export function useMultipleSchedules(caseId: number, monthYear: string, schedule
         
         return parseSolutionFile(data.solution);
       },
-      enabled: !!scheduleId,
+      enabled: !!scheduleId && caseId > 0 && monthYear.length > 0,
     })),
   });
 }

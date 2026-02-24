@@ -31,6 +31,7 @@ export function createTemplateHooks<T>(templateType: string) {
       queryFn: async (): Promise<TemplateSummary[]> => {
         return listTemplatesAction(templateType, caseId);
       },
+      enabled: caseId > 0,
     });
   }
 
@@ -47,7 +48,7 @@ export function createTemplateHooks<T>(templateType: string) {
         if (!templateId) throw new Error('No template ID provided');
         return getTemplateAction<T>(templateType, caseId, templateId);
       },
-      enabled: !!templateId,
+      enabled: caseId > 0 && !!templateId,
     });
   }
 

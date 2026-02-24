@@ -18,6 +18,7 @@ export function useMinimalStaff(caseId: number, monthYear: string) {
     queryFn: async (): Promise<MinimalStaffRequirements> => {
       return getMinimalStaffAction(caseId, monthYear);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 

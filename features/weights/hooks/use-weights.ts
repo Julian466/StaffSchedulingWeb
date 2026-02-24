@@ -18,6 +18,7 @@ export function useWeights(caseId: number, monthYear: string) {
     queryFn: async (): Promise<Weights> => {
       return getWeightsAction(caseId, monthYear);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 

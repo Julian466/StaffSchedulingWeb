@@ -18,6 +18,7 @@ export function useGlobalWishesAndBlocked(caseId: number, monthYear: string) {
         queryFn: async () => {
             return getAllGlobalWishesAction(caseId, monthYear);
         },
+        enabled: caseId > 0 && monthYear.length > 0,
     });
 }
 

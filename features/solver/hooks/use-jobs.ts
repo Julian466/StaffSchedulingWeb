@@ -24,6 +24,7 @@ export function useJobHistory(caseId: number, monthYear: string) {
     queryFn: async (): Promise<{ jobs: SolverJob[] }> => {
       return await getJobs(caseId, monthYear);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 
@@ -43,7 +44,7 @@ export function useJob(caseId: number, monthYear: string, jobId: string | null) 
       if (!jobId) throw new Error('No job ID provided');
       return await getJob(caseId, monthYear, jobId);
     },
-    enabled: !!jobId,
+    enabled: !!jobId && caseId > 0 && monthYear.length > 0,
     staleTime: 5000,
   });
 }

@@ -17,6 +17,7 @@ export function useEmployees(caseId: number, monthYear: string) {
     queryFn: async (): Promise<Employee[]> => {
       return getAllEmployeesAction(caseId, monthYear);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 

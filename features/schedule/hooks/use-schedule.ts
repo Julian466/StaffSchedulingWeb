@@ -26,6 +26,7 @@ export function useSchedulesMetadata(caseId: number, monthYear: string) {
     queryFn: async (): Promise<SchedulesMetadata> => {
       return getSchedulesMetadataAction(caseId, monthYear);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 
@@ -49,6 +50,7 @@ export function useSchedule(caseId: number, monthYear: string) {
       // Parse the raw solution data
       return parseSolutionFile(data.solution);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 
@@ -72,7 +74,7 @@ export function useScheduleById(caseId: number, monthYear: string, scheduleId: s
       
       return parseSolutionFile(data.solution);
     },
-    enabled: !!scheduleId,
+    enabled: !!scheduleId && caseId > 0 && monthYear.length > 0,
   });
 }
 
@@ -209,6 +211,6 @@ export function useMultipleSchedules(caseId: number, monthYear: string, schedule
       const results = await Promise.all(schedulePromises);
       return results.filter((s): s is NonNullable<typeof s> => s !== null);
     },
-    enabled: scheduleIds.length > 0,
+    enabled: scheduleIds.length > 0 && caseId > 0 && monthYear.length > 0,
   });
 }

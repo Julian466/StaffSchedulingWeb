@@ -18,6 +18,7 @@ export function useWishesAndBlocked(caseId: number, monthYear: string) {
     queryFn: async (): Promise<WishesAndBlockedEmployee[]> => {
       return getAllWishesAction(caseId, monthYear);
     },
+    enabled: caseId > 0 && monthYear.length > 0,
   });
 }
 
