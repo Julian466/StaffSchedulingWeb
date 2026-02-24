@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Users, Calendar, ArrowRight, ClockFading, Wand2, CalendarRangeIcon } from 'lucide-react';
 import { useWorkflow } from '@/contexts/workflow-context';
-import { useCase } from '@/components/case-provider';
+import { useSearchParams } from 'next/navigation';
 
 export default function HomePage() {
   const { isWorkflowMode } = useWorkflow();
-  const { currentCase } = useCase();
-  const caseSearch = currentCase ? `?caseId=${currentCase.caseId}&monthYear=${currentCase.monthYear}` : '';
+  const searchParams = useSearchParams();
+  const caseId = searchParams.get('caseId');
+  const monthYear = searchParams.get('monthYear');
+  const caseSearch = caseId && monthYear ? `?caseId=${caseId}&monthYear=${monthYear}` : '';
   const databases = [
     {
       title: 'Mitarbeiter',

@@ -27,7 +27,7 @@ import {
   useCreateMinimalStaffTemplate,
   useMinimalStaffTemplate,
 } from '@/features/minimal-staff/hooks/use-minimal-staff-templates';
-import { useCase } from '@/components/case-provider';
+import { useSearchParams } from 'next/navigation';
 
 interface MinimalStaffEditorProps {
   requirements: MinimalStaffRequirements;
@@ -73,7 +73,8 @@ const categories: { key: EmployeeCategory; label: string; color: string; descrip
 ];
 
 export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalStaffEditorProps) {
-  const { currentCase } = useCase();
+  const searchParams = useSearchParams();
+  const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
   const [localRequirements, setLocalRequirements] = useState<MinimalStaffRequirements>(requirements);
   const [hasChanges, setHasChanges] = useState(false);
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
@@ -82,9 +83,9 @@ export function MinimalStaffEditor({ requirements, onSave, isSaving }: MinimalSt
   const [importConfirmed, setImportConfirmed] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
-  const { data: templates = [] } = useMinimalStaffTemplates(currentCase?.caseId ?? 0);
-  const { mutate: createTemplate, isPending: isCreating } = useCreateMinimalStaffTemplate(currentCase?.caseId ?? 0);
-  const { data: templateToImport } = useMinimalStaffTemplate(currentCase?.caseId ?? 0, selectedTemplateId);
+  const { data: templates = [] } = useMinimalStaffTemplates(caseId);
+  const { mutate: createTemplate, isPending: isCreating } = useCreateMinimalStaffTemplate(caseId);
+  const { data: templateToImport } = useMinimalStaffTemplate(caseId, selectedTemplateId);
 
   // Perform import only after user confirmed
   useEffect(() => {

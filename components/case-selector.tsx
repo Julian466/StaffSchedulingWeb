@@ -1,7 +1,7 @@
 'use client';
 
-import { useCase } from '@/components/case-provider';
-import { useRouter, usePathname } from 'next/navigation';
+import { useSearchParams, usePathname, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -28,11 +28,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { parseMonthYear } from '@/lib/utils/case-utils';
+import { CaseUnit } from '@/types/case';
+import { listCasesAction, createCaseAction } from '@/features/cases/cases.actions';
 
 const MONTHS = [
   { value: 1, label: 'Januar' },
@@ -58,10 +59,23 @@ const createCaseSchema = z.object({
 type CreateCaseFormValues = z.infer<typeof createCaseSchema>;
 
 export function CaseSelector() {
-  const { currentCase, availableCases, switchCase, createNewCase, isLoading } = useCase();
-  const router = useRouter();
+  const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
+  const caseIdStr = searchParams.get('caseId');
+  const monthYear = searchParams.get('monthYear') ?? '';
+  const caseId = caseIdStr ? parseInt(caseIdStr, 10) : null;
+
+  const [availableCases, setAvailableCases] = useState<CaseUnit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+  useEffect(() => {
+    listCasesAction()
+      .then((data) => setAvailableCases(data.units ?? []))
+      .catch(() => setAvailableCases([]))
+      .finally(() => setIsLoading(false));
+  }, []);
 
   const form = useForm<CreateCaseFormValues>({
     resolver: zodResolver(createCaseSchema),
@@ -86,32 +100,30 @@ export function CaseSelector() {
     return monthData?.label || '';
   };
 
-  const handleCaseChange = async (value: string) => {
-    const [unitIdStr, monthYear] = value.split('|');
-    const unitId = parseInt(unitIdStr);
-    await switchCase(unitId, monthYear);
-
-    // Navigate with search params, preserving current path
-    const searchStr = `?caseId=${unitId}&monthYear=${monthYear}`;
+  const handleCaseChange = (value: string) => {
+    const [unitIdStr, my] = value.split('|');
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('caseId', unitIdStr);
+    params.set('monthYear', my);
     const currentPath = pathname === '/' ? '/employees' : pathname;
-    router.push(`${currentPath}${searchStr}`);
+    router.push(`${currentPath}?${params.toString()}`);
   };
 
   const handleCreateCase = async (data: CreateCaseFormValues) => {
     try {
-      await createNewCase(data.unitId, data.month, data.year);
+      const result = await createCaseAction(data.unitId, data.month, data.year);
+      const refreshed = await listCasesAction();
+      setAvailableCases(refreshed.units ?? []);
       setShowCreateDialog(false);
       form.reset();
-      const monthYear = `${data.month}_${data.year}`;
-      router.push(`/employees?caseId=${data.unitId}&monthYear=${monthYear}`);
+      const my = `${String(data.month).padStart(2, '0')}_${data.year}`;
+      router.push(`/employees?caseId=${result.unitId}&monthYear=${my}`);
     } catch (error) {
       console.error('Failed to create case:', error);
     }
   };
 
-  const currentValue = currentCase 
-    ? `${currentCase.caseId}|${currentCase.monthYear}` 
-    : '';
+  const currentValue = caseId && monthYear ? `${caseId}|${monthYear}` : '';
 
   return (
     <>
@@ -120,7 +132,7 @@ export function CaseSelector() {
         <Select
           value={currentValue}
           onValueChange={handleCaseChange}
-          disabled={isLoading || !currentCase}
+          disabled={isLoading}
         >
           <SelectTrigger className="w-[280px]">
             <SelectValue placeholder="Wähle Case" />

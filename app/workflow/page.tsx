@@ -33,7 +33,6 @@ import {
 } from 'lucide-react';
 import {toast} from 'sonner';
 import {useWorkflow} from '@/contexts/workflow-context';
-import {useCase} from '@/components/case-provider';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 import {useImportSolution} from '@/features/solver/hooks/use-solver';
@@ -59,13 +58,14 @@ interface ConfigCheck {
 export default function WorkflowPage() {
     const router = useRouter();
     const {workflowData, isLoading: workflowLoading} = useWorkflow();
-    const {switchCase, currentCaseId, currentCase} = useCase();
     const queryClient = useQueryClient();
 
     // Use workflow data from server environment
     const caseId = workflowData?.caseId;
     const startDate = workflowData?.startDate;
     const endDate = workflowData?.endDate;
+    const wfCaseId = caseId ? parseInt(caseId, 10) : 0;
+    const wfMonthYear = workflowData?.monthYear ?? '';
 
     const [actionStates, setActionStates] = useState<Record<WorkflowAction, ActionState>>({
         delete: {status: 'idle'},
@@ -89,7 +89,7 @@ export default function WorkflowPage() {
         end: string;
         solutionType: string;
     } | null>(null);
-    const importSolutionMutation = useImportSolution(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const importSolutionMutation = useImportSolution(wfCaseId, wfMonthYear);
 
     // Multiple import dialog state
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
@@ -182,8 +182,7 @@ export default function WorkflowPage() {
     const executeAction = async (action: WorkflowAction) => {
         // Handle special actions
         if (action === 'edit-wishes') {
-            await switchCase(parseInt(caseId!), getFolderName(startDate!));
-            router.push('/wishes-and-blocked');
+            router.push(`/wishes-and-blocked?caseId=${caseId}&monthYear=${wfMonthYear}`);
             return;
         }
 
@@ -248,7 +247,7 @@ export default function WorkflowPage() {
             }
 
             // Invalidate job history to refresh the table (even on errors to show failed jobs)
-            queryClient.invalidateQueries({queryKey: ['solver', 'jobs', currentCaseId]});
+            queryClient.invalidateQueries({queryKey: ['solver', 'jobs', wfCaseId]});
 
             setActionStates(prev => ({
                 ...prev,
@@ -331,7 +330,7 @@ export default function WorkflowPage() {
             }
         } catch (error) {
             // Invalidate job history to show failed jobs
-            queryClient.invalidateQueries({queryKey: ['solver', 'jobs', currentCaseId]});
+            queryClient.invalidateQueries({queryKey: ['solver', 'jobs', wfCaseId]});
 
             const errorMessage = error instanceof Error ? error.message : 'Unbekannter Fehler';
             setActionStates(prev => ({

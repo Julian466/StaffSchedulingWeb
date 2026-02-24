@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient as TanStackQueryClient } from '@tanstack/react-query';
-import { useCase } from '@/components/case-provider';
+import { useSearchParams } from 'next/navigation';
 
 /**
  * Creates a new React Query client instance for case-specific queries.
@@ -44,14 +44,16 @@ export function createQueryClient(getCurrentCaseId: () => number) {
  * }
  */
 export function useCaseFetch() {
-  const { currentCase } = useCase();
+  const searchParams = useSearchParams();
+  const caseIdStr = searchParams.get('caseId');
+  const monthYearStr = searchParams.get('monthYear');
 
   return async (url: string, options: RequestInit = {}) => {
     const headers = new Headers(options.headers);
     // Inject the current case ID and monthYear into the request headers
-    if (currentCase) {
-      headers.set('x-case-id', currentCase.caseId.toString());
-      headers.set('x-month-year', currentCase.monthYear);
+    if (caseIdStr && monthYearStr) {
+      headers.set('x-case-id', caseIdStr);
+      headers.set('x-month-year', monthYearStr);
     }
 
     return fetch(url, {

@@ -17,8 +17,9 @@ import {User, Calendar as CalendarIcon, Briefcase, ChevronLeft, ChevronRight} fr
 import {useWishesAndBlocked} from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
 import {useSchedule} from '@/features/schedule/hooks/use-schedule';
 import {useEmployees} from '@/features/employees/hooks/use-employees';
-import {useCase} from '@/components/case-provider';
+import { useSearchParams } from 'next/navigation';
 import {getShiftForCell} from '@/lib/services/schedule-parser';
+import {parseMonthYear} from '@/lib/utils/case-utils';
 import {cn} from '@/lib/utils';
 import {toast} from 'sonner';
 
@@ -114,10 +115,12 @@ export function EmployeeSummaryDialog({
                                           onNavigate,
                                           container,
                                       }: EmployeeSummaryDialogProps) {
-    const {currentCase} = useCase();
-    const {data: employeesData, isLoading: isLoadingEmployees} = useEmployees(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const {data: wishesAndBlockedData, isLoading: isLoadingWishes} = useWishesAndBlocked(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const {data: scheduleData, isLoading: isLoadingSchedule} = useSchedule(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const searchParams = useSearchParams();
+    const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
+    const monthYear = searchParams.get('monthYear') ?? '';
+    const {data: employeesData, isLoading: isLoadingEmployees} = useEmployees(caseId, monthYear);
+    const {data: wishesAndBlockedData, isLoading: isLoadingWishes} = useWishesAndBlocked(caseId, monthYear);
+    const {data: scheduleData, isLoading: isLoadingSchedule} = useSchedule(caseId, monthYear);
     const toastShownRef = useRef(false);
     const lastCheckedKeyRef = useRef<string | null>(null);
 
@@ -174,9 +177,8 @@ export function EmployeeSummaryDialog({
         }
     };
 
-    // Get year and month from case information or use current date
-    const year = currentCase?.year || new Date().getFullYear();
-    const month = currentCase?.month || new Date().getMonth() + 1;
+    // Get year and month from URL search params or use current date
+    const { month, year } = monthYear ? parseMonthYear(monthYear) : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
 
     // Show toast notifications when data is missing
     useEffect(() => {

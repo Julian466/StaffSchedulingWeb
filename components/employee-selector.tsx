@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/popover';
 import { Employee } from '@/types/employee';
 import { useEmployees } from '@/features/employees/hooks/use-employees';
-import { useCase } from '@/components/case-provider';
+import { useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 
 interface EmployeeSelectorProps {
@@ -36,8 +36,10 @@ export function EmployeeSelector({
   excludedKeys = [],
 }: EmployeeSelectorProps) {
   const [open, setOpen] = React.useState(false);
-  const { currentCase } = useCase();
-  const { data: employees = [], isLoading } = useEmployees(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+  const searchParams = useSearchParams();
+  const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
+  const monthYear = searchParams.get('monthYear') ?? '';
+  const { data: employees = [], isLoading } = useEmployees(caseId, monthYear);
   
   // Filter out excluded employees
   const availableEmployees = employees.filter(emp => !excludedKeys.includes(emp.key));

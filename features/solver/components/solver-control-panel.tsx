@@ -1,7 +1,8 @@
 'use client';
 
 import React, {useState} from 'react';
-import {useCase} from '@/components/case-provider';
+import {useSearchParams, usePathname, useRouter} from 'next/navigation';
+import {parseMonthYear} from '@/lib/utils/case-utils';
 import {
     useFetch,
     useSolve,
@@ -31,7 +32,12 @@ import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-soluti
 const COMMANDS_WITHOUT_DATE: SolverCommandType[] = [];
 
 export function SolverControlPanel() {
-    const {currentCaseId: selectedCase, currentCase, switchCase} = useCase();
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const router = useRouter();
+    const caseIdStr = searchParams.get('caseId');
+    const monthYear = searchParams.get('monthYear') ?? '';
+    const caseId = caseIdStr ? parseInt(caseIdStr, 10) : 0;
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [timeout, setTimeout] = useState('300');
 
@@ -43,13 +49,14 @@ export function SolverControlPanel() {
     const [progress, setProgress] = useState(0);
     const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
 
-    // Set default month and year from case information
+    // Set default month and year from URL params
     React.useEffect(() => {
-        if (currentCase && selectedMonth === null && selectedYear === null) {
-            setSelectedMonth(currentCase.month);
-            setSelectedYear(currentCase.year);
+        if (caseId && monthYear && selectedMonth === null && selectedYear === null) {
+            const { month, year } = parseMonthYear(monthYear);
+            setSelectedMonth(month);
+            setSelectedYear(year);
         }
-    }, [currentCase, selectedMonth, selectedYear]);
+    }, [caseId, monthYear, selectedMonth, selectedYear]);
 
     // Import dialog state
     const [showImportDialog, setShowImportDialog] = useState(false);
@@ -70,12 +77,12 @@ export function SolverControlPanel() {
         feasibleSolutions?: number[];
     } | null>(null);
 
-    const fetchMutation = useFetch(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const solveMutation = useSolve(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const solveMultipleMutation = useSolveMultiple(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const insertMutation = useInsert(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const deleteMutation = useDelete(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
-    const importSolutionMutation = useImportSolution(currentCase?.caseId ?? 0, currentCase?.monthYear ?? '');
+    const fetchMutation = useFetch(caseId, monthYear);
+    const solveMutation = useSolve(caseId, monthYear);
+    const solveMultipleMutation = useSolveMultiple(caseId, monthYear);
+    const insertMutation = useInsert(caseId, monthYear);
+    const deleteMutation = useDelete(caseId, monthYear);
+    const importSolutionMutation = useImportSolution(caseId, monthYear);
 
     const isExecuting =
         fetchMutation.isPending ||
@@ -117,7 +124,7 @@ export function SolverControlPanel() {
     }, [isExecuting]);
 
     const handleExecute = () => {
-        if (!selectedCase) {
+        if (!caseId) {
             return;
         }
 
@@ -137,7 +144,7 @@ export function SolverControlPanel() {
         const lastDay = new Date(selectedYear!, selectedMonth!, 0);
 
         const baseParams = {
-            unit: selectedCase,
+            unit: caseId,
             start: firstDay.getFullYear() + "-" + String(firstDay.getMonth() + 1).padStart(2, '0') + "-" + String(firstDay.getDate()).padStart(2, '0'),
             end: lastDay.getFullYear() + "-" + String(lastDay.getMonth() + 1).padStart(2, '0') + "-" + String(lastDay.getDate()).padStart(2, '0'),
         };
@@ -146,12 +153,14 @@ export function SolverControlPanel() {
             case 'fetch':
                 fetchMutation.mutate(baseParams, {
                     onSuccess: async () => {
-                        // Update case information with selected month and year after successful fetch -
+                        // Update URL with new monthYear after successful fetch
                         if (selectedMonth !== null && selectedYear !== null) {
-                            // Be sure that selectedMonth is MM format
                             const monthStr = String(selectedMonth).padStart(2, '0');
-                            const monthYear = `${monthStr}_${selectedYear}`;
-                            await switchCase(selectedCase, monthYear);
+                            const newMonthYear = `${monthStr}_${selectedYear}`;
+                            const params = new URLSearchParams(searchParams.toString());
+                            params.set('caseId', String(caseId));
+                            params.set('monthYear', newMonthYear);
+                            router.push(`${pathname}?${params.toString()}`);
                         }
                     }
                 });
@@ -167,7 +176,7 @@ export function SolverControlPanel() {
                             if (data.job.status === 'completed') {
                                 // Show import dialog after successful solve
                                 setImportParams({
-                                    caseId: selectedCase,
+                                    caseId: caseId,
                                     start: baseParams.start,
                                     end: baseParams.end,
                                     solutionType: 'wdefault',
@@ -189,7 +198,7 @@ export function SolverControlPanel() {
                             if (data.job.status === 'completed') {
                                 // Show multiple import dialog
                                 setMultipleImportParams({
-                                    caseId: selectedCase,
+                                    caseId: caseId,
                                     start: baseParams.start,
                                     end: baseParams.end,
                                     solutionCount: data.scheduleInfo.solutionsGenerated || 3,
@@ -250,8 +259,8 @@ export function SolverControlPanel() {
             <CardHeader>
                 <CardTitle>Solver steuern</CardTitle>
                 <CardDescription>
-                    {selectedCase
-                        ? `Ausgewählter Fall: ${selectedCase}`
+                    {caseId
+                        ? `Ausgewählter Fall: ${caseId}`
                         : 'Bitte wählen Sie einen Fall aus'}
                 </CardDescription>
             </CardHeader>
@@ -367,7 +376,7 @@ export function SolverControlPanel() {
                 <Button
                     onClick={handleExecute}
                     disabled={
-                        !selectedCase ||
+                        !caseId ||
                         (!COMMANDS_WITHOUT_DATE.includes(command) && (selectedMonth === null || selectedYear === null)) ||
                         isExecuting
                     }

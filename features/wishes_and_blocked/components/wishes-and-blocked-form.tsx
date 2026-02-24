@@ -18,7 +18,8 @@ import { useState } from 'react';
 import { InteractiveCalendar, DayData } from '@/components/InteractiveCalendar';
 import { Calendar as CalendarIcon, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useCase } from '@/components/case-provider';
+import { useSearchParams } from 'next/navigation';
+import { parseMonthYear } from '@/lib/utils/case-utils';
 import { EmployeeSelector } from '@/components/employee-selector';
 import { Employee } from '@/types/employee';
 
@@ -168,7 +169,11 @@ export function WishesAndBlockedForm({
   excludedEmployeeKeys = [],
   isGlobal,
 }: WishesAndBlockedFormProps) {
-  const { currentCase } = useCase();
+  const searchParams = useSearchParams();
+  const monthYearStr = searchParams.get('monthYear') ?? '';
+  const { month: urlMonth, year: urlYear } = monthYearStr
+    ? parseMonthYear(monthYearStr)
+    : { month: new Date().getMonth() + 1, year: new Date().getFullYear() };
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(() => 
     employee ? {
       key: employee.key,
@@ -185,9 +190,9 @@ export function WishesAndBlockedForm({
     },
   });
 
-  // Get year and month from currentCase or use current date
-  const year = currentCase?.year || new Date().getFullYear();
-  const month = currentCase?.month || new Date().getMonth() + 1;
+  // Get year and month from URL params or use current date
+  const year = urlYear;
+  const month = urlMonth;
 
   // State for calendar data
   const [calendarData, setCalendarData] = useState<DayData[]>(() => 

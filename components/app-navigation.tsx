@@ -1,9 +1,8 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { CaseSelector } from '@/components/case-selector';
-import { useCase } from '@/components/case-provider';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,8 +16,10 @@ import { cn } from '@/lib/utils';
 
 export function AppNavigation() {
   const pathname = usePathname();
-  const { currentCase } = useCase();
-  const caseSearch = currentCase ? `?caseId=${currentCase.caseId}&monthYear=${currentCase.monthYear}` : '';
+  const searchParams = useSearchParams();
+  const caseId = searchParams.get('caseId');
+  const monthYear = searchParams.get('monthYear');
+  const caseSearch = caseId && monthYear ? `?caseId=${caseId}&monthYear=${monthYear}` : '';
 
   const isActive = (path: string) => {
     return pathname === path || pathname.startsWith(path + '/');
