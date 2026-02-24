@@ -1,0 +1,36 @@
+import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
+import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
+import { getWishesAndBlockedDb } from '@/lib/data/wishes-and-blocked/db-wishes-and-blocked';
+
+export class LowdbWishesAndBlockedRepository implements IWishesAndBlockedRepository {
+  async getAll(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {
+    const db = await getWishesAndBlockedDb(caseId, monthYear);
+    return db.data.employees;
+  }
+
+  async getByKey(caseId: number, monthYear: string, key: number): Promise<WishesAndBlockedEmployee | null> {
+    const db = await getWishesAndBlockedDb(caseId, monthYear);
+    return db.data.employees.find((e) => e.key === key) ?? null;
+  }
+
+  async create(caseId: number, monthYear: string, entry: WishesAndBlockedEmployee): Promise<void> {
+    const db = await getWishesAndBlockedDb(caseId, monthYear);
+    db.data.employees.push(entry);
+    await db.write();
+  }
+
+  async update(caseId: number, monthYear: string, key: number, data: Partial<WishesAndBlockedEmployee>): Promise<void> {
+    const db = await getWishesAndBlockedDb(caseId, monthYear);
+    const index = db.data.employees.findIndex((e) => e.key === key);
+    if (index !== -1) {
+      db.data.employees[index] = { ...db.data.employees[index], ...data };
+      await db.write();
+    }
+  }
+
+  async delete(caseId: number, monthYear: string, key: number): Promise<void> {
+    const db = await getWishesAndBlockedDb(caseId, monthYear);
+    db.data.employees = db.data.employees.filter((e) => e.key !== key);
+    await db.write();
+  }
+}

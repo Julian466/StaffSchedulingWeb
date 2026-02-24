@@ -3,9 +3,10 @@ import { IJobRepository } from '@/src/application/ports/job.repository';
 
 export async function createJobUseCase(
   caseId: number,
+  monthYear: string,
   job: SolverJob,
   jobRepository: IJobRepository
 ): Promise<void> {
-  await jobRepository.create(caseId, job);
-  await jobRepository.cleanup(caseId);
+  await jobRepository.create(caseId, monthYear, job);
+  await jobRepository.cleanup(caseId, monthYear);
 }

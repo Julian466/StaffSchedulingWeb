@@ -1,8 +1,8 @@
 import { SolverJob } from '@/src/entities/models/solver.model';
 
 export interface IJobRepository {
-  getAll(caseId: number): Promise<SolverJob[]>;
-  getById(caseId: number, jobId: string): Promise<SolverJob | null>;
-  create(caseId: number, job: SolverJob): Promise<void>;
-  cleanup(caseId: number, maxJobs?: number): Promise<void>;
+  getAll(caseId: number, monthYear: string): Promise<SolverJob[]>;
+  getById(caseId: number, monthYear: string, jobId: string): Promise<SolverJob | null>;
+  create(caseId: number, monthYear: string, job: SolverJob): Promise<void>;
+  cleanup(caseId: number, monthYear: string, maxJobs?: number): Promise<void>;
 }

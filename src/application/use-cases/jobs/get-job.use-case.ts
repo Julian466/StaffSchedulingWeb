@@ -4,10 +4,11 @@ import { IJobRepository } from '@/src/application/ports/job.repository';
 
 export async function getJobUseCase(
   caseId: number,
+  monthYear: string,
   jobId: string,
   jobRepository: IJobRepository
 ): Promise<SolverJob> {
-  const job = await jobRepository.getById(caseId, jobId);
+  const job = await jobRepository.getById(caseId, monthYear, jobId);
   if (!job) throw new ResourceNotFoundError(`Job with id "${jobId}" not found`);
   return job;
 }
