@@ -6,7 +6,6 @@ import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/
 import {Badge} from "@/components/ui/badge";
 import {Input} from "@/components/ui/input";
 import {Search} from 'lucide-react';
-import {EmployeeIdentifier, EmployeeSummaryDialog} from '@/components/employee-summary-dialog';
 
 interface EmployeeListProps {
     employees: Employee[];
@@ -16,7 +15,6 @@ export function EmployeeList({
                                  employees
                              }: EmployeeListProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
 
     const filteredEmployees = useMemo(() => {
         if (!searchTerm) return employees;
@@ -71,12 +69,6 @@ export function EmployeeList({
                             {filteredEmployees.map((employee) => (
                                 <TableRow
                                     key={employee.key}
-                                    className="cursor-pointer hover:bg-muted/50"
-                                    onClick={() => setSelectedEmployee({
-                                        id: employee.key,
-                                        firstname: employee.firstname,
-                                        lastname: employee.name
-                                    })}
                                 >
                                     <TableCell><Badge>{employee.key}</Badge></TableCell>
                                     <TableCell className="font-medium">
@@ -91,19 +83,6 @@ export function EmployeeList({
                 </div>
             )}
 
-            {selectedEmployee && (
-                <EmployeeSummaryDialog
-                    employee={selectedEmployee}
-                    open={!!selectedEmployee}
-                    onOpenChange={(open) => !open && setSelectedEmployee(null)}
-                    employeeList={filteredEmployees.map(e => ({
-                        id: e.key,
-                        firstname: e.firstname,
-                        lastname: e.name
-                    }))}
-                    onNavigate={(emp) => setSelectedEmployee(emp)}
-                />
-            )}
         </div>
     );
 }

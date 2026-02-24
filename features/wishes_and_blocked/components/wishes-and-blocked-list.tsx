@@ -4,10 +4,9 @@ import {useMemo, useState} from 'react';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {Table, TableBody, TableCell, TableHead, TableHeader, TableRow,} from '@/components/ui/table';
 import {Button} from '@/components/ui/button';
-import {Ban, Eye, Heart, Pencil, Search, Trash2} from 'lucide-react';
+import {Ban, Heart, Pencil, Search, Trash2} from 'lucide-react';
 import {Badge} from '@/components/ui/badge';
 import {Input} from '@/components/ui/input';
-import {EmployeeIdentifier, EmployeeSummaryDialog} from '@/components/employee-summary-dialog';
 
 interface WishesAndBlockedListProps {
     employees: WishesAndBlockedEmployee[];
@@ -23,7 +22,6 @@ export function WishesAndBlockedList({
                                          isDeleting
                                      }: WishesAndBlockedListProps) {
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
 
     const filteredEmployees = useMemo(() => {
         if (!searchTerm) return employees;
@@ -78,12 +76,7 @@ export function WishesAndBlockedList({
                                 return (
                                     <TableRow key={employee.key}>
                                         <TableCell
-                                            className="font-medium cursor-pointer hover:bg-muted/50"
-                                            onClick={() => setSelectedEmployee({
-                                                id: employee.key,
-                                                firstname: employee.firstname,
-                                                lastname: employee.name
-                                            })}
+                                            className="font-medium"
                                         >
                                             <div className="flex flex-col">
                                                 <span>{employee.firstname} {employee.name}</span>
@@ -124,18 +117,6 @@ export function WishesAndBlockedList({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => setSelectedEmployee({
-                                                    id: employee.key,
-                                                    firstname: employee.firstname,
-                                                    lastname: employee.name
-                                                })}
-                                                title="Details anzeigen"
-                                            >
-                                                <Eye className="h-4 w-4"/>
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
                                                 onClick={() => onEdit(employee)}
                                                 title="Bearbeiten"
                                             >
@@ -159,19 +140,6 @@ export function WishesAndBlockedList({
                 </div>
             )}
 
-            {selectedEmployee && (
-                <EmployeeSummaryDialog
-                    employee={selectedEmployee}
-                    open={!!selectedEmployee}
-                    onOpenChange={(open) => !open && setSelectedEmployee(null)}
-                    employeeList={filteredEmployees.map(e => ({
-                        id: e.key,
-                        firstname: e.firstname,
-                        lastname: e.name
-                    }))}
-                    onNavigate={(emp) => setSelectedEmployee(emp)}
-                />
-            )}
         </div>
     );
 }

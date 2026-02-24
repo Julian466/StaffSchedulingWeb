@@ -7,7 +7,6 @@ import {getEmployeeStats, getShiftsForCell, isWeekend} from '@/lib/services/sche
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,} from '@/components/ui/tooltip';
 import {Input} from '@/components/ui/input';
 import {Search} from 'lucide-react';
-import {EmployeeIdentifier, EmployeeSummaryDialog} from '@/components/employee-summary-dialog';
 
 /**
  * Neue Typen für die Zusammenfassung:
@@ -96,7 +95,6 @@ const computeShiftSummary = (
 export function ScheduleTable(props: ScheduleTableProps) {
     const [openTooltipCell, setOpenTooltipCell] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
-    const [selectedEmployee, setSelectedEmployee] = useState<EmployeeIdentifier | null>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const [portalContainer, setPortalContainer] = useState<HTMLElement | undefined>(undefined);
 
@@ -111,16 +109,6 @@ export function ScheduleTable(props: ScheduleTableProps) {
             setPortalContainer(undefined);
         }
     }, [isFullscreen]);
-
-    const parseName = (fullName: string) => {
-        const parts = fullName.trim().split(/\s+/);
-        if (parts.length === 0) return {firstname: '', lastname: ''};
-        if (parts.length === 1) return {firstname: parts[0], lastname: ''};
-        return {
-            firstname: parts[0],
-            lastname: parts.slice(1).join(' ')
-        };
-    };
 
     const generateSummaryString = (
         pair: [string, ShiftTypeSummary]
@@ -395,20 +383,12 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                                     >
                                                         <td
                                                             className={cn(
-                                                                'sticky left-0 z-20 border-r border-border p-1 cursor-pointer',
+                                                                'sticky left-0 z-20 border-r border-border p-1',
                                                                 stats.hasOvertime
-                                                                    ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60'
+                                                                    ? 'bg-red-50 dark:bg-red-950/40'
                                                                     : 'bg-card',
                                                                 isLastInGroup ? 'border-b' : 'border-b-0'
                                                             )}
-                                                            onClick={() => {
-                                                                const {firstname, lastname} = parseName(employee.name);
-                                                                setSelectedEmployee({
-                                                                    id: employee.id,
-                                                                    firstname,
-                                                                    lastname
-                                                                });
-                                                            }}
                                                         >
                                                             {isFirstInGroup && (
                                                                 <>
@@ -620,20 +600,12 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                                     >
                                                         <td
                                                             className={cn(
-                                                                'sticky left-0 z-20 border-r border-border p-3 cursor-pointer',
+                                                                'sticky left-0 z-20 border-r border-border p-3',
                                                                 stats.hasOvertime
-                                                                    ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60'
+                                                                    ? 'bg-red-50 dark:bg-red-950/40'
                                                                     : 'bg-card',
                                                                 isLastInGroup ? 'border-b' : 'border-b-0'
                                                             )}
-                                                            onClick={() => {
-                                                                const {firstname, lastname} = parseName(employee.name);
-                                                                setSelectedEmployee({
-                                                                    id: employee.id,
-                                                                    firstname,
-                                                                    lastname
-                                                                });
-                                                            }}
                                                         >
                                                             <div className="space-y-1">
                                                                 {isFirstInGroup && (
@@ -830,19 +802,11 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                         <tr key={employee.id} className="transition-colors">
                                             <td
                                                 className={cn(
-                                                    'sticky left-0 z-20 border-b border-r border-border p-1 cursor-pointer',
+                                                    'sticky left-0 z-20 border-b border-r border-border p-1',
                                                     stats.hasOvertime
-                                                        ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60'
+                                                        ? 'bg-red-50 dark:bg-red-950/40'
                                                         : 'bg-card'
                                                 )}
-                                                onClick={() => {
-                                                    const {firstname, lastname} = parseName(employee.name);
-                                                    setSelectedEmployee({
-                                                        id: employee.id,
-                                                        firstname,
-                                                        lastname
-                                                    });
-                                                }}
                                             >
                                                 <div className="font-medium text-foreground">{employee.name}</div>
                                                 <div className="text-xs text-foreground">{employee.level[0]} -
@@ -1070,19 +1034,11 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                         <tr key={employee.id} className="transition-colors">
                                             <td
                                                 className={cn(
-                                                    'sticky left-0 z-20 border-b border-r border-border p-3 cursor-pointer',
+                                                    'sticky left-0 z-20 border-b border-r border-border p-3',
                                                     stats.hasOvertime
-                                                        ? 'bg-red-50 dark:bg-red-950/40 hover:bg-red-100 dark:hover:bg-red-950/60'
+                                                        ? 'bg-red-50 dark:bg-red-950/40'
                                                         : 'bg-card'
                                                 )}
-                                                onClick={() => {
-                                                    const {firstname, lastname} = parseName(employee.name);
-                                                    setSelectedEmployee({
-                                                        id: employee.id,
-                                                        firstname,
-                                                        lastname
-                                                    });
-                                                }}
                                             >
                                                 <div className="space-y-1">
                                                     <div className="font-medium text-foreground">{employee.name}</div>
@@ -1350,23 +1306,6 @@ export function ScheduleTable(props: ScheduleTableProps) {
                     </TooltipProvider>
                 )}
 
-            {selectedEmployee && (
-                <EmployeeSummaryDialog
-                    employee={selectedEmployee}
-                    open={!!selectedEmployee}
-                    onOpenChange={(open) => !open && setSelectedEmployee(null)}
-                    employeeList={filteredEmployees.map((e: ScheduleEmployee) => {
-                        const {firstname, lastname} = parseName(e.name);
-                        return {
-                            id: e.id,
-                            firstname,
-                            lastname
-                        };
-                    })}
-                    onNavigate={(emp) => setSelectedEmployee(emp)}
-                    container={portalContainer}
-                />
-            )}
         </div>
     );
 }
