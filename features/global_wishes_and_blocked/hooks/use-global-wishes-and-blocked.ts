@@ -36,8 +36,8 @@ export function useCreateGlobalWishesAndBlocked() {
     return useMutation({
         mutationFn: async (payload: { data: Omit<WishesAndBlockedEmployee, 'key'>; options?: { skipSyncToMonthly?: boolean } }) => {
             if (!currentCase) throw new Error('No case selected');
-            const { data } = payload;
-            return createGlobalWishesAction(currentCase.caseId, currentCase.monthYear, data);
+            const { data, options } = payload;
+            return createGlobalWishesAction(currentCase.caseId, currentCase.monthYear, data, options);
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['global-wishes-and-blocked', currentCase?.caseId, currentCase?.monthYear] });
@@ -51,9 +51,9 @@ export function useUpdateGlobalWishesAndBlocked() {
     const { currentCase } = useCase();
 
     return useMutation({
-        mutationFn: async ({ id, data }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>; options?: { skipSyncToMonthly?: boolean } }): Promise<WishesAndBlockedEmployee> => {
+        mutationFn: async ({ id, data, options }: { id: number; data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>; options?: { skipSyncToMonthly?: boolean } }): Promise<WishesAndBlockedEmployee> => {
             if (!currentCase) throw new Error('No case selected');
-            return updateGlobalWishesAction(currentCase.caseId, currentCase.monthYear, id, data);
+            return updateGlobalWishesAction(currentCase.caseId, currentCase.monthYear, id, data, options);
         },
         onSuccess: () => {
             if (currentCase) {
