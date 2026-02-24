@@ -77,6 +77,13 @@ export class LowdbScheduleRepository implements IScheduleRepository {
         await metaDb.write();
     }
 
+    async getSelectedSchedule(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null> {
+        const metaDb = await getSchedulesMetadataDb(caseId, monthYear);
+        const selectedId = metaDb.data.selectedScheduleId;
+        if (!selectedId) return null;
+        return this.getSchedule(caseId, monthYear, selectedId);
+    }
+
     async updateMetadata(
         caseId: number,
         monthYear: string,

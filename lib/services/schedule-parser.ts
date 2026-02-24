@@ -5,6 +5,7 @@ import {
     ScheduleStats,
     Shift
 } from '@/src/entities/models/schedule.model';
+import type {IScheduleParserService} from '@/src/application/ports/schedule-parser.service';
 
 /**
  * Parses a raw schedule solution from the solver into a structured format
@@ -212,4 +213,16 @@ export function getEmployeeStats(
     const hasOvertime = Math.abs(a - b) > 460;
 
     return {actualHours: a / 60, targetHours: b / 60, totalShifts, hasOvertime}
+}
+
+/**
+ * Class-based adapter that implements IScheduleParserService by delegating to
+ * the standalone `parseSolutionFile` helper above.
+ * Register this in the DI container as the concrete implementation of
+ * IScheduleParserService.
+ */
+export class ScheduleParserService implements IScheduleParserService {
+    parseSolution(jsonData: ScheduleSolutionRaw): ScheduleSolution {
+        return parseSolutionFile(jsonData);
+    }
 }

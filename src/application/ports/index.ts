@@ -6,3 +6,5 @@ export type {IGlobalWishesAndBlockedRepository} from './global-wishes-and-blocke
 export type {IScheduleRepository} from './schedule.repository';
 export type {IJobRepository} from './job.repository';
 export type {ICaseRepository} from './case.repository';
+export type {ISolverService, SolverConfigResult} from './solver.service';
+export type {IScheduleParserService} from './schedule-parser.service';

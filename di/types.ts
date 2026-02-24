@@ -8,6 +8,10 @@ import type {IScheduleRepository} from '@/src/application/ports/schedule.reposit
 import type {IJobRepository} from '@/src/application/ports/job.repository';
 import type {ICaseRepository} from '@/src/application/ports/case.repository';
 
+// Service interfaces
+import type {ISolverService} from '@/src/application/ports/solver.service';
+import type {IScheduleParserService} from '@/src/application/ports/schedule-parser.service';
+
 // Use Case interfaces
 import type {IGetAllEmployeesUseCase} from '@/src/application/use-cases/employees/get-all-employees.use-case';
 import type {IGetEmployeeUseCase} from '@/src/application/use-cases/employees/get-employee.use-case';
@@ -43,6 +47,19 @@ import type {IGetJobUseCase} from '@/src/application/use-cases/jobs/get-job.use-
 import type {ICreateJobUseCase} from '@/src/application/use-cases/jobs/create-job.use-case';
 import type {IListCasesUseCase} from '@/src/application/use-cases/cases/list-cases.use-case';
 
+// Use Case interfaces — Solver
+import type {IValidateConfigUseCase} from '@/src/application/use-cases/solver/validate-config.use-case';
+import type {IExecuteSolverFetchUseCase} from '@/src/application/use-cases/solver/execute-solver-fetch.use-case';
+import type {IExecuteSolverSolveUseCase} from '@/src/application/use-cases/solver/execute-solver-solve.use-case';
+import type {
+    IExecuteSolverSolveMultipleUseCase
+} from '@/src/application/use-cases/solver/execute-solver-solve-multiple.use-case';
+import type {IExecuteSolverInsertUseCase} from '@/src/application/use-cases/solver/execute-solver-insert.use-case';
+import type {IExecuteSolverDeleteUseCase} from '@/src/application/use-cases/solver/execute-solver-delete.use-case';
+import type {IFindSolutionFileUseCase} from '@/src/application/use-cases/solver/find-solution-file.use-case';
+import type {ISaveSolutionUseCase} from '@/src/application/use-cases/solver/save-solution.use-case';
+import type {IImportSolutionUseCase} from '@/src/application/use-cases/solver/import-solution.use-case';
+
 // Controller interfaces
 import type {IGetAllEmployeesController} from '@/src/controllers/employees/get-all-employees.controller';
 import type {IGetEmployeeController} from '@/src/controllers/employees/get-employee.controller';
@@ -73,6 +90,19 @@ import type {IGetAllJobsController} from '@/src/controllers/jobs/get-all-jobs.co
 import type {IGetJobController} from '@/src/controllers/jobs/get-job.controller';
 import type {ICreateJobController} from '@/src/controllers/jobs/create-job.controller';
 import type {IListCasesController} from '@/src/controllers/cases/list-cases.controller';
+
+// Controller interfaces — Solver
+import type {IValidateConfigController} from '@/src/controllers/solver/validate-config.controller';
+import type {IExecuteSolverFetchController} from '@/src/controllers/solver/execute-solver-fetch.controller';
+import type {IExecuteSolverSolveController} from '@/src/controllers/solver/execute-solver-solve.controller';
+import type {
+    IExecuteSolverSolveMultipleController
+} from '@/src/controllers/solver/execute-solver-solve-multiple.controller';
+import type {IExecuteSolverInsertController} from '@/src/controllers/solver/execute-solver-insert.controller';
+import type {IExecuteSolverDeleteController} from '@/src/controllers/solver/execute-solver-delete.controller';
+import type {IFindSolutionFileController} from '@/src/controllers/solver/find-solution-file.controller';
+import type {ISaveSolutionController} from '@/src/controllers/solver/save-solution.controller';
+import type {IImportSolutionController} from '@/src/controllers/solver/import-solution.controller';
 
 export const DI_SYMBOLS = {
     // Repositories
@@ -128,6 +158,21 @@ export const DI_SYMBOLS = {
     // Use Cases — Cases
     IListCasesUseCase: Symbol.for('IListCasesUseCase'),
 
+    // Services — Solver
+    ISolverService: Symbol.for('ISolverService'),
+    IScheduleParserService: Symbol.for('IScheduleParserService'),
+
+    // Use Cases — Solver
+    IValidateConfigUseCase: Symbol.for('IValidateConfigUseCase'),
+    IExecuteSolverFetchUseCase: Symbol.for('IExecuteSolverFetchUseCase'),
+    IExecuteSolverSolveUseCase: Symbol.for('IExecuteSolverSolveUseCase'),
+    IExecuteSolverSolveMultipleUseCase: Symbol.for('IExecuteSolverSolveMultipleUseCase'),
+    IExecuteSolverInsertUseCase: Symbol.for('IExecuteSolverInsertUseCase'),
+    IExecuteSolverDeleteUseCase: Symbol.for('IExecuteSolverDeleteUseCase'),
+    IFindSolutionFileUseCase: Symbol.for('IFindSolutionFileUseCase'),
+    ISaveSolutionUseCase: Symbol.for('ISaveSolutionUseCase'),
+    IImportSolutionUseCase: Symbol.for('IImportSolutionUseCase'),
+
     // Controllers — Employees
     IGetAllEmployeesController: Symbol.for('IGetAllEmployeesController'),
     IGetEmployeeController: Symbol.for('IGetEmployeeController'),
@@ -170,6 +215,17 @@ export const DI_SYMBOLS = {
 
     // Controllers — Cases
     IListCasesController: Symbol.for('IListCasesController'),
+
+    // Controllers — Solver
+    IValidateConfigController: Symbol.for('IValidateConfigController'),
+    IExecuteSolverFetchController: Symbol.for('IExecuteSolverFetchController'),
+    IExecuteSolverSolveController: Symbol.for('IExecuteSolverSolveController'),
+    IExecuteSolverSolveMultipleController: Symbol.for('IExecuteSolverSolveMultipleController'),
+    IExecuteSolverInsertController: Symbol.for('IExecuteSolverInsertController'),
+    IExecuteSolverDeleteController: Symbol.for('IExecuteSolverDeleteController'),
+    IFindSolutionFileController: Symbol.for('IFindSolutionFileController'),
+    ISaveSolutionController: Symbol.for('ISaveSolutionController'),
+    IImportSolutionController: Symbol.for('IImportSolutionController'),
 } as const;
 
 export interface DI_RETURN_TYPES {
@@ -226,6 +282,21 @@ export interface DI_RETURN_TYPES {
     // Use Cases — Cases
     IListCasesUseCase: IListCasesUseCase;
 
+    // Services — Solver
+    ISolverService: ISolverService;
+    IScheduleParserService: IScheduleParserService;
+
+    // Use Cases — Solver
+    IValidateConfigUseCase: IValidateConfigUseCase;
+    IExecuteSolverFetchUseCase: IExecuteSolverFetchUseCase;
+    IExecuteSolverSolveUseCase: IExecuteSolverSolveUseCase;
+    IExecuteSolverSolveMultipleUseCase: IExecuteSolverSolveMultipleUseCase;
+    IExecuteSolverInsertUseCase: IExecuteSolverInsertUseCase;
+    IExecuteSolverDeleteUseCase: IExecuteSolverDeleteUseCase;
+    IFindSolutionFileUseCase: IFindSolutionFileUseCase;
+    ISaveSolutionUseCase: ISaveSolutionUseCase;
+    IImportSolutionUseCase: IImportSolutionUseCase;
+
     // Controllers — Employees
     IGetAllEmployeesController: IGetAllEmployeesController;
     IGetEmployeeController: IGetEmployeeController;
@@ -268,4 +339,15 @@ export interface DI_RETURN_TYPES {
 
     // Controllers — Cases
     IListCasesController: IListCasesController;
+
+    // Controllers — Solver
+    IValidateConfigController: IValidateConfigController;
+    IExecuteSolverFetchController: IExecuteSolverFetchController;
+    IExecuteSolverSolveController: IExecuteSolverSolveController;
+    IExecuteSolverSolveMultipleController: IExecuteSolverSolveMultipleController;
+    IExecuteSolverInsertController: IExecuteSolverInsertController;
+    IExecuteSolverDeleteController: IExecuteSolverDeleteController;
+    IFindSolutionFileController: IFindSolutionFileController;
+    ISaveSolutionController: ISaveSolutionController;
+    IImportSolutionController: IImportSolutionController;
 }

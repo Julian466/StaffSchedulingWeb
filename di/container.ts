@@ -9,6 +9,7 @@ import {createGlobalWishesModule} from '@/di/modules/global-wishes.module';
 import {createSchedulesModule} from '@/di/modules/schedules.module';
 import {createJobsModule} from '@/di/modules/jobs.module';
 import {createCasesModule} from '@/di/modules/cases.module';
+import {createSolverModule} from '@/di/modules/solver.module';
 
 const ApplicationContainer = createContainer();
 
@@ -20,6 +21,7 @@ ApplicationContainer.load(Symbol('GlobalWishesModule'), createGlobalWishesModule
 ApplicationContainer.load(Symbol('SchedulesModule'), createSchedulesModule());
 ApplicationContainer.load(Symbol('JobsModule'), createJobsModule());
 ApplicationContainer.load(Symbol('CasesModule'), createCasesModule());
+ApplicationContainer.load(Symbol('SolverModule'), createSolverModule());
 
 export function getInjection<K extends keyof typeof DI_SYMBOLS>(
     symbol: K

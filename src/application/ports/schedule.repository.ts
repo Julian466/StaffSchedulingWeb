@@ -11,6 +11,8 @@ export interface IScheduleRepository {
 
     select(caseId: number, monthYear: string, scheduleId: string): Promise<void>;
 
+    getSelectedSchedule(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null>;
+
     updateMetadata(caseId: number, monthYear: string, scheduleId: string, updates: {
         description?: string;
         comment?: string

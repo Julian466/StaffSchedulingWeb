@@ -1,5 +1,7 @@
 import {spawnSync, SpawnSyncReturns} from 'child_process';
-import {getPythonConfig} from '@/lib/config/app-config';
+import {existsSync, promises as fsPromises, readFileSync} from 'fs';
+import path from 'path';
+import {getPythonConfig, validatePythonConfig} from '@/lib/config/app-config';
 import {createApiLogger} from '@/lib/logging/logger';
 import {
     DeleteParams,
@@ -9,6 +11,8 @@ import {
     SolveMultipleParams,
     SolveParams,
 } from '@/src/entities/models/solver.model';
+import type {ISolverService, SolverConfigResult} from '@/src/application/ports/solver.service';
+import type {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 
 const logger = createApiLogger('python-cli-service');
 
@@ -295,5 +299,78 @@ export function testPythonConfiguration(): {
             message: 'Unexpected error testing Python configuration',
             details: error instanceof Error ? error.message : String(error),
         };
+    }
+}
+
+/**
+ * Class-based adapter that implements ISolverService by delegating to the
+ * standalone helper functions above. Register this in the DI container as the
+ * concrete implementation of ISolverService.
+ */
+export class PythonCliService implements ISolverService {
+    validateConfig(): SolverConfigResult {
+        const configValidation = validatePythonConfig();
+        const pythonConfig = getPythonConfig();
+
+        let executionTest = null;
+        if (configValidation.isValid && configValidation.isEnabled) {
+            executionTest = testPythonConfiguration();
+        }
+
+        return {
+            ...configValidation,
+            pythonExecutable: pythonConfig.pythonExecutable,
+            staffSchedulingPath: pythonConfig.path,
+            executionTest,
+        };
+    }
+
+    runFetch(params: FetchParams): PythonCommandResult {
+        return executeFetch(params);
+    }
+
+    runSolve(params: SolveParams): PythonCommandResult {
+        return executeSolve(params);
+    }
+
+    runSolveMultiple(params: SolveMultipleParams): PythonCommandResult {
+        return executeSolveMultiple(params);
+    }
+
+    runInsert(params: InsertParams): PythonCommandResult {
+        return executeInsert(params);
+    }
+
+    runDelete(params: DeleteParams): PythonCommandResult {
+        return executeDelete(params);
+    }
+
+    findSolutionFile(filename: string): { exists: boolean; path?: string } {
+        const pythonConfig = getPythonConfig();
+        const solutionPath = path.join(pythonConfig.path, 'found_solutions', filename);
+        const exists = existsSync(solutionPath);
+        return {exists, path: exists ? solutionPath : undefined};
+    }
+
+    readSolutionFile(filename: string): ScheduleSolutionRaw {
+        const pythonConfig = getPythonConfig();
+        const filePath = path.join(pythonConfig.path, 'found_solutions', filename);
+        const fileContent = readFileSync(filePath, 'utf-8');
+        return JSON.parse(fileContent) as ScheduleSolutionRaw;
+    }
+
+    readProcessedSolutionFile(filename: string): ScheduleSolutionRaw {
+        const pythonConfig = getPythonConfig();
+        const filePath = path.join(pythonConfig.path, 'processed_solutions', filename);
+        const fileContent = readFileSync(filePath, 'utf-8');
+        return JSON.parse(fileContent) as ScheduleSolutionRaw;
+    }
+
+    async writeSolutionFile(filename: string, content: ScheduleSolutionRaw): Promise<void> {
+        const pythonConfig = getPythonConfig();
+        const targetDir = path.join(pythonConfig.path, 'found_solutions');
+        const targetPath = path.join(targetDir, filename);
+        await fsPromises.mkdir(targetDir, {recursive: true});
+        await fsPromises.writeFile(targetPath, JSON.stringify(content, null, 2), 'utf8');
     }
 }
