@@ -31,6 +31,13 @@ export { getAllJobsUseCase } from './jobs/get-all-jobs.use-case';
 export { getJobUseCase } from './jobs/get-job.use-case';
 export { createJobUseCase } from './jobs/create-job.use-case';
 
+// Global Wishes and Blocked
+export { getAllGlobalWishesUseCase } from './global-wishes/get-all-global-wishes.use-case';
+export { getGlobalWishesByKeyUseCase } from './global-wishes/get-global-wishes-by-key.use-case';
+export { createGlobalWishesUseCase } from './global-wishes/create-global-wishes.use-case';
+export { updateGlobalWishesUseCase } from './global-wishes/update-global-wishes.use-case';
+export { deleteGlobalWishesUseCase } from './global-wishes/delete-global-wishes.use-case';
+
 // Cases
 export { listCasesUseCase } from './cases/list-cases.use-case';
 export { createCaseUseCase } from './cases/create-case.use-case';
