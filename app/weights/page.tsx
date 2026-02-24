@@ -1,18 +1,14 @@
 'use client';
 
-import { useCase } from '@/components/case-provider';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useCaseParams } from '@/hooks/use-case-params';
+import { WeightsPageClient } from './weights-page-client';
 
-export default function WeightsRedirect() {
-  const { currentCase, isLoading } = useCase();
-  const router = useRouter();
+export default function WeightsPage() {
+  const caseParams = useCaseParams();
   
-  useEffect(() => {
-    if (!isLoading && currentCase) {
-      router.replace(`/cases/${currentCase.caseId}/${currentCase.monthYear}/weights`);
-    }
-  }, [currentCase, isLoading, router]);
+  if (!caseParams) {
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
+  }
   
-  return <div className="flex items-center justify-center h-64"><span className="animate-spin">⏳</span></div>;
+  return <WeightsPageClient caseId={caseParams.caseId} monthYear={caseParams.monthYear} />;
 }

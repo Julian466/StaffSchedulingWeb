@@ -11,13 +11,13 @@ import { useCase } from '@/components/case-provider';
 export default function HomePage() {
   const { isWorkflowMode } = useWorkflow();
   const { currentCase } = useCase();
-  const caseBase = currentCase ? `/cases/${currentCase.caseId}/${currentCase.monthYear}` : '';
+  const caseSearch = currentCase ? `?caseId=${currentCase.caseId}&monthYear=${currentCase.monthYear}` : '';
   const databases = [
     {
       title: 'Mitarbeiter',
       description: 'Verwalte alle Mitarbeiter und ihre Informationen',
       icon: Users,
-      href: `${caseBase}/employees`,
+      href: `/employees${caseSearch}`,
       color: 'text-blue-500',
       bgColor: 'bg-blue-50',
     },
@@ -25,7 +25,7 @@ export default function HomePage() {
       title: 'Globale Wünsche & Blockierungen',
       description: 'Verwalte allgemeine Wünsche und Blockierungen für alle Mitarbeiter',
       icon: CalendarRangeIcon,
-      href: `${caseBase}/global-wishes-and-blocked`,
+      href: `/global-wishes-and-blocked${caseSearch}`,
       color: 'text-indigo-500',
       bgColor: 'bg-indigo-50',
     },
@@ -33,7 +33,7 @@ export default function HomePage() {
       title: 'Wünsche & Blockierungen',
       description: 'Verwalte Mitarbeiterwünsche und Blockierungen',
       icon: Calendar,
-      href: `${caseBase}/wishes-and-blocked`,
+      href: `/wishes-and-blocked${caseSearch}`,
       color: 'text-purple-500',
       bgColor: 'bg-purple-50',
     },
@@ -41,7 +41,7 @@ export default function HomePage() {
       title: 'Dienstplan',
       description: 'Analysiere und visualisiere Mitarbeiter-Schichtpläne',
       icon: ClockFading,
-      href: `${caseBase}/schedule`,
+      href: `/schedule${caseSearch}`,
       color: 'text-green-500',
       bgColor: 'bg-green-50',
     },

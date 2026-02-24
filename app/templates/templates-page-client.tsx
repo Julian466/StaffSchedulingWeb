@@ -11,7 +11,7 @@ interface TemplatesPageClientProps {
 }
 
 export function TemplatesPageClient({ caseId, monthYear }: TemplatesPageClientProps) {
-  const basePath = `/cases/${caseId}/${monthYear}`;
+  const searchStr = `?caseId=${caseId}&monthYear=${monthYear}`;
 
   const templateTypes = [
     {
@@ -19,7 +19,7 @@ export function TemplatesPageClient({ caseId, monthYear }: TemplatesPageClientPr
       title: 'Gewichtungs-Templates',
       description: 'Verwalten Sie gespeicherte Solver-Gewichtungskonfigurationen',
       icon: Scale,
-      href: `${basePath}/templates/weights`,
+      href: `/templates/weights${searchStr}`,
       available: true,
     },
     {
@@ -27,7 +27,7 @@ export function TemplatesPageClient({ caseId, monthYear }: TemplatesPageClientPr
       title: 'Globale Wünsche-Templates',
       description: 'Wiederverwendbare globale Wunsch- und Blockierungskonfigurationen mit intelligentem Mitarbeiter-Matching',
       icon: Heart,
-      href: `${basePath}/templates/global-wishes`,
+      href: `/templates/global-wishes${searchStr}`,
       available: true,
     },
     {
@@ -35,7 +35,7 @@ export function TemplatesPageClient({ caseId, monthYear }: TemplatesPageClientPr
       title: 'Mindestbesetzungs-Templates',
       description: 'Wiederverwendbare Mindestbesetzungskonfigurationen pro Kategorie, Wochentag und Schicht',
       icon: UserCog,
-      href: `${basePath}/templates/minimal-staff`,
+      href: `/templates/minimal-staff${searchStr}`,
       available: true,
     },
   ];

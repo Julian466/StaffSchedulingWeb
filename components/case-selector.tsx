@@ -91,10 +91,10 @@ export function CaseSelector() {
     const unitId = parseInt(unitIdStr);
     await switchCase(unitId, monthYear);
 
-    // Navigate to the new case URL, preserving the current feature path
-    const featureMatch = pathname.match(/\/cases\/\d+\/\d+_\d+\/(.+)/);
-    const feature = featureMatch ? featureMatch[1] : '';
-    router.push(`/cases/${unitId}/${monthYear}${feature ? '/' + feature : '/employees'}`);
+    // Navigate with search params, preserving current path
+    const searchStr = `?caseId=${unitId}&monthYear=${monthYear}`;
+    const currentPath = pathname === '/' ? '/employees' : pathname;
+    router.push(`${currentPath}${searchStr}`);
   };
 
   const handleCreateCase = async (data: CreateCaseFormValues) => {
@@ -103,7 +103,7 @@ export function CaseSelector() {
       setShowCreateDialog(false);
       form.reset();
       const monthYear = `${data.month}_${data.year}`;
-      router.push(`/cases/${data.unitId}/${monthYear}/employees`);
+      router.push(`/employees?caseId=${data.unitId}&monthYear=${monthYear}`);
     } catch (error) {
       console.error('Failed to create case:', error);
     }

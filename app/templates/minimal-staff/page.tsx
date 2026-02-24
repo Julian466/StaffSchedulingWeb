@@ -1,18 +1,14 @@
 'use client';
 
-import { useCase } from '@/components/case-provider';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useCaseParams } from '@/hooks/use-case-params';
+import { MinimalStaffTemplatesPageClient } from './minimal-staff-page-client';
 
-export default function MinimalStaffTemplatesRedirect() {
-  const { currentCase, isLoading } = useCase();
-  const router = useRouter();
+export default function MinimalStaffTemplatesPage() {
+  const caseParams = useCaseParams();
   
-  useEffect(() => {
-    if (!isLoading && currentCase) {
-      router.replace(`/cases/${currentCase.caseId}/${currentCase.monthYear}/templates/minimal-staff`);
-    }
-  }, [currentCase, isLoading, router]);
+  if (!caseParams) {
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
+  }
   
-  return <div className="flex items-center justify-center h-64"><span className="animate-spin">⏳</span></div>;
+  return <MinimalStaffTemplatesPageClient caseId={caseParams.caseId} monthYear={caseParams.monthYear} />;
 }

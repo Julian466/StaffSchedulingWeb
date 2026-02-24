@@ -1,18 +1,14 @@
 'use client';
 
-import { useCase } from '@/components/case-provider';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useCaseParams } from '@/hooks/use-case-params';
+import { GlobalWishesTemplatesPageClient } from './global-wishes-page-client';
 
-export default function GlobalWishesTemplatesRedirect() {
-  const { currentCase, isLoading } = useCase();
-  const router = useRouter();
+export default function GlobalWishesTemplatesPage() {
+  const caseParams = useCaseParams();
   
-  useEffect(() => {
-    if (!isLoading && currentCase) {
-      router.replace(`/cases/${currentCase.caseId}/${currentCase.monthYear}/templates/global-wishes`);
-    }
-  }, [currentCase, isLoading, router]);
+  if (!caseParams) {
+    return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case aus</div>;
+  }
   
-  return <div className="flex items-center justify-center h-64"><span className="animate-spin">⏳</span></div>;
+  return <GlobalWishesTemplatesPageClient caseId={caseParams.caseId} monthYear={caseParams.monthYear} />;
 }
