@@ -2,13 +2,16 @@ import { SolverJob } from '@/src/entities/models/solver.model';
 import { ResourceNotFoundError } from '@/src/entities/errors/base.errors';
 import { IJobRepository } from '@/src/application/ports/job.repository';
 
-export async function getJobUseCase(
-  caseId: number,
-  monthYear: string,
-  jobId: string,
+export interface IGetJobUseCase {
+  (input: { caseId: number; monthYear: string; jobId: string }): Promise<SolverJob>;
+}
+
+export function makeGetJobUseCase(
   jobRepository: IJobRepository
-): Promise<SolverJob> {
-  const job = await jobRepository.getById(caseId, monthYear, jobId);
-  if (!job) throw new ResourceNotFoundError(`Job with id "${jobId}" not found`);
-  return job;
+): IGetJobUseCase {
+  return async ({ caseId, monthYear, jobId }) => {
+    const job = await jobRepository.getById(caseId, monthYear, jobId);
+    if (!job) throw new ResourceNotFoundError(`Job with id "${jobId}" not found`);
+    return job;
+  };
 }

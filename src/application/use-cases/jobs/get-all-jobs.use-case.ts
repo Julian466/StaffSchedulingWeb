@@ -1,10 +1,14 @@
 import { SolverJob } from '@/src/entities/models/solver.model';
 import { IJobRepository } from '@/src/application/ports/job.repository';
 
-export async function getAllJobsUseCase(
-  caseId: number,
-  monthYear: string,
+export interface IGetAllJobsUseCase {
+  (input: { caseId: number; monthYear: string }): Promise<SolverJob[]>;
+}
+
+export function makeGetAllJobsUseCase(
   jobRepository: IJobRepository
-): Promise<SolverJob[]> {
-  return jobRepository.getAll(caseId, monthYear);
+): IGetAllJobsUseCase {
+  return async ({ caseId, monthYear }) => {
+    return jobRepository.getAll(caseId, monthYear);
+  };
 }

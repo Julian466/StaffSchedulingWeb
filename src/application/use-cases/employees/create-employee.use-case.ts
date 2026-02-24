@@ -1,11 +1,14 @@
 import { Employee } from '@/src/entities/models/employee.model';
 import { IEmployeeRepository } from '@/src/application/ports/employee.repository';
 
-export async function createEmployeeUseCase(
-  caseId: number,
-  monthYear: string,
-  employee: Employee,
+export interface ICreateEmployeeUseCase {
+  (input: { caseId: number; monthYear: string; employee: Employee }): Promise<void>;
+}
+
+export function makeCreateEmployeeUseCase(
   employeeRepository: IEmployeeRepository
-): Promise<void> {
-  return employeeRepository.create(caseId, monthYear, employee);
+): ICreateEmployeeUseCase {
+  return async ({ caseId, monthYear, employee }) => {
+    return employeeRepository.create(caseId, monthYear, employee);
+  };
 }

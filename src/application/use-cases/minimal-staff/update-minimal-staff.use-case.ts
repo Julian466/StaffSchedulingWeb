@@ -1,11 +1,14 @@
 import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
 import { IMinimalStaffRepository } from '@/src/application/ports/minimal-staff.repository';
 
-export async function updateMinimalStaffUseCase(
-  caseId: number,
-  monthYear: string,
-  data: MinimalStaffRequirements,
+export interface IUpdateMinimalStaffUseCase {
+  (input: { caseId: number; monthYear: string; data: MinimalStaffRequirements }): Promise<void>;
+}
+
+export function makeUpdateMinimalStaffUseCase(
   minimalStaffRepository: IMinimalStaffRepository
-): Promise<void> {
-  return minimalStaffRepository.update(caseId, monthYear, data);
+): IUpdateMinimalStaffUseCase {
+  return async ({ caseId, monthYear, data }) => {
+    return minimalStaffRepository.update(caseId, monthYear, data);
+  };
 }

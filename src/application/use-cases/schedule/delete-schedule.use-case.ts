@@ -1,10 +1,13 @@
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 
-export async function deleteScheduleUseCase(
-  caseId: number,
-  monthYear: string,
-  scheduleId: string,
+export interface IDeleteScheduleUseCase {
+  (input: { caseId: number; monthYear: string; scheduleId: string }): Promise<void>;
+}
+
+export function makeDeleteScheduleUseCase(
   scheduleRepository: IScheduleRepository
-): Promise<void> {
-  return scheduleRepository.delete(caseId, monthYear, scheduleId);
+): IDeleteScheduleUseCase {
+  return async ({ caseId, monthYear, scheduleId }) => {
+    return scheduleRepository.delete(caseId, monthYear, scheduleId);
+  };
 }

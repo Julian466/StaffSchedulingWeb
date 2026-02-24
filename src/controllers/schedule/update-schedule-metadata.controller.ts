@@ -1,10 +1,14 @@
-import { updateScheduleMetadataUseCase } from '@/src/application/use-cases/schedule/update-schedule-metadata.use-case';
+import { makeUpdateScheduleMetadataUseCase, IUpdateScheduleMetadataUseCase } from '@/src/application/use-cases/schedule/update-schedule-metadata.use-case';
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export class UpdateScheduleMetadataController {
-  constructor(private readonly scheduleRepository: IScheduleRepository) {}
+  private readonly updateScheduleMetadata: IUpdateScheduleMetadataUseCase;
+
+  constructor(scheduleRepository: IScheduleRepository) {
+    this.updateScheduleMetadata = makeUpdateScheduleMetadataUseCase(scheduleRepository);
+  }
 
   async execute(
     caseId: number,
@@ -15,7 +19,7 @@ export class UpdateScheduleMetadataController {
     try {
       validateMonthYear(monthYear);
       validateScheduleId(scheduleId);
-      await updateScheduleMetadataUseCase(caseId, monthYear, scheduleId, updates, this.scheduleRepository);
+      await this.updateScheduleMetadata({ caseId, monthYear, scheduleId, updates });
       return { data: undefined };
     } catch (error) {
       if (isDomainError(error)) {

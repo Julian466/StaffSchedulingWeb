@@ -1,11 +1,13 @@
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 
-export async function updateScheduleMetadataUseCase(
-  caseId: number,
-  monthYear: string,
-  scheduleId: string,
-  updates: { description?: string; comment?: string },
+export interface IUpdateScheduleMetadataUseCase {
+  (input: { caseId: number; monthYear: string; scheduleId: string; updates: { description?: string; comment?: string } }): Promise<void>;
+}
+
+export function makeUpdateScheduleMetadataUseCase(
   scheduleRepository: IScheduleRepository
-): Promise<void> {
-  return scheduleRepository.updateMetadata(caseId, monthYear, scheduleId, updates);
+): IUpdateScheduleMetadataUseCase {
+  return async ({ caseId, monthYear, scheduleId, updates }) => {
+    return scheduleRepository.updateMetadata(caseId, monthYear, scheduleId, updates);
+  };
 }

@@ -1,11 +1,14 @@
 import { Weights } from '@/src/entities/models/weights.model';
 import { IWeightsRepository } from '@/src/application/ports/weights.repository';
 
-export async function updateWeightsUseCase(
-  caseId: number,
-  monthYear: string,
-  weights: Weights,
+export interface IUpdateWeightsUseCase {
+  (input: { caseId: number; monthYear: string; weights: Weights }): Promise<void>;
+}
+
+export function makeUpdateWeightsUseCase(
   weightsRepository: IWeightsRepository
-): Promise<void> {
-  return weightsRepository.update(caseId, monthYear, weights);
+): IUpdateWeightsUseCase {
+  return async ({ caseId, monthYear, weights }) => {
+    return weightsRepository.update(caseId, monthYear, weights);
+  };
 }

@@ -1,8 +1,14 @@
 import { CaseUnit } from '@/src/entities/models/case.model';
 import { ICaseRepository } from '@/src/application/ports/case.repository';
 
-export async function listCasesUseCase(
+export interface IListCasesUseCase {
+  (): Promise<CaseUnit[]>;
+}
+
+export function makeListCasesUseCase(
   caseRepository: ICaseRepository
-): Promise<CaseUnit[]> {
-  return caseRepository.list();
+): IListCasesUseCase {
+  return async () => {
+    return caseRepository.list();
+  };
 }

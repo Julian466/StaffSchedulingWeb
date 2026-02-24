@@ -1,11 +1,15 @@
-import { saveScheduleUseCase } from '@/src/application/use-cases/schedule/save-schedule.use-case';
+import { makeSaveScheduleUseCase, ISaveScheduleUseCase } from '@/src/application/use-cases/schedule/save-schedule.use-case';
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 import { ScheduleSolutionRaw, ScheduleMetadata } from '@/src/entities/models/schedule.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateScheduleId, validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export class SaveScheduleController {
-  constructor(private readonly scheduleRepository: IScheduleRepository) {}
+  private readonly saveSchedule: ISaveScheduleUseCase;
+
+  constructor(scheduleRepository: IScheduleRepository) {
+    this.saveSchedule = makeSaveScheduleUseCase(scheduleRepository);
+  }
 
   async execute(
     caseId: number,
@@ -17,7 +21,7 @@ export class SaveScheduleController {
     try {
       validateMonthYear(monthYear);
       validateScheduleId(scheduleId);
-      const metadata = await saveScheduleUseCase(caseId, monthYear, scheduleId, solution, this.scheduleRepository, description);
+      const metadata = await this.saveSchedule({ caseId, monthYear, scheduleId, solution, description });
       return { data: metadata };
     } catch (error) {
       if (isDomainError(error)) {

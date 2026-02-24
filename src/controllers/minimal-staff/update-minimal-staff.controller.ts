@@ -1,16 +1,20 @@
-import { updateMinimalStaffUseCase } from '@/src/application/use-cases/minimal-staff/update-minimal-staff.use-case';
+import { makeUpdateMinimalStaffUseCase, IUpdateMinimalStaffUseCase } from '@/src/application/use-cases/minimal-staff/update-minimal-staff.use-case';
 import { IMinimalStaffRepository } from '@/src/application/ports/minimal-staff.repository';
 import { MinimalStaffRequirements } from '@/src/entities/models/minimal-staff.model';
 import { isDomainError } from '@/src/entities/errors/base.errors';
 import { validateMonthYear } from '@/src/entities/validation/input-validators';
 
 export class UpdateMinimalStaffController {
-  constructor(private readonly minimalStaffRepository: IMinimalStaffRepository) {}
+  private readonly updateMinimalStaff: IUpdateMinimalStaffUseCase;
+
+  constructor(minimalStaffRepository: IMinimalStaffRepository) {
+    this.updateMinimalStaff = makeUpdateMinimalStaffUseCase(minimalStaffRepository);
+  }
 
   async execute(caseId: number, monthYear: string, data: MinimalStaffRequirements): Promise<{ data: void } | { error: string }> {
     try {
       validateMonthYear(monthYear);
-      await updateMinimalStaffUseCase(caseId, monthYear, data, this.minimalStaffRepository);
+      await this.updateMinimalStaff({ caseId, monthYear, data });
       return { data: undefined };
     } catch (error) {
       if (isDomainError(error)) {

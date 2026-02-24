@@ -2,13 +2,16 @@ import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-block
 import { ResourceNotFoundError } from '@/src/entities/errors/base.errors';
 import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
 
-export async function getWishesByKeyUseCase(
-  caseId: number,
-  monthYear: string,
-  key: number,
+export interface IGetWishesByKeyUseCase {
+  (input: { caseId: number; monthYear: string; key: number }): Promise<WishesAndBlockedEmployee>;
+}
+
+export function makeGetWishesByKeyUseCase(
   wishesRepository: IWishesAndBlockedRepository
-): Promise<WishesAndBlockedEmployee> {
-  const entry = await wishesRepository.getByKey(caseId, monthYear, key);
-  if (!entry) throw new ResourceNotFoundError(`Wishes entry with key ${key} not found`);
-  return entry;
+): IGetWishesByKeyUseCase {
+  return async ({ caseId, monthYear, key }) => {
+    const entry = await wishesRepository.getByKey(caseId, monthYear, key);
+    if (!entry) throw new ResourceNotFoundError(`Wishes entry with key ${key} not found`);
+    return entry;
+  };
 }

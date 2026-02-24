@@ -1,10 +1,13 @@
 import { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 
-export async function selectScheduleUseCase(
-  caseId: number,
-  monthYear: string,
-  scheduleId: string,
+export interface ISelectScheduleUseCase {
+  (input: { caseId: number; monthYear: string; scheduleId: string }): Promise<void>;
+}
+
+export function makeSelectScheduleUseCase(
   scheduleRepository: IScheduleRepository
-): Promise<void> {
-  return scheduleRepository.select(caseId, monthYear, scheduleId);
+): ISelectScheduleUseCase {
+  return async ({ caseId, monthYear, scheduleId }) => {
+    return scheduleRepository.select(caseId, monthYear, scheduleId);
+  };
 }

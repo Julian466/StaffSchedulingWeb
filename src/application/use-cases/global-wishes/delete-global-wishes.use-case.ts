@@ -1,10 +1,13 @@
 import { IGlobalWishesAndBlockedRepository } from '@/src/application/ports/global-wishes-and-blocked.repository';
 
-export async function deleteGlobalWishesUseCase(
-  caseId: number,
-  monthYear: string,
-  key: number,
+export interface IDeleteGlobalWishesUseCase {
+  (input: { caseId: number; monthYear: string; key: number }): Promise<void>;
+}
+
+export function makeDeleteGlobalWishesUseCase(
   globalWishesRepository: IGlobalWishesAndBlockedRepository
-): Promise<void> {
-  return globalWishesRepository.delete(caseId, monthYear, key);
+): IDeleteGlobalWishesUseCase {
+  return async ({ caseId, monthYear, key }) => {
+    return globalWishesRepository.delete(caseId, monthYear, key);
+  };
 }

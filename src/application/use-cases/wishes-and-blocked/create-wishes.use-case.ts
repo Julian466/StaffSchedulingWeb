@@ -1,11 +1,14 @@
 import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { IWishesAndBlockedRepository } from '@/src/application/ports/wishes-and-blocked.repository';
 
-export async function createWishesUseCase(
-  caseId: number,
-  monthYear: string,
-  entry: WishesAndBlockedEmployee,
+export interface ICreateWishesUseCase {
+  (input: { caseId: number; monthYear: string; entry: WishesAndBlockedEmployee }): Promise<void>;
+}
+
+export function makeCreateWishesUseCase(
   wishesRepository: IWishesAndBlockedRepository
-): Promise<void> {
-  return wishesRepository.create(caseId, monthYear, entry);
+): ICreateWishesUseCase {
+  return async ({ caseId, monthYear, entry }) => {
+    return wishesRepository.create(caseId, monthYear, entry);
+  };
 }

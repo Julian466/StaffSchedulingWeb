@@ -1,10 +1,14 @@
 import { WishesAndBlockedEmployee } from '@/src/entities/models/wishes-and-blocked.model';
 import { IGlobalWishesAndBlockedRepository } from '@/src/application/ports/global-wishes-and-blocked.repository';
 
-export async function getAllGlobalWishesUseCase(
-  caseId: number,
-  monthYear: string,
+export interface IGetAllGlobalWishesUseCase {
+  (input: { caseId: number; monthYear: string }): Promise<WishesAndBlockedEmployee[]>;
+}
+
+export function makeGetAllGlobalWishesUseCase(
   globalWishesRepository: IGlobalWishesAndBlockedRepository
-): Promise<WishesAndBlockedEmployee[]> {
-  return globalWishesRepository.getAll(caseId, monthYear);
+): IGetAllGlobalWishesUseCase {
+  return async ({ caseId, monthYear }) => {
+    return globalWishesRepository.getAll(caseId, monthYear);
+  };
 }
