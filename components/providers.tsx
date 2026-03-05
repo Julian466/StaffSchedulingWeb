@@ -1,11 +1,16 @@
 'use client';
 
 import {ReactNode} from 'react';
-import {WorkflowProvider} from '@/contexts/workflow-context';
+import {WorkflowProvider, WorkflowData} from '@/contexts/workflow-context';
 
-export function Providers({children}: { children: ReactNode }) {
+interface ProvidersProps {
+    children: ReactNode;
+    workflowData?: WorkflowData | null;
+}
+
+export function Providers({children, workflowData}: ProvidersProps) {
     return (
-        <WorkflowProvider>
+        <WorkflowProvider initialData={workflowData}>
             {children}
         </WorkflowProvider>
     );
