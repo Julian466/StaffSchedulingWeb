@@ -12,7 +12,11 @@ import {cn} from '@/lib/utils';
 // and must be rendered inside a Suspense boundary during SSR/prerendering.
 import {Suspense} from 'react';
 
-export function AppNavigation() {
+interface AppNavigationProps {
+    isLocked: boolean;
+}
+
+export function AppNavigation({isLocked}: AppNavigationProps) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const caseId = searchParams.get('caseId');
@@ -196,7 +200,7 @@ export function AppNavigation() {
 
                     {/* Case Selector */}
                     <div className="min-w-fit">
-                        <CaseSelector/>
+                        <CaseSelector disabled={isLocked}/>
                     </div>
                 </div>
             </div>
@@ -204,10 +208,14 @@ export function AppNavigation() {
     );
 }
 
-export function NavigationWrapper() {
+interface NavigationWrapperProps {
+    isLocked: boolean;
+}
+
+export function NavigationWrapper({isLocked}: NavigationWrapperProps) {
     return (
         <Suspense fallback={<div className="h-16 border-b bg-background sticky top-0 z-50"/>}>
-            <AppNavigation/>
+            <AppNavigation isLocked={isLocked}/>
         </Suspense>
     );
 }

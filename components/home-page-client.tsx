@@ -5,14 +5,12 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Button} from '@/components/ui/button';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {ArrowRight, Calendar, CalendarRangeIcon, ClockFading, Users, Wand2} from 'lucide-react';
-import {useWorkflow} from '@/contexts/workflow-context';
-
 interface HomePageClientProps {
     caseSearch: string;
+    isWorkflowMode: boolean;
 }
 
-export function HomePageClient({caseSearch}: HomePageClientProps) {
-    const {isWorkflowMode} = useWorkflow();
+export function HomePageClient({caseSearch, isWorkflowMode}: HomePageClientProps) {
 
     const databases = [
         {

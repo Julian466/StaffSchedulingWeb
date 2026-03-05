@@ -13,9 +13,10 @@ interface SolverPageClientProps {
     monthYear: string;
     initialConfigValidation: SolverConfigResult | null;
     initialJobs: SolverJob[];
+    isLocked?: boolean;
 }
 
-export function SolverPageClient({caseId, monthYear, initialConfigValidation, initialJobs}: SolverPageClientProps) {
+export function SolverPageClient({caseId, monthYear, initialConfigValidation, initialJobs, isLocked}: SolverPageClientProps) {
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
 
     const refreshJobs = async () => {
@@ -39,7 +40,7 @@ export function SolverPageClient({caseId, monthYear, initialConfigValidation, in
             <ConfigValidator initialData={initialConfigValidation}/>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <SolverControlPanel caseId={caseId} monthYear={monthYear} onAfterOperation={refreshJobs}/>
+                <SolverControlPanel caseId={caseId} monthYear={monthYear} onAfterOperation={refreshJobs} isLocked={isLocked}/>
                 <div className="space-y-6">
                     <JobHistoryTable jobs={jobs}/>
                 </div>

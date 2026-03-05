@@ -4,6 +4,20 @@
  */
 
 /**
+ * Converts a DD.MM.YYYY date string to MM_YYYY folder format.
+ *
+ * @param ddmmyyyy - Date string in DD.MM.YYYY format (e.g., "15.11.2024")
+ * @returns String in MM_YYYY format (e.g., "11_2024"), or empty string if invalid
+ */
+export function deriveMonthYear(ddmmyyyy: string): string {
+    const parts = ddmmyyyy.split('.');
+    if (parts.length === 3) {
+        return `${parts[1].padStart(2, '0')}_${parts[2]}`;
+    }
+    return '';
+}
+
+/**
  * Parses a monthYear string in MM_YYYY format to extract month and year numbers.
  *
  * @param monthYear - String in MM_YYYY format (e.g., "11_2024")

@@ -22,9 +22,10 @@ interface SolverControlPanelProps {
     caseId: number;
     monthYear: string;
     onAfterOperation?: () => Promise<void>;
+    isLocked?: boolean;
 }
 
-export function SolverControlPanel({caseId, monthYear, onAfterOperation}: SolverControlPanelProps) {
+export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocked}: SolverControlPanelProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -197,6 +198,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation}: Solver
                             <Select
                                 value={selectedMonth?.toString() || ''}
                                 onValueChange={(v) => setSelectedMonth(parseInt(v))}
+                                disabled={isLocked}
                             >
                                 <SelectTrigger id="month">
                                     <SelectValue placeholder="Monat wählen"/>
@@ -222,6 +224,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation}: Solver
                             <Select
                                 value={selectedYear?.toString() || ''}
                                 onValueChange={(v) => setSelectedYear(parseInt(v))}
+                                disabled={isLocked}
                             >
                                 <SelectTrigger id="year">
                                     <SelectValue placeholder="Jahr wählen"/>

@@ -4,14 +4,17 @@ import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {ArrowRight, Calendar, Wand2, X} from 'lucide-react';
-import {useWorkflow} from '@/contexts/workflow-context';
 import {useRouter} from 'next/navigation';
+import {WorkflowState} from '@/src/entities/models/workflow.model';
 
-export function WorkflowBanner() {
-    const {workflowData, isWorkflowMode} = useWorkflow();
+interface WorkflowBannerProps {
+    state: WorkflowState;
+}
+
+export function WorkflowBanner({state}: WorkflowBannerProps) {
     const router = useRouter();
 
-    if (!isWorkflowMode || !workflowData) {
+    if (!state.isWorkflowMode || !state.caseId || !state.startDate || !state.endDate) {
         return null;
     }
 
@@ -20,7 +23,7 @@ export function WorkflowBanner() {
     };
 
     const handleExitWorkflow = () => {
-        alert('Um den Workflow-Modus zu beenden, schließen Sie bitte das Server-Fenster und starten Sie die Anwendung normal mit "npm run dev".');
+        router.push('/api/workflow/stop');
     };
 
     const formatDate = (dateStr: string): string => {
@@ -37,7 +40,7 @@ export function WorkflowBanner() {
             <AlertTitle className="text-blue-900 flex items-center gap-2">
                 Workflow-Modus aktiv
                 <Badge variant="secondary" className="ml-2">
-                    Case {workflowData.caseId}
+                    Case {state.caseId}
                 </Badge>
             </AlertTitle>
             <AlertDescription className="text-blue-800 mt-2">
@@ -46,12 +49,12 @@ export function WorkflowBanner() {
                         <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4"/>
                             <span className="font-medium">Von:</span>
-                            <span>{formatDate(workflowData.startDate)}</span>
+                            <span>{formatDate(state.startDate)}</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4"/>
                             <span className="font-medium">Bis:</span>
-                            <span>{formatDate(workflowData.endDate)}</span>
+                            <span>{formatDate(state.endDate)}</span>
                         </div>
                     </div>
                     <div className="flex gap-2 mt-2">

@@ -8,7 +8,11 @@ import {CaseUnit} from '@/src/entities/models/case.model';
 import {listCasesAction} from '@/features/cases/cases.actions';
 
 
-export function CaseSelector() {
+interface CaseSelectorProps {
+    disabled?: boolean;
+}
+
+export function CaseSelector({disabled}: CaseSelectorProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -54,7 +58,7 @@ export function CaseSelector() {
             <Select
                 value={currentValue}
                 onValueChange={handleCaseChange}
-                disabled={isLoading}
+                disabled={disabled || isLoading}
             >
                 <SelectTrigger className="w-[280px]">
                     <SelectValue placeholder="Wähle Case"/>

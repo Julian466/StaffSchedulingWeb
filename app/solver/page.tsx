@@ -1,13 +1,16 @@
 import {SolverPageClient} from './solver-page-client';
-import {validateConfig} from '@/features/solver/solver.actions';
-import {getJobs} from '@/features/solver/solver.actions';
+import {validateConfig, getJobs} from '@/features/solver/solver.actions';
+import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
 export default async function SolverPage({
                                              searchParams,
                                          }: {
     searchParams: Promise<{ caseId?: string; monthYear?: string }>;
 }) {
-    const {caseId: caseIdStr, monthYear} = await searchParams;
+    const [{caseId: caseIdStr, monthYear}, workflowState] = await Promise.all([
+        searchParams,
+        getWorkflowSession(),
+    ]);
 
     if (!caseIdStr || !monthYear) {
         return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
@@ -31,5 +34,6 @@ export default async function SolverPage({
         monthYear={monthYear}
         initialConfigValidation={configValidation}
         initialJobs={jobsData.jobs}
+        isLocked={workflowState.isWorkflowMode}
     />;
 }

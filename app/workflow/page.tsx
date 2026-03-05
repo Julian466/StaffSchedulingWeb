@@ -1,6 +1,7 @@
 ﻿import {redirect} from 'next/navigation';
 import {validateConfig, getJobs} from '@/features/solver/solver.actions';
 import {WorkflowPageClient} from './workflow-page-client';
+import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
 /** Converts DD.MM.YYYY -> YYYY-MM-DD */
 function convertToISODate(ddmmyyyy: string): string {
@@ -11,27 +12,17 @@ function convertToISODate(ddmmyyyy: string): string {
     return ddmmyyyy;
 }
 
-/** Converts DD.MM.YYYY -> MM_YYYY */
-function deriveMonthYear(ddmmyyyy: string): string {
-    const parts = ddmmyyyy.split('.');
-    if (parts.length === 3) {
-        return `${parts[1].padStart(2, '0')}_${parts[2]}`;
-    }
-    return ddmmyyyy;
-}
-
 export default async function WorkflowPage() {
-    const isWorkflowMode = process.env.WORKFLOW_MODE === 'true';
-    const caseIdStr = process.env.WORKFLOW_CASE ?? '';
-    const startDate = process.env.WORKFLOW_START ?? '';
-    const endDate = process.env.WORKFLOW_END ?? '';
+    const state = await getWorkflowSession();
 
-    if (!isWorkflowMode || !caseIdStr || !startDate || !endDate) {
+    if (!state.isWorkflowMode || state.caseId === null || !state.startDate || !state.endDate || !state.monthYear) {
         redirect('/');
     }
 
-    const caseId = parseInt(caseIdStr, 10);
-    const monthYear = deriveMonthYear(startDate);
+    const caseId = state.caseId;
+    const startDate = state.startDate;
+    const endDate = state.endDate;
+    const monthYear = state.monthYear;
     const isoStart = convertToISODate(startDate);
     const isoEnd = convertToISODate(endDate);
 
