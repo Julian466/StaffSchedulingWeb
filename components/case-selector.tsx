@@ -10,15 +10,28 @@ import {listCasesAction} from '@/features/cases/cases.actions';
 
 interface CaseSelectorProps {
     disabled?: boolean;
+    lockedCaseId?: number | null;
+    lockedMonthYear?: string | null;
 }
 
-export function CaseSelector({disabled}: CaseSelectorProps) {
+export function CaseSelector({disabled, lockedCaseId, lockedMonthYear}: CaseSelectorProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
-    const caseIdStr = searchParams.get('caseId');
-    const monthYear = searchParams.get('monthYear') ?? '';
-    const caseId = caseIdStr ? parseInt(caseIdStr, 10) : null;
+
+
+    const urlCaseIdStr = searchParams.get('caseId');
+    const urlMonthYear = searchParams.get('monthYear');
+
+    // 2. Entscheide: Wenn gelockt, nimm die lock-Werte, sonst URL
+    const effectiveCaseId = disabled && lockedCaseId
+        ? lockedCaseId
+        : (urlCaseIdStr ? parseInt(urlCaseIdStr, 10) : null);
+
+    const effectiveMonthYear = disabled && lockedMonthYear
+        ? lockedMonthYear
+        : (urlMonthYear ?? '');
+
 
     const [availableCases, setAvailableCases] = useState<CaseUnit[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +63,9 @@ export function CaseSelector({disabled}: CaseSelectorProps) {
     };
 
 
-    const currentValue = caseId && monthYear ? `${caseId}|${monthYear}` : '';
+    const currentValue = effectiveCaseId && effectiveMonthYear
+        ? `${effectiveCaseId}|${effectiveMonthYear}`
+        : '';
 
     return (
         <div className="flex items-center gap-2">
@@ -61,7 +76,11 @@ export function CaseSelector({disabled}: CaseSelectorProps) {
                 disabled={disabled || isLoading}
             >
                 <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder="Wähle Case"/>
+                    <SelectValue placeholder={
+                        disabled && lockedCaseId && lockedMonthYear
+                            ? `Case ${lockedCaseId} - ${lockedMonthYear.replace('_', ' ')}`
+                            : "Wähle Case"
+                    }/>
                 </SelectTrigger>
                 <SelectContent>
                     {allCaseOptions.map((option) => (

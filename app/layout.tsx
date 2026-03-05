@@ -14,7 +14,11 @@ export default async function RootLayout({
     return (
         <html lang="de">
         <body>
-        <NavigationWrapper isLocked={workflowState.isWorkflowMode}/>
+        <NavigationWrapper
+            isLocked={workflowState.isWorkflowMode}
+            lockedCaseId={workflowState.caseId}
+            lockedMonthYear={workflowState.monthYear}
+        />
         <main className="container mx-auto p-4">
             <WorkflowBanner state={workflowState}/>
             {children}

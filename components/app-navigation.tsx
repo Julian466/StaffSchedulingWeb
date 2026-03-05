@@ -14,9 +14,11 @@ import {Suspense} from 'react';
 
 interface AppNavigationProps {
     isLocked: boolean;
+    lockedCaseId?: number | null;
+    lockedMonthYear?: string | null;
 }
 
-export function AppNavigation({isLocked}: AppNavigationProps) {
+export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavigationProps) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const caseId = searchParams.get('caseId');
@@ -200,7 +202,11 @@ export function AppNavigation({isLocked}: AppNavigationProps) {
 
                     {/* Case Selector */}
                     <div className="min-w-fit">
-                        <CaseSelector disabled={isLocked}/>
+                        <CaseSelector
+                            disabled={isLocked}
+                            lockedCaseId={lockedCaseId}
+                            lockedMonthYear={lockedMonthYear}
+                        />
                     </div>
                 </div>
             </div>
@@ -210,12 +216,14 @@ export function AppNavigation({isLocked}: AppNavigationProps) {
 
 interface NavigationWrapperProps {
     isLocked: boolean;
+    lockedCaseId?: number | null;
+    lockedMonthYear?: string | null;
 }
 
-export function NavigationWrapper({isLocked}: NavigationWrapperProps) {
+export function NavigationWrapper({isLocked, lockedCaseId, lockedMonthYear}: NavigationWrapperProps) {
     return (
         <Suspense fallback={<div className="h-16 border-b bg-background sticky top-0 z-50"/>}>
-            <AppNavigation isLocked={isLocked}/>
+            <AppNavigation isLocked={isLocked} lockedCaseId={lockedCaseId} lockedMonthYear={lockedMonthYear} />
         </Suspense>
     );
 }
