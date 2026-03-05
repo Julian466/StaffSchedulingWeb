@@ -23,7 +23,8 @@ export function WorkflowBanner({state}: WorkflowBannerProps) {
     };
 
     const handleExitWorkflow = () => {
-        router.push('/api/workflow/stop');
+        // Hard Browser reload to ensure all workflow-related UI is reset, including any client-side state
+        window.location.href = '/api/workflow/stop';
     };
 
     const formatDate = (dateStr: string): string => {
