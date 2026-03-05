@@ -52,16 +52,16 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear, templates}: 
 
     const handleViewTemplate = async (templateId: string) => {
         setViewingTemplateId(templateId);
-        try {
-            const template = await getMinimalStaffTemplateAction(caseId, templateId);
-            setViewingTemplateData({
-                description: template._metadata.description,
-                content: template.content,
-                last_modified: template._metadata.last_modified,
-            });
-        } catch {
-            toast.error('Fehler beim Laden des Templates');
+        const result = await getMinimalStaffTemplateAction(caseId, templateId);
+        if (!result.success) {
+            toast.error(result.error);
+            return;
         }
+        setViewingTemplateData({
+            description: result.data._metadata.description,
+            content: result.data.content,
+            last_modified: result.data._metadata.last_modified,
+        });
     };
 
     const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
@@ -69,30 +69,28 @@ export function MinimalStaffTemplatesPageClient({caseId, monthYear, templates}: 
     const handleSaveDescription = async (newDescription: string) => {
         if (editingTemplate) {
             setIsUpdating(true);
-            try {
-                await updateMinimalStaffTemplateAction(caseId, editingTemplate.id, {description: newDescription});
-                toast.success('Template erfolgreich aktualisiert');
-                setEditingTemplate(null);
-            } catch {
-                toast.error('Fehler beim Aktualisieren des Templates');
-            } finally {
-                setIsUpdating(false);
+            const result = await updateMinimalStaffTemplateAction(caseId, editingTemplate.id, {description: newDescription});
+            setIsUpdating(false);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            toast.success('Template erfolgreich aktualisiert');
+            setEditingTemplate(null);
         }
     };
 
     const handleDelete = async () => {
         if (deletingTemplateId) {
             setIsDeleting(true);
-            try {
-                await deleteMinimalStaffTemplateAction(caseId, deletingTemplateId);
-                toast.success('Template erfolgreich gelöscht');
-                setDeletingTemplateId(null);
-            } catch {
-                toast.error('Fehler beim Löschen des Templates');
-            } finally {
-                setIsDeleting(false);
+            const result = await deleteMinimalStaffTemplateAction(caseId, deletingTemplateId);
+            setIsDeleting(false);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            toast.success('Template erfolgreich gelöscht');
+            setDeletingTemplateId(null);
         }
     };
 

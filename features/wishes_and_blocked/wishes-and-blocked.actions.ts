@@ -3,6 +3,7 @@
 import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
+import type {ActionResult} from '@/src/entities/models/action-result.model';
 
 export async function getAllWishesAction(caseId: number, monthYear: string): Promise<WishesAndBlockedEmployee[]> {
     const controller = getInjection('IGetAllWishesController');
@@ -18,29 +19,35 @@ export async function getWishesByKeyAction(caseId: number, monthYear: string, ke
     return result.data;
 }
 
-export async function createWishesAction(caseId: number, monthYear: string, data: Omit<WishesAndBlockedEmployee, 'key'>): Promise<WishesAndBlockedEmployee> {
+export async function createWishesAction(
+    caseId: number,
+    monthYear: string,
+    data: Omit<WishesAndBlockedEmployee, 'key'>
+): Promise<ActionResult> {
     const controller = getInjection('ICreateWishesController');
     const result = await controller({caseId, monthYear, entry: data as WishesAndBlockedEmployee});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/wishes-and-blocked');
-    return data as WishesAndBlockedEmployee;
+    return {success: true, data: undefined};
 }
 
-export async function updateWishesAction(caseId: number, monthYear: string, key: number, data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>): Promise<WishesAndBlockedEmployee> {
+export async function updateWishesAction(
+    caseId: number,
+    monthYear: string,
+    key: number,
+    data: Partial<Omit<WishesAndBlockedEmployee, 'key'>>
+): Promise<ActionResult> {
     const controller = getInjection('IUpdateWishesController');
     const result = await controller({caseId, monthYear, key, data});
-    if ('error' in result) throw new Error(result.error);
-    // Fetch updated entity
-    const getController = getInjection('IGetWishesByKeyController');
-    const getResult = await getController({caseId, monthYear, key});
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/wishes-and-blocked');
-    if ('data' in getResult) return getResult.data;
-    return data as WishesAndBlockedEmployee;
+    return {success: true, data: undefined};
 }
 
-export async function deleteWishesAction(caseId: number, monthYear: string, key: number): Promise<void> {
+export async function deleteWishesAction(caseId: number, monthYear: string, key: number): Promise<ActionResult> {
     const controller = getInjection('IDeleteWishesController');
     const result = await controller({caseId, monthYear, key});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/wishes-and-blocked');
+    return {success: true, data: undefined};
 }

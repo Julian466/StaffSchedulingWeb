@@ -101,19 +101,17 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
 
     const handleSaveAsTemplate = async (description: string) => {
         setIsCreating(true);
-        try {
-            await createMinimalStaffTemplateAction(caseId, localRequirements, description);
-            setSaveDialogOpen(false);
-            const updated = await listMinimalStaffTemplatesAction(caseId);
-            setTemplates(updated);
-            toast.success('Template gespeichert');
-        } catch (error) {
-            toast.error('Fehler beim Speichern des Templates', {
-                description: error instanceof Error ? error.message : String(error),
-            });
-        } finally {
+        const result = await createMinimalStaffTemplateAction(caseId, localRequirements, description);
+        if (!result.success) {
+            toast.error(result.error);
             setIsCreating(false);
+            return;
         }
+        setSaveDialogOpen(false);
+        const updated = await listMinimalStaffTemplatesAction(caseId);
+        setTemplates(updated);
+        toast.success('Template gespeichert');
+        setIsCreating(false);
     };
 
     const handleImportTemplate = (templateId: string) => {
@@ -125,13 +123,13 @@ export function MinimalStaffEditor({requirements, onSave, isSaving}: MinimalStaf
     const confirmImport = async () => {
         if (!selectedTemplateId) return;
         try {
-            const template = await getMinimalStaffTemplateAction(caseId, selectedTemplateId);
-            setLocalRequirements(template.content);
+            const result = await getMinimalStaffTemplateAction(caseId, selectedTemplateId);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+            setLocalRequirements(result.data.content);
             setHasChanges(true);
-        } catch (error) {
-            toast.error('Fehler beim Laden des Templates', {
-                description: error instanceof Error ? error.message : String(error),
-            });
         } finally {
             setImportConfirmOpen(false);
             setSelectedTemplateId(null);

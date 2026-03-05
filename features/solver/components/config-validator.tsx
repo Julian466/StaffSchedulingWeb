@@ -5,7 +5,7 @@ import {validateConfig} from '@/features/solver/solver.actions';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {AlertCircle, CheckCircle2, Loader2, XCircle} from 'lucide-react';
-import type {SolverConfigResult} from '@/src/application/ports/solver.service';
+import type {SolverConfigResult} from '@/src/entities/models/solver.model';
 
 interface ConfigValidatorProps {
     initialData: SolverConfigResult | null;
@@ -18,13 +18,13 @@ export function ConfigValidator({initialData}: ConfigValidatorProps) {
 
     const refetch = () => {
         startRefetchTransition(async () => {
-            try {
-                const result = await validateConfig();
-                setData(result);
-                setIsError(false);
-            } catch {
+            const result = await validateConfig();
+            if (!result.success) {
                 setIsError(true);
+                return;
             }
+            setData(result.data);
+            setIsError(false);
         });
     };
 

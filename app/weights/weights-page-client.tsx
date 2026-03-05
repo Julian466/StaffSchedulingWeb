@@ -20,12 +20,12 @@ export function WeightsPageClient({caseId, monthYear, weights}: WeightsPageClien
 
     const handleSave = (newWeights: Weights) => {
         startTransition(async () => {
-            try {
-                await updateWeightsAction(caseId, monthYear, newWeights);
-                toast.success('Gewichtungen erfolgreich aktualisiert');
-            } catch {
-                toast.error('Fehler beim Aktualisieren der Gewichtungen');
+            const result = await updateWeightsAction(caseId, monthYear, newWeights);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            toast.success('Gewichtungen erfolgreich aktualisiert');
         });
     };
 

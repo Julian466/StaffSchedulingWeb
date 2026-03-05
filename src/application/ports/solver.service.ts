@@ -5,19 +5,11 @@ import type {
     PythonCommandResult,
     SolveMultipleParams,
     SolveParams,
+    SolverConfigResult,
 } from '@/src/entities/models/solver.model';
-import type {PythonConfigValidation} from '@/lib/config/app-config';
 import type {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 
-export interface SolverConfigResult extends PythonConfigValidation {
-    pythonExecutable: string;
-    staffSchedulingPath: string;
-    executionTest: {
-        success: boolean;
-        message: string;
-        details?: string;
-    } | null;
-}
+export type { SolverConfigResult };
 
 export interface ISolverService {
     /**

@@ -3,6 +3,7 @@
 import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import {Weights} from '@/src/entities/models/weights.model';
+import type {ActionResult} from '@/src/entities/models/action-result.model';
 
 export async function getWeightsAction(caseId: number, monthYear: string): Promise<Weights> {
     const controller = getInjection('IGetWeightsController');
@@ -11,9 +12,10 @@ export async function getWeightsAction(caseId: number, monthYear: string): Promi
     return result.data;
 }
 
-export async function updateWeightsAction(caseId: number, monthYear: string, weights: Weights): Promise<void> {
+export async function updateWeightsAction(caseId: number, monthYear: string, weights: Weights): Promise<ActionResult> {
     const controller = getInjection('IUpdateWeightsController');
     const result = await controller({caseId, monthYear, weights});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/weights');
+    return {success: true, data: undefined};
 }

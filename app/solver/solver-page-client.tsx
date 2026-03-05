@@ -1,7 +1,7 @@
 import {ConfigValidator} from '@/features/solver/components/config-validator';
 import {SolverControlPanel} from '@/features/solver/components/solver-control-panel';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
-import type {SolverConfigResult} from '@/src/application/ports/solver.service';
+import type {SolverConfigResult} from '@/src/entities/models/solver.model';
 import type {SolverJob} from '@/src/entities/models/solver.model';
 
 interface SolverPageClientProps {

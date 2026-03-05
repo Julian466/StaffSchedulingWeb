@@ -151,17 +151,19 @@ export function GlobalWishesAndBlockedPageClient({
         if (!pendingEntry) return;
         const {entry, isEdit} = pendingEntry;
         startSubmitTransition(async () => {
-            try {
-                if (isEdit) {
-                    const {key, ...data} = entry;
-                    await updateGlobalWishesAction(caseId, monthYear, key, data);
-                    toast.success('Globale Wünsche gespeichert. Monatliche Wünsche wurden zurückgesetzt.');
-                } else {
-                    await createGlobalWishesAction(caseId, monthYear, entry);
-                    toast.success('Globale Wünsche erstellt. Monatliche Wünsche wurden neu berechnet.');
-                }
-            } catch {
-                toast.error('Fehler beim Speichern.');
+            let result;
+            if (isEdit) {
+                const {key, ...data} = entry;
+                result = await updateGlobalWishesAction(caseId, monthYear, key, data);
+            } else {
+                result = await createGlobalWishesAction(caseId, monthYear, entry);
+            }
+            if (!result.success) {
+                toast.error(result.error);
+            } else if (isEdit) {
+                toast.success('Globale Wünsche gespeichert. Monatliche Wünsche wurden zurückgesetzt.');
+            } else {
+                toast.success('Globale Wünsche erstellt. Monatliche Wünsche wurden neu berechnet.');
             }
             setPendingEntry(null);
             setEditingEmployee(undefined);
@@ -177,11 +179,11 @@ export function GlobalWishesAndBlockedPageClient({
     const handleConfirmDelete = async () => {
         if (confirmDeleteId === null) return;
         startDeleteTransition(async () => {
-            try {
-                await deleteGlobalWishesAction(caseId, monthYear, confirmDeleteId);
+            const result = await deleteGlobalWishesAction(caseId, monthYear, confirmDeleteId);
+            if (!result.success) {
+                toast.error(result.error);
+            } else {
                 toast.success('Eintrag und zugehörige monatliche Wünsche wurden gelöscht.');
-            } catch {
-                toast.error('Fehler beim Löschen.');
             }
             setConfirmDeleteId(null);
         });
@@ -206,13 +208,13 @@ export function GlobalWishesAndBlockedPageClient({
         };
 
         startCreateTemplateTransition(async () => {
-            try {
-                await createGlobalWishesTemplateAction(caseId, content, description);
-                setSaveTemplateDialogOpen(false);
-                toast.success(`Template "${description}" wurde erfolgreich gespeichert.`);
-            } catch {
-                toast.error('Das Template konnte nicht gespeichert werden.');
+            const result = await createGlobalWishesTemplateAction(caseId, content, description);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            setSaveTemplateDialogOpen(false);
+            toast.success(`Template "${description}" wurde erfolgreich gespeichert.`);
         });
     };
 
@@ -220,12 +222,12 @@ export function GlobalWishesAndBlockedPageClient({
     // import dialog; this allows previewing before import
     const handleSelectTemplate = (templateId: string) => {
         startLoadTemplateTransition(async () => {
-            try {
-                const template = await getGlobalWishesTemplateAction(caseId, templateId);
-                setSelectedTemplate(template);
-            } catch {
-                toast.error('Template konnte nicht geladen werden.');
+            const result = await getGlobalWishesTemplateAction(caseId, templateId);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            setSelectedTemplate(result.data);
         });
     };
 
@@ -235,18 +237,18 @@ export function GlobalWishesAndBlockedPageClient({
      */
     const handleImport = async (templateId: string) => {
         startImportTransition(async () => {
-            try {
-                const result = await importGlobalWishesTemplateAction(caseId, monthYear, templateId);
-                toast.success(
-                    `Template importiert: ${result.matchCount} von ${result.totalCount} Mitarbeiter wurden importiert.` +
-                    (result.unmatchedCount > 0 ? ` ${result.unmatchedCount} Mitarbeiter wurden übersprungen.` : '')
-                );
-                setImportTemplateDialogOpen(false);
-                setSelectedTemplate(null);
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'Das Template konnte nicht importiert werden.';
-                toast.error(`Fehler beim Importieren: ${message}`);
+            const result = await importGlobalWishesTemplateAction(caseId, monthYear, templateId);
+            if (!result.success) {
+                toast.error(`Fehler beim Importieren: ${result.error}`);
+                return;
             }
+            const {matchCount, totalCount, unmatchedCount} = result.data;
+            toast.success(
+                `Template importiert: ${matchCount} von ${totalCount} Mitarbeiter wurden importiert.` +
+                (unmatchedCount > 0 ? ` ${unmatchedCount} Mitarbeiter wurden übersprungen.` : '')
+            );
+            setImportTemplateDialogOpen(false);
+            setSelectedTemplate(null);
         });
     };
 

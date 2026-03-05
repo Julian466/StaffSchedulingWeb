@@ -20,10 +20,11 @@ export default async function SolverPage({
             aus</div>;
     }
 
-    const [configValidation, jobsData] = await Promise.all([
-        validateConfig().catch(() => null),
+    const [configResult, jobsData] = await Promise.all([
+        validateConfig(),
         getJobs(caseId, monthYear).catch(() => ({jobs: []})),
     ]);
+    const configValidation = configResult.success ? configResult.data : null;
 
     return <SolverPageClient
         caseId={caseId}

@@ -53,12 +53,12 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
 
     const handleViewTemplate = async (templateId: string) => {
         setViewingTemplateId(templateId);
-        try {
-            const template = await getGlobalWishesTemplateAction(caseId, templateId);
-            setViewingTemplate(template);
-        } catch {
-            toast.error('Fehler beim Laden des Templates');
+        const result = await getGlobalWishesTemplateAction(caseId, templateId);
+        if (!result.success) {
+            toast.error(result.error);
+            return;
         }
+        setViewingTemplate(result.data);
     };
 
     const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
@@ -66,30 +66,28 @@ export function GlobalWishesTemplatesPageClient({caseId, monthYear, templates}: 
     const handleSaveDescription = async (newDescription: string) => {
         if (editingTemplate) {
             setIsUpdating(true);
-            try {
-                await updateGlobalWishesTemplateAction(caseId, editingTemplate.id, {description: newDescription});
-                toast.success('Template erfolgreich aktualisiert');
-                setEditingTemplate(null);
-            } catch {
-                toast.error('Fehler beim Aktualisieren des Templates');
-            } finally {
-                setIsUpdating(false);
+            const result = await updateGlobalWishesTemplateAction(caseId, editingTemplate.id, {description: newDescription});
+            setIsUpdating(false);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            toast.success('Template erfolgreich aktualisiert');
+            setEditingTemplate(null);
         }
     };
 
     const handleDelete = async () => {
         if (deletingTemplateId) {
             setIsDeleting(true);
-            try {
-                await deleteGlobalWishesTemplateAction(caseId, deletingTemplateId);
-                toast.success('Template erfolgreich gelöscht');
-                setDeletingTemplateId(null);
-            } catch {
-                toast.error('Fehler beim Löschen des Templates');
-            } finally {
-                setIsDeleting(false);
+            const result = await deleteGlobalWishesTemplateAction(caseId, deletingTemplateId);
+            setIsDeleting(false);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            toast.success('Template erfolgreich gelöscht');
+            setDeletingTemplateId(null);
         }
     };
 

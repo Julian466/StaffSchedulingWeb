@@ -135,17 +135,17 @@ export default function WorkflowPage() {
     // Check configuration on mount
     useEffect(() => {
         const checkConfig = async () => {
-            try {
-                const data = await validateConfig();
-                setConfigCheck({
-                    isValid: data.isValid,
-                    pythonExecutable: data.pythonExecutable,
-                    staffSchedulingPath: data.staffSchedulingPath
-                });
-            } catch (error) {
+            const result = await validateConfig();
+            if (!result.success) {
                 setConfigCheck({isValid: false});
                 toast.error('Konfiguration konnte nicht geladen werden');
+                return;
             }
+            setConfigCheck({
+                isValid: result.data.isValid,
+                pythonExecutable: result.data.pythonExecutable,
+                staffSchedulingPath: result.data.staffSchedulingPath
+            });
         };
         checkConfig();
     }, []);
@@ -160,8 +160,8 @@ export default function WorkflowPage() {
                 const isoEnd = convertToISODate(endDate);
                 const filename = `solution_${caseId}_${isoStart}-${isoEnd}.json`;
 
-                const data = await findSolutionFile(filename);
-                setSolutionExists(data.exists);
+                const result = await findSolutionFile(filename);
+                setSolutionExists(result.success ? result.data.exists : false);
             } catch (error) {
                 setSolutionExists(false);
             }
@@ -249,50 +249,65 @@ export default function WorkflowPage() {
             };
 
             switch (action) {
-                case 'delete':
-                    result = await solverDelete(numericCaseId, folderName, {
+                case 'delete': {
+                    const r = await solverDelete(numericCaseId, folderName, {
                         unit: numericCaseId,
                         start: isoStart,
                         end: isoEnd
                     });
+                    if (!r.success) throw new Error(r.error);
+                    result = r.data;
                     break;
-                case 'fetch':
-                    result = await solverFetch(numericCaseId, folderName, {
+                }
+                case 'fetch': {
+                    const r = await solverFetch(numericCaseId, folderName, {
                         unit: numericCaseId,
                         start: isoStart,
                         end: isoEnd
                     });
+                    if (!r.success) throw new Error(r.error);
+                    result = r.data;
                     break;
-                case 'solve':
-                    result = await solverSolve(numericCaseId, folderName, {
+                }
+                case 'solve': {
+                    const r = await solverSolve(numericCaseId, folderName, {
                         unit: numericCaseId,
                         start: isoStart,
                         end: isoEnd,
                         timeout: timeout || 60
                     });
+                    if (!r.success) throw new Error(r.error);
+                    result = r.data;
                     break;
-                case 'multi-solve':
-                    result = await solverSolveMultiple(numericCaseId, folderName, {
+                }
+                case 'multi-solve': {
+                    const r = await solverSolveMultiple(numericCaseId, folderName, {
                         unit: numericCaseId,
                         start: isoStart,
                         end: isoEnd,
                         timeout: timeout || 60
                     });
+                    if (!r.success) throw new Error(r.error);
+                    result = r.data;
                     break;
+                }
                 case 'insert': {
                     // First, save the currently selected schedule before exporting
                     toast.info('Speichere ausgewählten Dienstplan vor dem Export...');
 
                     const saveResult = await saveSolution(numericCaseId, folderName, isoStart, isoEnd);
-                    console.log('Dienstplan gespeichert:', saveResult);
-                    toast.success(`Dienstplan gespeichert als ${saveResult.filename}`);
+                    if (!saveResult.success) throw new Error(saveResult.error);
+                    console.log('Dienstplan gespeichert:', saveResult.data);
+                    toast.success(`Dienstplan gespeichert als ${saveResult.data.filename}`);
 
                     // Then insert
-                    result = await solverInsert(numericCaseId, folderName, {
+                    const insertResult = await solverInsert(numericCaseId, folderName, {
                         unit: numericCaseId,
                         start: isoStart,
                         end: isoEnd
                     });
+                    if (!insertResult.success) throw new Error(insertResult.error);
+                    result = insertResult.data;
                     break;
                 }
                 default:
@@ -675,16 +690,13 @@ export default function WorkflowPage() {
                     solutionType={importParams.solutionType}
                     onImport={async (params) => {
                         setIsImporting(true);
-                        try {
-                            await importSolution(wfCaseId, wfMonthYear, params);
+                        const result = await importSolution(wfCaseId, wfMonthYear, params);
+                        if (!result.success) {
+                            toast.error(result.error);
+                        } else {
                             toast.success('Lösung erfolgreich importiert');
-                        } catch (error) {
-                            toast.error('Fehler beim Importieren der Lösung', {
-                                description: error instanceof Error ? error.message : String(error),
-                            });
-                        } finally {
-                            setIsImporting(false);
                         }
+                        setIsImporting(false);
                     }}
                     isImporting={isImporting}
                 />
@@ -702,16 +714,13 @@ export default function WorkflowPage() {
                     feasibleSolutions={multipleImportParams.feasibleSolutions}
                     onImport={async (params) => {
                         setIsImporting(true);
-                        try {
-                            await importSolution(wfCaseId, wfMonthYear, params);
+                        const result = await importSolution(wfCaseId, wfMonthYear, params);
+                        if (!result.success) {
+                            toast.error(result.error);
+                        } else {
                             toast.success('Lösung erfolgreich importiert');
-                        } catch (error) {
-                            toast.error('Fehler beim Importieren der Lösung', {
-                                description: error instanceof Error ? error.message : String(error),
-                            });
-                        } finally {
-                            setIsImporting(false);
                         }
+                        setIsImporting(false);
                     }}
                     isImporting={isImporting}
                 />

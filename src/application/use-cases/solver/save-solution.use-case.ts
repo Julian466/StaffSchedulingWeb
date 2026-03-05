@@ -1,11 +1,8 @@
 import type {ISolverService} from '@/src/application/ports/solver.service';
 import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
+import type {SaveSolutionResult} from '@/src/entities/models/solver.model';
 
-export interface SaveSolutionResult {
-    success: boolean;
-    filename: string;
-    path: string;
-}
+export type { SaveSolutionResult };
 
 export interface ISaveSolutionUseCase {
     (input: {

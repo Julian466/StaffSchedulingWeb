@@ -84,20 +84,18 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
 
     const handleSaveAsTemplate = async (description: string) => {
         setIsCreating(true);
-        try {
-            await createWeightsTemplateAction(caseId, editedWeights, description);
-            setSaveDialogOpen(false);
-            // Refresh template list
-            const updated = await listWeightsTemplatesAction(caseId);
-            setTemplates(updated);
-            toast.success('Template gespeichert');
-        } catch (error) {
-            toast.error('Fehler beim Speichern des Templates', {
-                description: error instanceof Error ? error.message : String(error),
-            });
-        } finally {
+        const result = await createWeightsTemplateAction(caseId, editedWeights, description);
+        if (!result.success) {
+            toast.error(result.error);
             setIsCreating(false);
+            return;
         }
+        setSaveDialogOpen(false);
+        // Refresh template list
+        const updated = await listWeightsTemplatesAction(caseId);
+        setTemplates(updated);
+        toast.success('Template gespeichert');
+        setIsCreating(false);
     };
 
     const handleImportTemplate = (templateId: string) => {
@@ -110,12 +108,12 @@ export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
     const confirmImport = async () => {
         if (!selectedTemplateId) return;
         try {
-            const template = await getWeightsTemplateAction(caseId, selectedTemplateId);
-            setEditedWeights(template.content);
-        } catch (error) {
-            toast.error('Fehler beim Laden des Templates', {
-                description: error instanceof Error ? error.message : String(error),
-            });
+            const result = await getWeightsTemplateAction(caseId, selectedTemplateId);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+            setEditedWeights(result.data.content);
         } finally {
             setImportConfirmOpen(false);
             setSelectedTemplateId(null);

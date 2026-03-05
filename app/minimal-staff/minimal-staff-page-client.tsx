@@ -20,12 +20,12 @@ export function MinimalStaffPageClient({caseId, monthYear, requirements}: Minima
 
     const handleSave = (newRequirements: MinimalStaffRequirements) => {
         startTransition(async () => {
-            try {
-                await updateMinimalStaffAction(caseId, monthYear, newRequirements);
-                toast.success('Mindestbesetzung erfolgreich aktualisiert');
-            } catch {
-                toast.error('Fehler beim Aktualisieren der Mindestbesetzung');
+            const result = await updateMinimalStaffAction(caseId, monthYear, newRequirements);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
+            toast.success('Mindestbesetzung erfolgreich aktualisiert');
         });
     };
 

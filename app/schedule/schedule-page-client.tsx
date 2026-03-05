@@ -86,29 +86,37 @@ export function SchedulePageClient({caseId, monthYear, initialSchedule, initialM
         if (!pendingSolution) return;
 
         startSaveTransition(async () => {
-            try {
-                const scheduleId = Date.now().toString();
-                await saveScheduleAction(caseId, monthYear, scheduleId, pendingSolution, description, true);
-                setShowDescriptionDialog(false);
-                setPendingSolution(null);
-                toast.success('Dienstplan erfolgreich geladen');
-            } catch (error) {
-                toast.error('Fehler beim Speichern des Dienstplans');
-                console.error(error);
+            const scheduleId = Date.now().toString();
+            const result = await saveScheduleAction(caseId, monthYear, scheduleId, pendingSolution, description, true);
+            if (!result.success) {
+                toast.error(result.error || 'Fehler beim Speichern des Dienstplans');
+                return;
             }
+            setShowDescriptionDialog(false);
+            setPendingSolution(null);
+            toast.success('Dienstplan erfolgreich geladen');
         });
     };
 
     const handleScheduleSelect = async (scheduleId: string) => {
-        await selectScheduleAction(caseId, monthYear, scheduleId);
+        const result = await selectScheduleAction(caseId, monthYear, scheduleId);
+        if (!result.success) {
+            toast.error(result.error || 'Fehler beim Auswählen des Dienstplans');
+        }
     };
 
     const handleScheduleDelete = async (scheduleId: string) => {
-        await deleteScheduleAction(caseId, monthYear, scheduleId);
+        const result = await deleteScheduleAction(caseId, monthYear, scheduleId);
+        if (!result.success) {
+            toast.error(result.error || 'Fehler beim Löschen des Dienstplans');
+        }
     };
 
     const handleDescriptionUpdate = async (scheduleId: string, description: string) => {
-        await updateScheduleMetadataAction(caseId, monthYear, scheduleId, {description});
+        const result = await updateScheduleMetadataAction(caseId, monthYear, scheduleId, {description});
+        if (!result.success) {
+            toast.error(result.error || 'Fehler beim Aktualisieren der Beschreibung');
+        }
     };
 
     const handleMultipleSchedulesSelect = (scheduleIds: string[]) => {

@@ -1,3 +1,4 @@
+export * from './action-result.model';
 export * from './employee.model';
 export * from './weights.model';
 export * from './minimal-staff.model';

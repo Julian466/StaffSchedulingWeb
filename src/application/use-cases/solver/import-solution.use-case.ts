@@ -1,5 +1,8 @@
 import type {ISolverService} from '@/src/application/ports/solver.service';
 import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
+import type {ImportSolutionResult} from '@/src/entities/models/solver.model';
+
+export type { ImportSolutionResult };
 
 export interface ImportSolutionInput {
     caseId: number;
@@ -7,13 +10,6 @@ export interface ImportSolutionInput {
     start: string;
     end: string;
     solutionType: string;
-}
-
-export interface ImportSolutionResult {
-    success: boolean;
-    scheduleId: string;
-    filename: string;
-    message: string;
 }
 
 export interface IImportSolutionUseCase {

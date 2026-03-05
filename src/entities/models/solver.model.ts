@@ -94,3 +94,51 @@ export const SolveMultipleResultSchema = z.object({
 });
 
 export type SolveMultipleResult = z.infer<typeof SolveMultipleResultSchema>;
+
+// ---- Result types (returned by controllers / used in server actions) ----
+
+/**
+ * Result of the solver configuration validation.
+ * Mirrors the shape produced by ISolverService.validateConfig().
+ */
+export interface SolverConfigResult {
+    isValid: boolean;
+    isEnabled: boolean;
+    errors: string[];
+    warnings: string[];
+    pythonExecutable: string;
+    staffSchedulingPath: string;
+    executionTest: {
+        success: boolean;
+        message: string;
+        details?: string;
+    } | null;
+}
+
+/**
+ * Summary of schedules generated during a solve-multiple run.
+ */
+export interface SolveMultipleScheduleInfo {
+    solutionsGenerated: number;
+    scheduleFiles: string[];
+    feasibleSolutions: number[];
+}
+
+/**
+ * Result of persisting a solver solution file.
+ */
+export interface SaveSolutionResult {
+    success: boolean;
+    filename: string;
+    path: string;
+}
+
+/**
+ * Result of importing a solver solution into the schedule store.
+ */
+export interface ImportSolutionResult {
+    success: boolean;
+    scheduleId: string;
+    filename: string;
+    message: string;
+}

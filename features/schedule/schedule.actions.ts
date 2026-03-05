@@ -3,6 +3,7 @@
 import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import type {SchedulesMetadata, ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
+import type {ActionResult} from '@/src/entities/models/action-result.model';
 
 export async function getSchedulesMetadataAction(caseId: number, monthYear: string): Promise<SchedulesMetadata> {
     const controller = getInjection('IGetSchedulesMetadataController');
@@ -52,10 +53,10 @@ export async function saveScheduleAction(
     solution: ScheduleSolutionRaw,
     description?: string,
     autoSelect: boolean = false
-): Promise<{ success: boolean }> {
+): Promise<ActionResult> {
     const saveController = getInjection('ISaveScheduleController');
     const result = await saveController({caseId, monthYear, scheduleId, solution, description});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
 
     if (autoSelect) {
         const selectController = getInjection('ISelectScheduleController');
@@ -63,27 +64,23 @@ export async function saveScheduleAction(
     }
 
     revalidatePath('/schedule');
-    return {success: true};
+    return {success: true, data: undefined};
 }
 
-export async function selectScheduleAction(caseId: number, monthYear: string, scheduleId: string): Promise<{
-    success: boolean
-}> {
+export async function selectScheduleAction(caseId: number, monthYear: string, scheduleId: string): Promise<ActionResult> {
     const controller = getInjection('ISelectScheduleController');
     const result = await controller({caseId, monthYear, scheduleId});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/schedule');
-    return {success: true};
+    return {success: true, data: undefined};
 }
 
-export async function deleteScheduleAction(caseId: number, monthYear: string, scheduleId: string): Promise<{
-    success: boolean
-}> {
+export async function deleteScheduleAction(caseId: number, monthYear: string, scheduleId: string): Promise<ActionResult> {
     const controller = getInjection('IDeleteScheduleController');
     const result = await controller({caseId, monthYear, scheduleId});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/schedule');
-    return {success: true};
+    return {success: true, data: undefined};
 }
 
 export async function updateScheduleMetadataAction(
@@ -91,10 +88,10 @@ export async function updateScheduleMetadataAction(
     monthYear: string,
     scheduleId: string,
     updates: { description?: string; comment?: string }
-): Promise<{ success: boolean }> {
+): Promise<ActionResult> {
     const controller = getInjection('IUpdateScheduleMetadataController');
     const result = await controller({caseId, monthYear, scheduleId, updates});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/schedule');
-    return {success: true};
+    return {success: true, data: undefined};
 }

@@ -138,11 +138,14 @@ export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps)
             end: lastDay.getFullYear() + "-" + String(lastDay.getMonth() + 1).padStart(2, '0') + "-" + String(lastDay.getDate()).padStart(2, '0'),
         };
 
-        try {
-            switch (command) {
+        switch (command) {
                 case 'fetch': {
-                    const data = await solverFetch(caseId, monthYear, baseParams);
-                    if (data.job.status === 'completed') {
+                    const result = await solverFetch(caseId, monthYear, baseParams);
+                    if (!result.success) {
+                        toast.error(result.error);
+                        break;
+                    }
+                    if (result.data.job.status === 'completed') {
                         toast.success('Daten erfolgreich von der Datenbank abgerufen');
                         // Update URL with new monthYear after successful fetch
                         if (selectedMonth !== null && selectedYear !== null) {
@@ -154,25 +157,33 @@ export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps)
                             router.push(`${pathname}?${params.toString()}`);
                         }
                     } else {
-                        toast.error('Fehler beim Abrufen der Daten', {description: data.job.consoleOutput});
+                        toast.error('Fehler beim Abrufen der Daten', {description: result.data.job.consoleOutput});
                     }
                     break;
                 }
                 case 'solve': {
-                    const data = await solverSolve(caseId, monthYear, {...baseParams, timeout: parseInt(timeout, 10)});
-                    if (data.job.status === 'completed') {
+                    const result = await solverSolve(caseId, monthYear, {...baseParams, timeout: parseInt(timeout, 10)});
+                    if (!result.success) {
+                        toast.error(result.error);
+                        break;
+                    }
+                    if (result.data.job.status === 'completed') {
                         toast.success('Dienstplan erfolgreich erstellt');
                         setImportParams({caseId, start: baseParams.start, end: baseParams.end, solutionType: 'wdefault'});
                         setShowImportDialog(true);
                     } else {
-                        toast.error('Fehler beim Erstellen des Dienstplans', {description: data.job.consoleOutput});
+                        toast.error('Fehler beim Erstellen des Dienstplans', {description: result.data.job.consoleOutput});
                     }
                     break;
                 }
                 case 'solve-multiple': {
-                    const data = await solverSolveMultiple(caseId, monthYear, {...baseParams, timeout: parseInt(timeout, 10)});
-                    if (data.job.status === 'completed') {
-                        const successCount = data.scheduleInfo.solutionsGenerated;
+                    const result = await solverSolveMultiple(caseId, monthYear, {...baseParams, timeout: parseInt(timeout, 10)});
+                    if (!result.success) {
+                        toast.error(result.error);
+                        break;
+                    }
+                    if (result.data.job.status === 'completed') {
+                        const successCount = result.data.scheduleInfo.solutionsGenerated;
                         const expectedCount = 3;
                         if (successCount === expectedCount) {
                             toast.success(`${successCount} Dienstpläne erfolgreich erstellt`, {description: 'Alle Lösungen können nun importiert werden'});
@@ -181,19 +192,23 @@ export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps)
                         } else {
                             toast.error('Keine Dienstpläne erstellt', {description: 'Der Solver konnte keine FEASIBLE Lösungen finden'});
                         }
-                        setMultipleImportParams({caseId, start: baseParams.start, end: baseParams.end, solutionCount: data.scheduleInfo.solutionsGenerated || 3, feasibleSolutions: data.scheduleInfo.feasibleSolutions});
+                        setMultipleImportParams({caseId, start: baseParams.start, end: baseParams.end, solutionCount: result.data.scheduleInfo.solutionsGenerated || 3, feasibleSolutions: result.data.scheduleInfo.feasibleSolutions});
                         setShowMultipleImportDialog(true);
                     } else {
-                        toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {description: data.job.consoleOutput});
+                        toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {description: result.data.job.consoleOutput});
                     }
                     break;
                 }
                 case 'insert': {
-                    const data = await solverInsert(caseId, monthYear, baseParams);
-                    if (data.job.status === 'completed') {
+                    const result = await solverInsert(caseId, monthYear, baseParams);
+                    if (!result.success) {
+                        toast.error(result.error);
+                        break;
+                    }
+                    if (result.data.job.status === 'completed') {
                         toast.success('Daten erfolgreich in die Datenbank eingefügt');
                     } else {
-                        toast.error('Fehler beim Einfügen der Daten', {description: data.job.consoleOutput});
+                        toast.error('Fehler beim Einfügen der Daten', {description: result.data.job.consoleOutput});
                     }
                     break;
                 }
@@ -202,22 +217,20 @@ export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps)
                         setIsExecuting(false);
                         return;
                     }
-                    const data = await solverDelete(caseId, monthYear, baseParams);
-                    if (data.job.status === 'completed') {
+                    const result = await solverDelete(caseId, monthYear, baseParams);
+                    if (!result.success) {
+                        toast.error(result.error);
+                        break;
+                    }
+                    if (result.data.job.status === 'completed') {
                         toast.success('Daten erfolgreich aus der Datenbank gelöscht');
                     } else {
-                        toast.error('Fehler beim Löschen der Daten', {description: data.job.consoleOutput});
+                        toast.error('Fehler beim Löschen der Daten', {description: result.data.job.consoleOutput});
                     }
                     break;
                 }
             }
-        } catch (error) {
-            toast.error(`Fehler beim Ausführen des ${command}-Befehls`, {
-                description: error instanceof Error ? error.message : String(error),
-            });
-        } finally {
-            setIsExecuting(false);
-        }
+        setIsExecuting(false);
     };
 
     const getCommandIcon = (cmd: SolverCommandType) => {
@@ -430,16 +443,13 @@ export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps)
                     solutionType={importParams.solutionType}
                     onImport={async (params) => {
                         setIsImporting(true);
-                        try {
-                            await importSolution(caseId, monthYear, params);
+                        const result = await importSolution(caseId, monthYear, params);
+                        if (!result.success) {
+                            toast.error(result.error);
+                        } else {
                             toast.success('Lösung erfolgreich importiert');
-                        } catch (error) {
-                            toast.error('Fehler beim Importieren der Lösung', {
-                                description: error instanceof Error ? error.message : String(error),
-                            });
-                        } finally {
-                            setIsImporting(false);
                         }
+                        setIsImporting(false);
                     }}
                     isImporting={isImporting}
                 />
@@ -457,16 +467,13 @@ export function SolverControlPanel({caseId, monthYear}: SolverControlPanelProps)
                     feasibleSolutions={multipleImportParams.feasibleSolutions}
                     onImport={async (params) => {
                         setIsImporting(true);
-                        try {
-                            await importSolution(caseId, monthYear, params);
+                        const result = await importSolution(caseId, monthYear, params);
+                        if (!result.success) {
+                            toast.error(result.error);
+                        } else {
                             toast.success('Lösung erfolgreich importiert');
-                        } catch (error) {
-                            toast.error('Fehler beim Importieren der Lösung', {
-                                description: error instanceof Error ? error.message : String(error),
-                            });
-                        } finally {
-                            setIsImporting(false);
                         }
+                        setIsImporting(false);
                     }}
                     isImporting={isImporting}
                 />

@@ -3,6 +3,7 @@
 import {revalidatePath} from 'next/cache';
 import {getInjection} from '@/di/container';
 import type {GlobalWishesTemplateContent, Template, TemplateSummary} from '@/src/entities/models/template.model';
+import type {ActionResult} from '@/src/entities/models/action-result.model';
 
 export async function listGlobalWishesTemplatesAction(caseId: number): Promise<TemplateSummary[]> {
     const controller = getInjection('IListGlobalWishesTemplatesController');
@@ -11,38 +12,38 @@ export async function listGlobalWishesTemplatesAction(caseId: number): Promise<T
     return result.data;
 }
 
-export async function getGlobalWishesTemplateAction(caseId: number, templateId: string): Promise<Template<GlobalWishesTemplateContent>> {
+export async function getGlobalWishesTemplateAction(caseId: number, templateId: string): Promise<ActionResult<Template<GlobalWishesTemplateContent>>> {
     const controller = getInjection('IGetGlobalWishesTemplateController');
     const result = await controller({caseId, templateId});
-    if ('error' in result) throw new Error(result.error);
-    return result.data;
+    if ('error' in result) return {success: false, error: result.error};
+    return {success: true, data: result.data};
 }
 
-export async function createGlobalWishesTemplateAction(caseId: number, content: GlobalWishesTemplateContent, description: string): Promise<TemplateSummary> {
+export async function createGlobalWishesTemplateAction(caseId: number, content: GlobalWishesTemplateContent, description: string): Promise<ActionResult<TemplateSummary>> {
     const controller = getInjection('ICreateGlobalWishesTemplateController');
     const result = await controller({caseId, content, description});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/templates/global-wishes');
     revalidatePath('/global-wishes-and-blocked');
-    return result.data;
+    return {success: true, data: result.data};
 }
 
 export async function updateGlobalWishesTemplateAction(
     caseId: number,
     templateId: string,
     data: { content?: GlobalWishesTemplateContent; description?: string }
-): Promise<Template<GlobalWishesTemplateContent>> {
+): Promise<ActionResult<Template<GlobalWishesTemplateContent>>> {
     const controller = getInjection('IUpdateGlobalWishesTemplateController');
     const result = await controller({caseId, templateId, data});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/templates/global-wishes');
-    return result.data;
+    return {success: true, data: result.data};
 }
 
-export async function deleteGlobalWishesTemplateAction(caseId: number, templateId: string): Promise<{ success: boolean }> {
+export async function deleteGlobalWishesTemplateAction(caseId: number, templateId: string): Promise<ActionResult> {
     const controller = getInjection('IDeleteGlobalWishesTemplateController');
     const result = await controller({caseId, templateId});
-    if ('error' in result) throw new Error(result.error);
+    if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/templates/global-wishes');
-    return result.data;
+    return {success: true, data: undefined};
 }

@@ -7,6 +7,7 @@ import {Plus} from 'lucide-react';
 import {WishesAndBlockedEmployee} from '@/src/entities/models/wishes-and-blocked.model';
 import {WishesAndBlockedList} from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
 import {WishesAndBlockedDialog} from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
+import {toast} from 'sonner';
 
 import {
     createWishesAction,
@@ -41,10 +42,15 @@ export function WishesAndBlockedPageClient({caseId, monthYear, employees}: Wishe
 
     const handleSubmit = async (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
         startSubmitTransition(async () => {
+            let result;
             if (editingEmployee) {
-                await updateWishesAction(caseId, monthYear, editingEmployee.key, data);
+                result = await updateWishesAction(caseId, monthYear, editingEmployee.key, data);
             } else {
-                await createWishesAction(caseId, monthYear, data);
+                result = await createWishesAction(caseId, monthYear, data);
+            }
+            if (!result.success) {
+                toast.error(result.error);
+                return;
             }
             setDialogOpen(false);
             setEditingEmployee(undefined);
@@ -54,7 +60,10 @@ export function WishesAndBlockedPageClient({caseId, monthYear, employees}: Wishe
     const handleDelete = async (id: number) => {
         if (confirm('Möchtest du diesen Eintrag wirklich löschen?')) {
             startDeleteTransition(async () => {
-                await deleteWishesAction(caseId, monthYear, id);
+                const result = await deleteWishesAction(caseId, monthYear, id);
+                if (!result.success) {
+                    toast.error(result.error);
+                }
             });
         }
     };
