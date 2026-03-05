@@ -5,7 +5,9 @@ import {ScheduleParserService} from '@/lib/services/schedule-parser';
 import {makeValidateConfigUseCase} from '@/src/application/use-cases/solver/validate-config.use-case';
 import {makeExecuteSolverFetchUseCase} from '@/src/application/use-cases/solver/execute-solver-fetch.use-case';
 import {makeExecuteSolverSolveUseCase} from '@/src/application/use-cases/solver/execute-solver-solve.use-case';
-import {makeExecuteSolverSolveMultipleUseCase} from '@/src/application/use-cases/solver/execute-solver-solve-multiple.use-case';
+import {
+    makeExecuteSolverSolveMultipleUseCase
+} from '@/src/application/use-cases/solver/execute-solver-solve-multiple.use-case';
 import {makeExecuteSolverInsertUseCase} from '@/src/application/use-cases/solver/execute-solver-insert.use-case';
 import {makeExecuteSolverDeleteUseCase} from '@/src/application/use-cases/solver/execute-solver-delete.use-case';
 import {makeFindSolutionFileUseCase} from '@/src/application/use-cases/solver/find-solution-file.use-case';
@@ -14,7 +16,9 @@ import {makeImportSolutionUseCase} from '@/src/application/use-cases/solver/impo
 import {makeValidateConfigController} from '@/src/controllers/solver/validate-config.controller';
 import {makeExecuteSolverFetchController} from '@/src/controllers/solver/execute-solver-fetch.controller';
 import {makeExecuteSolverSolveController} from '@/src/controllers/solver/execute-solver-solve.controller';
-import {makeExecuteSolverSolveMultipleController} from '@/src/controllers/solver/execute-solver-solve-multiple.controller';
+import {
+    makeExecuteSolverSolveMultipleController
+} from '@/src/controllers/solver/execute-solver-solve-multiple.controller';
 import {makeExecuteSolverInsertController} from '@/src/controllers/solver/execute-solver-insert.controller';
 import {makeExecuteSolverDeleteController} from '@/src/controllers/solver/execute-solver-delete.controller';
 import {makeFindSolutionFileController} from '@/src/controllers/solver/find-solution-file.controller';

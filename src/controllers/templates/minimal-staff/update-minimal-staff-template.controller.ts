@@ -1,4 +1,6 @@
-import type {IUpdateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
+import type {
+    IUpdateMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
 import type {Template} from '@/src/entities/models/template.model';
 import type {MinimalStaffRequirements} from '@/src/entities/models/minimal-staff.model';
 import {isDomainError} from '@/src/entities/errors/base.errors';

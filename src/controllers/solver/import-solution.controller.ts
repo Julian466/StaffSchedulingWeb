@@ -1,7 +1,10 @@
 import {z} from 'zod';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 import {validateMonthYear} from '@/src/entities/validation/input-validators';
-import type {IImportSolutionUseCase, ImportSolutionResult} from '@/src/application/use-cases/solver/import-solution.use-case';
+import type {
+    IImportSolutionUseCase,
+    ImportSolutionResult
+} from '@/src/application/use-cases/solver/import-solution.use-case';
 
 const InputSchema = z.object({
     caseId: z.number().int().positive(),

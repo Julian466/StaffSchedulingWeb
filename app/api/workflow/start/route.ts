@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { setWorkflowSession } from '@/src/infrastructure/services/workflow-session.service';
+import {NextRequest, NextResponse} from 'next/server';
+import {setWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
 export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);

@@ -1,4 +1,6 @@
-import type {ICreateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
+import type {
+    ICreateWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
 import type {TemplateSummary} from '@/src/entities/models/template.model';
 import type {Weights} from '@/src/entities/models/weights.model';
 import {isDomainError} from '@/src/entities/errors/base.errors';

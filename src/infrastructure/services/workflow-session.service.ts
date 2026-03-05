@@ -1,6 +1,6 @@
-import { cookies } from 'next/headers';
-import { WorkflowState } from '@/src/entities/models/workflow.model';
-import { deriveMonthYear } from '@/lib/utils/case-utils';
+import {cookies} from 'next/headers';
+import {WorkflowState} from '@/src/entities/models/workflow.model';
+import {deriveMonthYear} from '@/lib/utils/case-utils';
 
 export async function getWorkflowSession(): Promise<WorkflowState> {
     const cookieStore = await cookies();

@@ -1,5 +1,7 @@
 import {z} from 'zod';
-import type {IImportGlobalWishesTemplateUseCase} from '@/src/application/use-cases/global-wishes/import-global-wishes-template.use-case';
+import type {
+    IImportGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/global-wishes/import-global-wishes-template.use-case';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 
 const ImportGlobalWishesTemplateInputSchema = z.object({

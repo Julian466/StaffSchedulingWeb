@@ -1,4 +1,6 @@
-import type {IDeleteWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
+import type {
+    IDeleteWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 
 export interface IDeleteWeightsTemplateController {

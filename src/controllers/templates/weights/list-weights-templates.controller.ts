@@ -1,4 +1,6 @@
-import type {IListWeightsTemplatesUseCase} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
+import type {
+    IListWeightsTemplatesUseCase
+} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
 import type {TemplateSummary} from '@/src/entities/models/template.model';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 

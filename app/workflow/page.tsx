@@ -1,5 +1,5 @@
 ﻿import {redirect} from 'next/navigation';
-import {validateConfig, getJobs} from '@/features/solver/solver.actions';
+import {getJobs, validateConfig} from '@/features/solver/solver.actions';
 import {WorkflowPageClient} from './workflow-page-client';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 

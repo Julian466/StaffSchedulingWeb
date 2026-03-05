@@ -5,6 +5,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Button} from '@/components/ui/button';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {ArrowRight, Calendar, CalendarRangeIcon, ClockFading, Users, Wand2} from 'lucide-react';
+
 interface HomePageClientProps {
     caseSearch: string;
     isWorkflowMode: boolean;

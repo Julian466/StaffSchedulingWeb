@@ -1,5 +1,5 @@
 import {SolverPageClient} from './solver-page-client';
-import {validateConfig, getJobs} from '@/features/solver/solver.actions';
+import {getJobs, validateConfig} from '@/features/solver/solver.actions';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
 export default async function SolverPage({

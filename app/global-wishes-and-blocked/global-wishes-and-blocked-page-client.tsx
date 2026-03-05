@@ -26,9 +26,12 @@ import {
 } from '@/features/global_wishes_and_blocked/global-wishes-and-blocked.actions';
 import {SaveTemplateDialog} from '@/components/save-template-dialog';
 import {ImportGlobalWishesTemplateDialog} from '@/components/import-global-wishes-template-dialog';
-import {createGlobalWishesTemplateAction, getGlobalWishesTemplateAction} from '@/features/templates/global-wishes-templates.actions';
+import {
+    createGlobalWishesTemplateAction,
+    getGlobalWishesTemplateAction
+} from '@/features/templates/global-wishes-templates.actions';
 import {Employee} from '@/src/entities/models/employee.model';
-import {GlobalWishesTemplateContent, TemplateSummary, Template} from '@/src/entities/models/template.model';
+import {GlobalWishesTemplateContent, Template, TemplateSummary} from '@/src/entities/models/template.model';
 import {toast} from 'sonner';
 
 interface GlobalWishesAndBlockedPageClientProps {

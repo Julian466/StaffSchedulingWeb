@@ -1,4 +1,6 @@
-import type {IDeleteGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
+import type {
+    IDeleteGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 
 export interface IDeleteGlobalWishesTemplateController {

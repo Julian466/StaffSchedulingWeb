@@ -4,7 +4,6 @@ import {useState} from 'react';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
-import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -22,7 +21,7 @@ import {
     getWeightsTemplateAction,
     updateWeightsTemplateAction,
 } from '@/features/templates/weights-templates.actions';
-import {AlertCircle, Clock, Edit, Eye, FileText, Scale, Trash2,} from 'lucide-react';
+import {Clock, Edit, Eye, FileText, Scale, Trash2,} from 'lucide-react';
 import {formatDistanceToNow} from 'date-fns';
 import {de} from 'date-fns/locale';
 import {TemplateSummary} from '@/src/entities/models/template.model';

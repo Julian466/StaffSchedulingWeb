@@ -1,15 +1,35 @@
 import {createModule} from '@evyweb/ioctopus';
 import {DI_SYMBOLS} from '@/di/types';
-import {makeListGlobalWishesTemplatesUseCase} from '@/src/application/use-cases/templates/global-wishes/list-global-wishes-templates.use-case';
-import {makeGetGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/get-global-wishes-template.use-case';
-import {makeCreateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
-import {makeUpdateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/update-global-wishes-template.use-case';
-import {makeDeleteGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
-import {makeListGlobalWishesTemplatesController} from '@/src/controllers/templates/global-wishes/list-global-wishes-templates.controller';
-import {makeGetGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/get-global-wishes-template.controller';
-import {makeCreateGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/create-global-wishes-template.controller';
-import {makeUpdateGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/update-global-wishes-template.controller';
-import {makeDeleteGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/delete-global-wishes-template.controller';
+import {
+    makeListGlobalWishesTemplatesUseCase
+} from '@/src/application/use-cases/templates/global-wishes/list-global-wishes-templates.use-case';
+import {
+    makeGetGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/get-global-wishes-template.use-case';
+import {
+    makeCreateGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
+import {
+    makeUpdateGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/update-global-wishes-template.use-case';
+import {
+    makeDeleteGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
+import {
+    makeListGlobalWishesTemplatesController
+} from '@/src/controllers/templates/global-wishes/list-global-wishes-templates.controller';
+import {
+    makeGetGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/get-global-wishes-template.controller';
+import {
+    makeCreateGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/create-global-wishes-template.controller';
+import {
+    makeUpdateGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/update-global-wishes-template.controller';
+import {
+    makeDeleteGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/delete-global-wishes-template.controller';
 
 export function createGlobalWishesTemplatesModule() {
     const m = createModule();

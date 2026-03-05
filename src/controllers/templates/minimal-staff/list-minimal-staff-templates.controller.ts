@@ -1,4 +1,6 @@
-import type {IListMinimalStaffTemplatesUseCase} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
+import type {
+    IListMinimalStaffTemplatesUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
 import type {TemplateSummary} from '@/src/entities/models/template.model';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 

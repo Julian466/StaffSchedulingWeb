@@ -1,4 +1,6 @@
-import type {ICreateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
+import type {
+    ICreateGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
 import type {GlobalWishesTemplateContent, TemplateSummary} from '@/src/entities/models/template.model';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 

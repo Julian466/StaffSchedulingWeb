@@ -3,7 +3,9 @@ import {DI_SYMBOLS} from '@/di/types';
 import {
     LowdbGlobalWishesAndBlockedRepository
 } from '@/src/infrastructure/repositories/lowdb-global-wishes-and-blocked.repository';
-import {GlobalWishesTemplateRepositoryAdapter} from '@/src/infrastructure/repositories/global-wishes-template.repository';
+import {
+    GlobalWishesTemplateRepositoryAdapter
+} from '@/src/infrastructure/repositories/global-wishes-template.repository';
 import {makeGetAllGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/get-all-global-wishes.use-case';
 import {
     makeGetGlobalWishesByKeyUseCase

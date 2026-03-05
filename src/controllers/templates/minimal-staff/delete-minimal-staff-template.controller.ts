@@ -1,4 +1,6 @@
-import type {IDeleteMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
+import type {
+    IDeleteMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
 import {isDomainError} from '@/src/entities/errors/base.errors';
 
 export interface IDeleteMinimalStaffTemplateController {

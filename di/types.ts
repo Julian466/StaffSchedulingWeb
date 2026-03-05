@@ -37,7 +37,9 @@ import type {
 import type {ICreateGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/create-global-wishes.use-case';
 import type {IUpdateGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/update-global-wishes.use-case';
 import type {IDeleteGlobalWishesUseCase} from '@/src/application/use-cases/global-wishes/delete-global-wishes.use-case';
-import type {IImportGlobalWishesTemplateUseCase} from '@/src/application/use-cases/global-wishes/import-global-wishes-template.use-case';
+import type {
+    IImportGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/global-wishes/import-global-wishes-template.use-case';
 import type {IGetSchedulesMetadataUseCase} from '@/src/application/use-cases/schedule/get-schedules-metadata.use-case';
 import type {IGetScheduleUseCase} from '@/src/application/use-cases/schedule/get-schedule.use-case';
 import type {ISaveScheduleUseCase} from '@/src/application/use-cases/schedule/save-schedule.use-case';
@@ -52,23 +54,53 @@ import type {ICreateJobUseCase} from '@/src/application/use-cases/jobs/create-jo
 import type {IListCasesUseCase} from '@/src/application/use-cases/cases/list-cases.use-case';
 import type {IGetSelectedScheduleUseCase} from '@/src/application/use-cases/schedule/get-selected-schedule.use-case';
 // Use Case interfaces — Weights Templates
-import type {IListWeightsTemplatesUseCase} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
-import type {IGetWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/get-weights-template.use-case';
-import type {ICreateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
-import type {IUpdateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/update-weights-template.use-case';
-import type {IDeleteWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
+import type {
+    IListWeightsTemplatesUseCase
+} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
+import type {
+    IGetWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/get-weights-template.use-case';
+import type {
+    ICreateWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
+import type {
+    IUpdateWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/update-weights-template.use-case';
+import type {
+    IDeleteWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
 // Use Case interfaces — Minimal Staff Templates
-import type {IListMinimalStaffTemplatesUseCase} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
-import type {IGetMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/get-minimal-staff-template.use-case';
-import type {ICreateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/create-minimal-staff-template.use-case';
-import type {IUpdateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
-import type {IDeleteMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
+import type {
+    IListMinimalStaffTemplatesUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
+import type {
+    IGetMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/get-minimal-staff-template.use-case';
+import type {
+    ICreateMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/create-minimal-staff-template.use-case';
+import type {
+    IUpdateMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
+import type {
+    IDeleteMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
 // Use Case interfaces — Global Wishes Templates
-import type {IListGlobalWishesTemplatesUseCase} from '@/src/application/use-cases/templates/global-wishes/list-global-wishes-templates.use-case';
-import type {IGetGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/get-global-wishes-template.use-case';
-import type {ICreateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
-import type {IUpdateGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/update-global-wishes-template.use-case';
-import type {IDeleteGlobalWishesTemplateUseCase} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
+import type {
+    IListGlobalWishesTemplatesUseCase
+} from '@/src/application/use-cases/templates/global-wishes/list-global-wishes-templates.use-case';
+import type {
+    IGetGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/get-global-wishes-template.use-case';
+import type {
+    ICreateGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/create-global-wishes-template.use-case';
+import type {
+    IUpdateGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/update-global-wishes-template.use-case';
+import type {
+    IDeleteGlobalWishesTemplateUseCase
+} from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
 
 // Use Case interfaces — Solver
 import type {IValidateConfigUseCase} from '@/src/application/use-cases/solver/validate-config.use-case';
@@ -103,7 +135,9 @@ import type {
 import type {ICreateGlobalWishesController} from '@/src/controllers/global-wishes/create-global-wishes.controller';
 import type {IUpdateGlobalWishesController} from '@/src/controllers/global-wishes/update-global-wishes.controller';
 import type {IDeleteGlobalWishesController} from '@/src/controllers/global-wishes/delete-global-wishes.controller';
-import type {IImportGlobalWishesTemplateController} from '@/src/controllers/global-wishes/import-global-wishes-template.controller';
+import type {
+    IImportGlobalWishesTemplateController
+} from '@/src/controllers/global-wishes/import-global-wishes-template.controller';
 import type {IGetSchedulesMetadataController} from '@/src/controllers/schedule/get-schedules-metadata.controller';
 import type {IGetScheduleController} from '@/src/controllers/schedule/get-schedule.controller';
 import type {ISaveScheduleController} from '@/src/controllers/schedule/save-schedule.controller';
@@ -116,23 +150,51 @@ import type {ICreateJobController} from '@/src/controllers/jobs/create-job.contr
 import type {IListCasesController} from '@/src/controllers/cases/list-cases.controller';
 import type {IGetSelectedScheduleController} from '@/src/controllers/schedule/get-selected-schedule.controller';
 // Controller interfaces — Weights Templates
-import type {IListWeightsTemplatesController} from '@/src/controllers/templates/weights/list-weights-templates.controller';
+import type {
+    IListWeightsTemplatesController
+} from '@/src/controllers/templates/weights/list-weights-templates.controller';
 import type {IGetWeightsTemplateController} from '@/src/controllers/templates/weights/get-weights-template.controller';
-import type {ICreateWeightsTemplateController} from '@/src/controllers/templates/weights/create-weights-template.controller';
-import type {IUpdateWeightsTemplateController} from '@/src/controllers/templates/weights/update-weights-template.controller';
-import type {IDeleteWeightsTemplateController} from '@/src/controllers/templates/weights/delete-weights-template.controller';
+import type {
+    ICreateWeightsTemplateController
+} from '@/src/controllers/templates/weights/create-weights-template.controller';
+import type {
+    IUpdateWeightsTemplateController
+} from '@/src/controllers/templates/weights/update-weights-template.controller';
+import type {
+    IDeleteWeightsTemplateController
+} from '@/src/controllers/templates/weights/delete-weights-template.controller';
 // Controller interfaces — Minimal Staff Templates
-import type {IListMinimalStaffTemplatesController} from '@/src/controllers/templates/minimal-staff/list-minimal-staff-templates.controller';
-import type {IGetMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/get-minimal-staff-template.controller';
-import type {ICreateMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/create-minimal-staff-template.controller';
-import type {IUpdateMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/update-minimal-staff-template.controller';
-import type {IDeleteMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/delete-minimal-staff-template.controller';
+import type {
+    IListMinimalStaffTemplatesController
+} from '@/src/controllers/templates/minimal-staff/list-minimal-staff-templates.controller';
+import type {
+    IGetMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/get-minimal-staff-template.controller';
+import type {
+    ICreateMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/create-minimal-staff-template.controller';
+import type {
+    IUpdateMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/update-minimal-staff-template.controller';
+import type {
+    IDeleteMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/delete-minimal-staff-template.controller';
 // Controller interfaces — Global Wishes Templates
-import type {IListGlobalWishesTemplatesController} from '@/src/controllers/templates/global-wishes/list-global-wishes-templates.controller';
-import type {IGetGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/get-global-wishes-template.controller';
-import type {ICreateGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/create-global-wishes-template.controller';
-import type {IUpdateGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/update-global-wishes-template.controller';
-import type {IDeleteGlobalWishesTemplateController} from '@/src/controllers/templates/global-wishes/delete-global-wishes-template.controller';
+import type {
+    IListGlobalWishesTemplatesController
+} from '@/src/controllers/templates/global-wishes/list-global-wishes-templates.controller';
+import type {
+    IGetGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/get-global-wishes-template.controller';
+import type {
+    ICreateGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/create-global-wishes-template.controller';
+import type {
+    IUpdateGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/update-global-wishes-template.controller';
+import type {
+    IDeleteGlobalWishesTemplateController
+} from '@/src/controllers/templates/global-wishes/delete-global-wishes-template.controller';
 
 // Controller interfaces — Solver
 import type {IValidateConfigController} from '@/src/controllers/solver/validate-config.controller';

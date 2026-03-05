@@ -1,16 +1,38 @@
 import {createModule} from '@evyweb/ioctopus';
 import {DI_SYMBOLS} from '@/di/types';
-import {LowdbMinimalStaffTemplateRepository} from '@/src/infrastructure/repositories/lowdb-minimal-staff-template.repository';
-import {makeListMinimalStaffTemplatesUseCase} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
-import {makeGetMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/get-minimal-staff-template.use-case';
-import {makeCreateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/create-minimal-staff-template.use-case';
-import {makeUpdateMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
-import {makeDeleteMinimalStaffTemplateUseCase} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
-import {makeListMinimalStaffTemplatesController} from '@/src/controllers/templates/minimal-staff/list-minimal-staff-templates.controller';
-import {makeGetMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/get-minimal-staff-template.controller';
-import {makeCreateMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/create-minimal-staff-template.controller';
-import {makeUpdateMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/update-minimal-staff-template.controller';
-import {makeDeleteMinimalStaffTemplateController} from '@/src/controllers/templates/minimal-staff/delete-minimal-staff-template.controller';
+import {
+    LowdbMinimalStaffTemplateRepository
+} from '@/src/infrastructure/repositories/lowdb-minimal-staff-template.repository';
+import {
+    makeListMinimalStaffTemplatesUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/list-minimal-staff-templates.use-case';
+import {
+    makeGetMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/get-minimal-staff-template.use-case';
+import {
+    makeCreateMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/create-minimal-staff-template.use-case';
+import {
+    makeUpdateMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/update-minimal-staff-template.use-case';
+import {
+    makeDeleteMinimalStaffTemplateUseCase
+} from '@/src/application/use-cases/templates/minimal-staff/delete-minimal-staff-template.use-case';
+import {
+    makeListMinimalStaffTemplatesController
+} from '@/src/controllers/templates/minimal-staff/list-minimal-staff-templates.controller';
+import {
+    makeGetMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/get-minimal-staff-template.controller';
+import {
+    makeCreateMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/create-minimal-staff-template.controller';
+import {
+    makeUpdateMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/update-minimal-staff-template.controller';
+import {
+    makeDeleteMinimalStaffTemplateController
+} from '@/src/controllers/templates/minimal-staff/delete-minimal-staff-template.controller';
 
 export function createMinimalStaffTemplatesModule() {
     const m = createModule();

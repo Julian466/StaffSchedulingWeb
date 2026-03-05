@@ -1,7 +1,7 @@
 import {randomUUID} from 'crypto';
 import type {ISolverService} from '@/src/application/ports/solver.service';
 import type {IJobRepository} from '@/src/application/ports/job.repository';
-import type {SolveMultipleParams, SolverJob, SolveMultipleScheduleInfo} from '@/src/entities/models/solver.model';
+import type {SolveMultipleParams, SolveMultipleScheduleInfo, SolverJob} from '@/src/entities/models/solver.model';
 
 export type { SolveMultipleScheduleInfo };
 

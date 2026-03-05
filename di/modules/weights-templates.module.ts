@@ -1,16 +1,34 @@
 import {createModule} from '@evyweb/ioctopus';
 import {DI_SYMBOLS} from '@/di/types';
 import {LowdbWeightsTemplateRepository} from '@/src/infrastructure/repositories/lowdb-weights-template.repository';
-import {makeListWeightsTemplatesUseCase} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
-import {makeGetWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/get-weights-template.use-case';
-import {makeCreateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
-import {makeUpdateWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/update-weights-template.use-case';
-import {makeDeleteWeightsTemplateUseCase} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
-import {makeListWeightsTemplatesController} from '@/src/controllers/templates/weights/list-weights-templates.controller';
+import {
+    makeListWeightsTemplatesUseCase
+} from '@/src/application/use-cases/templates/weights/list-weights-templates.use-case';
+import {
+    makeGetWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/get-weights-template.use-case';
+import {
+    makeCreateWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/create-weights-template.use-case';
+import {
+    makeUpdateWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/update-weights-template.use-case';
+import {
+    makeDeleteWeightsTemplateUseCase
+} from '@/src/application/use-cases/templates/weights/delete-weights-template.use-case';
+import {
+    makeListWeightsTemplatesController
+} from '@/src/controllers/templates/weights/list-weights-templates.controller';
 import {makeGetWeightsTemplateController} from '@/src/controllers/templates/weights/get-weights-template.controller';
-import {makeCreateWeightsTemplateController} from '@/src/controllers/templates/weights/create-weights-template.controller';
-import {makeUpdateWeightsTemplateController} from '@/src/controllers/templates/weights/update-weights-template.controller';
-import {makeDeleteWeightsTemplateController} from '@/src/controllers/templates/weights/delete-weights-template.controller';
+import {
+    makeCreateWeightsTemplateController
+} from '@/src/controllers/templates/weights/create-weights-template.controller';
+import {
+    makeUpdateWeightsTemplateController
+} from '@/src/controllers/templates/weights/update-weights-template.controller';
+import {
+    makeDeleteWeightsTemplateController
+} from '@/src/controllers/templates/weights/delete-weights-template.controller';
 
 export function createWeightsTemplatesModule() {
     const m = createModule();
