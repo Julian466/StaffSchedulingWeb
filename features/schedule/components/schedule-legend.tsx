@@ -116,7 +116,7 @@ export function ScheduleLegend() {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-foreground">Alternative Schichten</p>
-                                <p className="text-xs text-muted-foreground">F2_, S2_, N5 – zählen nicht zur
+                                <p className="text-xs text-muted-foreground">F2_, S2_, N5 - zählen nicht zur
                                     Mindestbesetzung</p>
                             </div>
                         </div>

@@ -3,11 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node scripts/dev-with-args.js",
-    "dev:default": "next dev",
+    "dev": "next dev",
     "build": "next build",
-    "start": "node scripts/start-with-args.js",
-    "start:default": "next start",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {

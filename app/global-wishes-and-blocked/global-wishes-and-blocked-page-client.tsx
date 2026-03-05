@@ -96,13 +96,13 @@ export function GlobalWishesAndBlockedPageClient({
     // to delete (or null if none is pending)
     const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
 
-    // user clicked "New entry" – clear any existing editing state
+    // user clicked "New entry" - clear any existing editing state
     const handleCreate = () => {
         setEditingEmployee(undefined);
         setDialogOpen(true);
     };
 
-    // user clicked edit on a row – populate the form with that employee
+    // user clicked edit on a row - populate the form with that employee
     const handleEdit = (employee: WishesAndBlockedEmployee) => {
         setEditingEmployee(employee);
         setDialogOpen(true);
@@ -122,7 +122,7 @@ export function GlobalWishesAndBlockedPageClient({
 
         let key: number;
         if (isEdit) {
-            // editing existing entry – preserve its key
+            // editing existing entry - preserve its key
             key = editingEmployee!.key;
         } else {
             // create: locate the employee by name

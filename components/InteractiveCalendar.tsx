@@ -263,7 +263,7 @@ export function InteractiveCalendar({
                                     >
                                         <div className="mb-1">{day}</div>
 
-                                        {/* Termine anzeigen – pro Kategorie gruppiert */}
+                                        {/* Termine anzeigen - pro Kategorie gruppiert */}
                                         <div className="flex-1 flex flex-wrap gap-1 content-start overflow-hidden">
                                             {allowedEventTitles
                                                 ? // Grouped mode: one badge per eventCategory
@@ -374,7 +374,7 @@ export function InteractiveCalendar({
                                                 </div>
                                             </div>
 
-                                            {/* Schichten – eingeschränkte Auswahl (F/S/N) */}
+                                            {/* Schichten - eingeschränkte Auswahl (F/S/N) */}
                                             {allowedEventTitles && !readOnly && eventCategories.length > 0 && (
                                                 <div className="space-y-3">
                                                     <Label>Schichten</Label>
@@ -444,7 +444,7 @@ export function InteractiveCalendar({
                                                 </div>
                                             )}
 
-                                            {/* Termine – freie Eingabe (Fallback wenn kein allowedEventTitles) */}
+                                            {/* Termine - freie Eingabe (Fallback wenn kein allowedEventTitles) */}
                                             {!allowedEventTitles && (
                                                 <div>
                                                     <Label>Termine</Label>
@@ -521,7 +521,7 @@ export function InteractiveCalendar({
                                                 </div>
                                             )}
 
-                                            {/* Termine Liste – auch bei allowedEventTitles readOnly zeigen */}
+                                            {/* Termine Liste - auch bei allowedEventTitles readOnly zeigen */}
                                             {allowedEventTitles && readOnly && data.events.length > 0 && (
                                                 <div>
                                                     <Label>Schichten</Label>
@@ -557,7 +557,7 @@ export function InteractiveCalendar({
                                         </div>
                                     )}
 
-                                    {/* Termin hinzufügen Modus – nur bei freier Eingabe */}
+                                    {/* Termin hinzufügen Modus - nur bei freier Eingabe */}
                                     {!allowedEventTitles && popoverMode[date] === "add-event" && selectedEventCategory[date] && (
                                         <div className="space-y-4">
                                             <div className="text-sm text-gray-600">
