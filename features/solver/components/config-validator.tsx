@@ -1,7 +1,7 @@
 'use client';
 
 import {useState, useTransition} from 'react';
-import {validateConfig} from '@/features/solver/solver.actions';
+import {checkSolverHealth} from '@/features/solver/solver.actions';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
 import {Button} from '@/components/ui/button';
 import {AlertCircle, CheckCircle2, Loader2, XCircle} from 'lucide-react';
@@ -18,7 +18,7 @@ export function ConfigValidator({initialData}: ConfigValidatorProps) {
 
     const refetch = () => {
         startRefetchTransition(async () => {
-            const result = await validateConfig();
+            const result = await checkSolverHealth();
             if (!result.success) {
                 setIsError(true);
                 return;

@@ -1,5 +1,5 @@
 import {SolverPageClient} from './solver-page-client';
-import {getJobs, validateConfig} from '@/features/solver/solver.actions';
+import {getJobs, checkSolverHealth} from '@/features/solver/solver.actions';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
 export default async function SolverPage({
@@ -24,7 +24,7 @@ export default async function SolverPage({
     }
 
     const [configResult, jobsData] = await Promise.all([
-        validateConfig(),
+        checkSolverHealth(),
         getJobs(caseId, monthYear).catch(() => ({jobs: []})),
     ]);
     const configValidation = configResult.success ? configResult.data : null;

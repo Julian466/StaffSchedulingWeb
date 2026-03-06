@@ -4,7 +4,6 @@ import {useEffect, useRef, useState} from 'react';
 import {toast} from 'sonner';
 import {
     importSolution,
-    saveSolution,
     solverDelete,
     solverFetch,
     solverInsert,
@@ -194,18 +193,9 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
         }
     }
 
-    async function executeInsert(opts: SolverExecOptions, withSave = false): Promise<SolverOperationResult> {
+    async function executeInsert(opts: SolverExecOptions): Promise<SolverOperationResult> {
         startExecution(60_000);
         try {
-            if (withSave) {
-                toast.info('Speichere ausgewählten Dienstplan vor dem Export...');
-                const saveResult = await saveSolution(opts.caseId, opts.monthYear, opts.start, opts.end);
-                if (!saveResult.success) {
-                    toast.error(saveResult.error);
-                    return {succeeded: false};
-                }
-                toast.success(`Dienstplan gespeichert als ${saveResult.data.filename}`);
-            }
             const result = await solverInsert(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
                 start: opts.start,

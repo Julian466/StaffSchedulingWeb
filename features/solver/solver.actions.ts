@@ -11,14 +11,14 @@ import type {
     SolveMultipleParams,
     SolveMultipleScheduleInfo,
     SolveParams,
-    SolverConfigResult,
     SolverJob,
 } from '@/src/entities/models/solver.model';
 import type {ActionResult} from '@/src/entities/models/action-result.model';
+import {SolverHealthResult} from "@/src/application/ports/solver.service";
 
-export async function validateConfig(): Promise<ActionResult<SolverConfigResult>> {
-    const controller = getInjection('IValidateConfigController');
-    const result = controller();
+export async function checkSolverHealth(): Promise<ActionResult<SolverHealthResult >> {
+    const controller = getInjection('ICheckSolverHealthController');
+    const result = await controller();
     if ('error' in result) return {success: false, error: result.error};
     return {success: true, data: result.data};
 }
@@ -85,27 +85,6 @@ export async function solverDelete(
     if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/solver');
     revalidatePath('/workflow');
-    return {success: true, data: result.data};
-}
-
-export async function findSolutionFile(
-    filename: string
-): Promise<ActionResult<{ exists: boolean; path?: string }>> {
-    const controller = getInjection('IFindSolutionFileController');
-    const result = controller({filename});
-    if ('error' in result) return {success: false, error: result.error};
-    return {success: true, data: result.data};
-}
-
-export async function saveSolution(
-    caseId: number,
-    monthYear: string,
-    start: string,
-    end: string
-): Promise<ActionResult<SaveSolutionResult>> {
-    const controller = getInjection('ISaveSolutionController');
-    const result = await controller({caseId, monthYear, start, end});
-    if ('error' in result) return {success: false, error: result.error};
     return {success: true, data: result.data};
 }
 

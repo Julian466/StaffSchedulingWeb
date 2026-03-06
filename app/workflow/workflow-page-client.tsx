@@ -1,6 +1,6 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
@@ -24,7 +24,6 @@ import {
     CheckCircle2,
     Download,
     Edit,
-    FileCheck,
     FolderOpen,
     Loader2,
     Play,
@@ -36,7 +35,7 @@ import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
-import {findSolutionFile, getJobs} from '@/features/solver/solver.actions';
+import {getJobs} from '@/features/solver/solver.actions';
 import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
 import type {SolverConfigResult, SolverJob} from '@/src/entities/models/solver.model';
 
@@ -70,8 +69,6 @@ export function WorkflowPageClient({
 }: WorkflowPageClientProps) {
     const router = useRouter();
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
-    const [solutionExists, setSolutionExists] = useState<boolean | null>(null);
-    const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [showFetchWarning, setShowFetchWarning] = useState(false);
     const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
     const [pendingAction, setPendingAction] = useState<'solve' | 'multi-solve' | null>(null);
@@ -111,15 +108,6 @@ export function WorkflowPageClient({
         handleImport,
     } = useSolverOperations({onAfterOperation: refreshJobs});
 
-    // Check if solution file exists for delete button indicator
-    useEffect(() => {
-        if (!initialConfig?.staffSchedulingPath) return;
-        const filename = `solution_${caseId}_${isoStart}-${isoEnd}.json`;
-        findSolutionFile(filename)
-            .then((result) => setSolutionExists(result.success ? result.data.exists : false))
-            .catch(() => setSolutionExists(false));
-    }, [caseId, isoStart, isoEnd, initialConfig]);
-
     const execOpts = {caseId, monthYear, start: isoStart, end: isoEnd};
 
     const runAction = async (action: WorkflowAction, timeout?: number) => {
@@ -130,7 +118,6 @@ export function WorkflowPageClient({
                 case 'delete': {
                     const r = await executeDelete(execOpts);
                     succeeded = r.succeeded;
-                    if (succeeded) setSolutionExists(false);
                     break;
                 }
                 case 'fetch': {
@@ -149,7 +136,7 @@ export function WorkflowPageClient({
                     break;
                 }
                 case 'insert': {
-                    const r = await executeInsert(execOpts, true);
+                    const r = await executeInsert(execOpts);
                     succeeded = r.succeeded;
                     break;
                 }
@@ -166,10 +153,6 @@ export function WorkflowPageClient({
     const executeAction = (action: WorkflowAction) => {
         if (action === 'edit-wishes') {
             router.push(`/wishes-and-blocked?caseId=${caseId}&monthYear=${monthYear}`);
-            return;
-        }
-        if (action === 'delete' && !solutionExists) {
-            setShowDeleteWarning(true);
             return;
         }
         if (action === 'fetch') {
@@ -302,7 +285,6 @@ export function WorkflowPageClient({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {actions.map((action) => {
                     const state = actionStates[action];
-                    const isDelete = action === 'delete';
 
                     return (
                         <Card
@@ -327,28 +309,6 @@ export function WorkflowPageClient({
                                 </div>
                             </CardHeader>
                             <CardContent>
-                                {isDelete && solutionExists !== null && (
-                                    <Alert className={solutionExists
-                                        ? 'mb-4 border-green-200 bg-green-50'
-                                        : 'mb-4 border-amber-200 bg-amber-50'}>
-                                        {solutionExists ? (
-                                            <>
-                                                <FileCheck className="h-4 w-4 text-green-600"/>
-                                                <AlertDescription className="text-green-800">
-                                                    Dienstplan-Datei gefunden
-                                                </AlertDescription>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <AlertTriangle className="h-4 w-4 text-amber-600"/>
-                                                <AlertDescription className="text-amber-800">
-                                                    Keine Dienstplan-Datei gefunden. Bestätigung erforderlich.
-                                                </AlertDescription>
-                                            </>
-                                        )}
-                                    </Alert>
-                                )}
-
                                 {state.message && (
                                     <Alert className="mb-4" variant={state.status === 'error' ? 'destructive' : 'default'}>
                                         <AlertDescription>{state.message}</AlertDescription>
@@ -377,32 +337,6 @@ export function WorkflowPageClient({
                 <JobHistoryTable jobs={jobs}/>
             </div>
 
-            {/* Delete Warning Dialog */}
-            <AlertDialog open={showDeleteWarning} onOpenChange={setShowDeleteWarning}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
-                            Keine Dienstplan-Datei gefunden
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Es wurde keine exportierte Dienstplan-Datei für Case {caseId} im
-                            Zeitraum {formatDate(startDate)} bis {formatDate(endDate)} gefunden.
-                            <br/><br/>
-                            Möchten Sie trotzdem fortfahren und den Delete-Befehl ausführen?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => {
-                            setShowDeleteWarning(false);
-                            runAction('delete');
-                        }}>
-                            Trotzdem ausführen
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
 
             {/* Fetch Warning Dialog */}
             <AlertDialog open={showFetchWarning} onOpenChange={setShowFetchWarning}>

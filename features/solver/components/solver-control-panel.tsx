@@ -104,7 +104,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocke
                 await executeSolveMultiple(execOpts, parseInt(timeout, 10));
                 break;
             case 'insert':
-                await executeInsert(execOpts, false);
+                await executeInsert(execOpts);
                 break;
             case 'delete': {
                 if (!confirm('Möchten Sie wirklich alle Daten für diesen Zeitraum löschen?')) return;

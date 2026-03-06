@@ -1,20 +1,25 @@
-import {randomUUID} from 'crypto';
-import type {ISolverService} from '@/src/application/ports/solver.service';
-import type {IJobRepository} from '@/src/application/ports/job.repository';
-import type {InsertParams, SolverJob} from '@/src/entities/models/solver.model';
+import { randomUUID } from 'crypto';
+import type { ISolverService } from '@/src/application/ports/solver.service';
+import type { IJobRepository } from '@/src/application/ports/job.repository';
+import type { InsertParams, SolverJob } from '@/src/entities/models/solver.model';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 export interface IExecuteSolverInsertUseCase {
-    (input: { caseId: number; monthYear: string; params: InsertParams }): Promise<{ job: SolverJob }>;
+    (input: {
+        caseId: number;
+        monthYear: string;
+        params: InsertParams;
+        solution?: ScheduleSolutionRaw; // API braucht es, CLI ignoriert es
+    }): Promise<{ job: SolverJob }>;
 }
 
 export function makeExecuteSolverInsertUseCase(
     solverService: ISolverService,
     jobRepository: IJobRepository
 ): IExecuteSolverInsertUseCase {
-    return async ({caseId, monthYear, params}) => {
+    return async ({ caseId, monthYear, params, solution }) => {
         const startTime = Date.now();
-        const result = solverService.runInsert(params);
-        const duration = Date.now() - startTime;
+        const result = await solverService.insertSolution(params, solution);
 
         const job: SolverJob = {
             id: randomUUID(),
@@ -22,19 +27,18 @@ export function makeExecuteSolverInsertUseCase(
             status: result.success ? 'completed' : 'failed',
             caseId,
             params,
-            consoleOutput: result.consoleOutput,
-            exitCode: result.exitCode,
+            error: result.error,
             createdAt: new Date(startTime).toISOString(),
             completedAt: new Date().toISOString(),
-            duration,
+            duration: result.duration,
         };
 
         await jobRepository.create(caseId, monthYear, job);
 
         if (!result.success) {
-            throw new Error(`Insert command failed: ${result.consoleOutput}`);
+            throw new Error(`Insert failed: ${result.error}`);
         }
 
-        return {job};
+        return { job };
     };
 }

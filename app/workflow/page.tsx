@@ -1,5 +1,5 @@
 ﻿import {redirect} from 'next/navigation';
-import {getJobs, validateConfig} from '@/features/solver/solver.actions';
+import {getJobs, checkSolverHealth} from '@/features/solver/solver.actions';
 import {WorkflowPageClient} from './workflow-page-client';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
@@ -27,7 +27,7 @@ export default async function WorkflowPage() {
     const isoEnd = convertToISODate(endDate);
 
     const [configResult, jobsData] = await Promise.all([
-        validateConfig(),
+        checkSolverHealth(),
         getJobs(caseId, monthYear).catch(() => ({jobs: []})),
     ]);
     const initialConfig = configResult.success ? configResult.data : null;

@@ -39,7 +39,10 @@ export function makeImportSolutionUseCase(
 
         let solution;
         try {
-            solution = solverService.readProcessedSolutionFile(filename);
+            // Not implemented yet:
+            // TODO: Implementiere die Logik zum Einlesen der Lösung aus der Datei. Aktuell wird eine Fehlermeldung geworfen, da dies noch nicht implementiert ist.
+            throw new Error("Import Solution not implemented.");
+            //solution = solverService.readProcessedSolutionFile(filename);
         } catch {
             throw new Error(`Solution file not found. Expected file: ${filename}`);
         }
