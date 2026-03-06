@@ -1,4 +1,4 @@
-import {WishesAndBlockedEmployee} from "@/types/wishes-and-blocked";
+import {WishesAndBlockedEmployee} from "@/src/entities/models/wishes-and-blocked.model";
 
 export function getDaysByWeekday(year?: number, month?: number): number[][] {
     const today = new Date();
@@ -11,7 +11,7 @@ export function getDaysByWeekday(year?: number, month?: number): number[][] {
     const daysInMonth = new Date(y, m, 0).getDate();
 
     // Ergebnis: 0 = Montag, 1 = Dienstag, ..., 6 = Sonntag
-    const result: number[][] = Array.from({ length: 7 }, () => []);
+    const result: number[][] = Array.from({length: 7}, () => []);
 
     for (let d = 1; d <= daysInMonth; d++) {
         const jsWeekday = new Date(y, m - 1, d).getDay(); // 0 = Sonntag, 1 = Montag, ..., 6 = Samstag

@@ -1,105 +1,25 @@
-'use client';
+import {WishesAndBlockedPageClient} from './wishes-and-blocked-page-client';
+import {getAllWishesAction} from '@/features/wishes_and_blocked/wishes-and-blocked.actions';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Plus } from 'lucide-react';
-import { WishesAndBlockedEmployee } from '@/types/wishes-and-blocked';
-import { WishesAndBlockedList } from '@/features/wishes_and_blocked/components/wishes-and-blocked-list';
-import { WishesAndBlockedDialog } from '@/features/wishes_and_blocked/components/wishes-and-blocked-dialog';
+export default async function WishesAndBlockedPage({
+                                                       searchParams,
+                                                   }: {
+    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+}) {
+    const {caseId: caseIdStr, monthYear} = await searchParams;
 
-import {
-  useWishesAndBlocked,
-  useCreateWishesAndBlocked,
-  useUpdateWishesAndBlocked,
-  useDeleteWishesAndBlocked,
-} from '@/features/wishes_and_blocked/hooks/use-wishes-and-blocked';
-
-export default function WishesAndBlockedPage() {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEmployee, setEditingEmployee] = useState<WishesAndBlockedEmployee | undefined>();
-
-  // TanStack Query Hooks
-  const { data: employees = [], isLoading } = useWishesAndBlocked();
-  
-  // Get list of employee keys that already have wishes
-  const existingEmployeeKeys = employees.map(emp => emp.key);
-  const createMutation = useCreateWishesAndBlocked();
-  const updateMutation = useUpdateWishesAndBlocked();
-  const deleteMutation = useDeleteWishesAndBlocked();
-
-  const handleCreate = () => {
-    setEditingEmployee(undefined);
-    setDialogOpen(true);
-  };
-
-  const handleEdit = (employee: WishesAndBlockedEmployee) => {
-    setEditingEmployee(employee);
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = async (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
-    if (editingEmployee) {
-      // Update
-      await updateMutation.mutateAsync({
-        id: editingEmployee.key,
-        data,
-      });
-    } else {
-      // Create
-      await createMutation.mutateAsync(data);
+    if (!caseIdStr || !monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
     }
-    setDialogOpen(false);
-    setEditingEmployee(undefined);
-  };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Möchtest du diesen Eintrag wirklich löschen?')) {
-      await deleteMutation.mutateAsync(id);
+    const caseId = Number(caseIdStr);
+    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
     }
-  };
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+    const employees = await getAllWishesAction(caseId, monthYear);
 
-  return (
-    <div className="py-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Wünsche & Blockierungen</CardTitle>
-              <CardDescription>
-                Verwalte Wunsch-Tage, Wunsch-Schichten, blockierte Tage und blockierte Schichten für Mitarbeiter
-              </CardDescription>
-            </div>
-            <Button onClick={handleCreate}>
-              <Plus className="mr-2 h-4 w-4" />
-              Neuer Eintrag
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Lädt...</div>
-          ) : (
-            <WishesAndBlockedList
-              employees={employees}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              isDeleting={deleteMutation.isPending}
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <WishesAndBlockedDialog
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-        employee={editingEmployee}
-        onSubmit={handleSubmit}
-        isSubmitting={isSubmitting}
-        excludedEmployeeKeys={existingEmployeeKeys}
-      />
-    </div>
-  );
+    return <WishesAndBlockedPageClient caseId={caseId} monthYear={monthYear} employees={employees}/>;
 }

@@ -1,92 +1,25 @@
-'use client';
+import {MinimalStaffPageClient} from './minimal-staff-page-client';
+import {getMinimalStaffAction} from '@/features/minimal-staff/minimal-staff.actions';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { MinimalStaffEditor } from '@/features/minimal-staff/components/minimal-staff-editor';
-import { useMinimalStaff, useUpdateMinimalStaff } from '@/features/minimal-staff/hooks/use-minimal-staff';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, UserCog, CheckCircle2 } from 'lucide-react';
+export default async function MinimalStaffPage({
+                                                   searchParams,
+                                               }: {
+    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+}) {
+    const {caseId: caseIdStr, monthYear} = await searchParams;
 
-export default function MinimalStaffPage() {
-  const { data: requirements, isLoading, error } = useMinimalStaff();
-  const { mutate: updateRequirements, isPending } = useUpdateMinimalStaff();
+    if (!caseIdStr || !monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  if (error) {
-    return (
-      <div className="py-6 space-y-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Fehler beim Laden</AlertTitle>
-          <AlertDescription>
-            Die Mindestbesetzung konnte nicht geladen werden. Bitte versuchen Sie es später erneut.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+    const caseId = Number(caseIdStr);
+    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  if (isLoading) {
-    return (
-      <div className="py-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <UserCog className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Mindestbesetzung</CardTitle>
-                <CardDescription>
-                  Definieren Sie die minimale Anzahl von Mitarbeitern pro Kategorie, Wochentag und Schicht
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-[400px] w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    const requirements = await getMinimalStaffAction(caseId, monthYear);
 
-  return (
-    <div className="py-6 space-y-4">
-      {/* Info Banner */}
-      <Alert>
-        <CheckCircle2 className="h-4 w-4" />
-        <AlertTitle>Personalplanung optimieren</AlertTitle>
-        <AlertDescription>
-          Legen Sie hier fest, wie viele Mitarbeiter jeder Kategorie mindestens pro Schicht eingeplant werden müssen.
-          Diese Vorgaben werden bei der automatischen Dienstplanerstellung berücksichtigt.
-        </AlertDescription>
-      </Alert>
-
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <UserCog className="h-6 w-6 text-primary" />
-            </div>
-            <div>
-              <CardTitle>Mindestbesetzung konfigurieren</CardTitle>
-              <CardDescription>
-                Verwalten Sie die Mindestanforderungen für alle Mitarbeiterkategorien
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {requirements && (
-            <MinimalStaffEditor
-              requirements={requirements}
-              onSave={updateRequirements}
-              isSaving={isPending}
-            />
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+    return <MinimalStaffPageClient caseId={caseId} monthYear={monthYear} requirements={requirements}/>;
 }

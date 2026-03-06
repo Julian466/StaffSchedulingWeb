@@ -1,231 +1,237 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { Weights, WEIGHT_METADATA } from '@/types/weights';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Info, Download, Upload, Save } from 'lucide-react';
+import {useEffect, useMemo, useState} from 'react';
+import {WEIGHT_METADATA, Weights} from '@/src/entities/models/weights.model';
+import {Label} from '@/components/ui/label';
+import {Input} from '@/components/ui/input';
+import {Button} from '@/components/ui/button';
+import {Info, Save, Upload} from 'lucide-react';
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,} from '@/components/ui/tooltip';
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { SaveTemplateDialog } from '@/components/save-template-dialog';
-import { ImportTemplateDialog } from '@/components/import-template-dialog';
+import {SaveTemplateDialog} from '@/components/save-template-dialog';
+import {ImportTemplateDialog} from '@/components/import-template-dialog';
 import {
-  useWeightTemplates,
-  useCreateWeightTemplate,
-  useWeightTemplate,
-} from '@/features/weights/hooks/use-weight-templates';
+    createWeightsTemplateAction,
+    getWeightsTemplateAction,
+    listWeightsTemplatesAction,
+} from '@/features/templates/weights-templates.actions';
+import {TemplateSummary} from '@/src/entities/models/template.model';
+import {useSearchParams} from 'next/navigation';
+import {toast} from 'sonner';
 
 interface WeightsEditorProps {
-  weights: Weights;
-  onSave: (weights: Weights) => void;
-  isSaving?: boolean;
+    weights: Weights;
+    onSave: (weights: Weights) => void;
+    isSaving?: boolean;
 }
 
 /**
  * Component for editing solver weight configurations.
  * Provides numeric inputs (no fixed min/max) for all weight values.
  */
-export function WeightsEditor({ weights, onSave, isSaving }: WeightsEditorProps) {
-  const [editedWeights, setEditedWeights] = useState<Weights>(weights);
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
-  const [importConfirmed, setImportConfirmed] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+export function WeightsEditor({weights, onSave, isSaving}: WeightsEditorProps) {
+    const searchParams = useSearchParams();
+    const caseId = parseInt(searchParams.get('caseId') ?? '0', 10);
+    const [editedWeights, setEditedWeights] = useState<Weights>(weights);
+    const [saveDialogOpen, setSaveDialogOpen] = useState(false);
+    const [importDialogOpen, setImportDialogOpen] = useState(false);
+    const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+    const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+    const [templates, setTemplates] = useState<TemplateSummary[]>([]);
+    const [isCreating, setIsCreating] = useState(false);
 
-  const { data: templates = [] } = useWeightTemplates();
-  const { mutate: createTemplate, isPending: isCreating } = useCreateWeightTemplate();
-  const { data: templateToImport } = useWeightTemplate(selectedTemplateId);
+    // Fetch templates on mount
+    useEffect(() => {
+        if (!caseId) return;
+        listWeightsTemplatesAction(caseId)
+            .then(setTemplates)
+            .catch(() => setTemplates([]));
+    }, [caseId]);
 
-  // Update local state when props change (deferred to avoid synchronous setState in effect)
-  useEffect(() => {
-    if (JSON.stringify(weights) !== JSON.stringify(editedWeights)) {
-      Promise.resolve().then(() => setEditedWeights(weights));
-    }
-  }, [weights]);
+    // Update local state when props change (deferred to avoid synchronous setState in effect)
+    useEffect(() => {
+        if (JSON.stringify(weights) !== JSON.stringify(editedWeights)) {
+            Promise.resolve().then(() => setEditedWeights(weights));
+        }
+    }, [weights]);
+    // Derived flag: are there unsaved changes?
+    const hasChanges = useMemo(() => JSON.stringify(weights) !== JSON.stringify(editedWeights), [weights, editedWeights]);
 
-  // Perform import only after user confirmed
-  useEffect(() => {
-    if (templateToImport && importConfirmed) {
-      // Defer state updates to avoid synchronous setState inside effect
-      Promise.resolve().then(() => {
-        setEditedWeights(templateToImport.content);
-        setImportConfirmOpen(false);
-        setImportConfirmed(false);
-        setSelectedTemplateId(null);
+    const handleWeightChange = (key: keyof Weights, value: number) => {
+        // No enforced min/max for weights — accept the provided numeric value as-is
+        setEditedWeights(prev => ({
+            ...prev,
+            [key]: value,
+        }));
+    };
+
+    const handleSave = () => {
+        onSave(editedWeights);
+    };
+
+    const handleReset = () => {
+        setEditedWeights(weights);
+    };
+
+    const handleSaveAsTemplate = async (description: string) => {
+        setIsCreating(true);
+        const result = await createWeightsTemplateAction(caseId, editedWeights, description);
+        if (!result.success) {
+            toast.error(result.error);
+            setIsCreating(false);
+            return;
+        }
+        setSaveDialogOpen(false);
+        // Refresh template list
+        const updated = await listWeightsTemplatesAction(caseId);
+        setTemplates(updated);
+        toast.success('Template gespeichert');
+        setIsCreating(false);
+    };
+
+    const handleImportTemplate = (templateId: string) => {
+        setSelectedTemplateId(templateId);
         setImportDialogOpen(false);
-      });
-    }
-  }, [templateToImport, importConfirmed]);
-  // Derived flag: are there unsaved changes?
-  const hasChanges = useMemo(() => JSON.stringify(weights) !== JSON.stringify(editedWeights), [weights, editedWeights]);
+        // Open confirmation dialog but do NOT perform import yet
+        setImportConfirmOpen(true);
+    };
 
-  const handleWeightChange = (key: keyof Weights, value: number) => {
-    // No enforced min/max for weights — accept the provided numeric value as-is
-    setEditedWeights(prev => ({
-      ...prev,
-      [key]: value,
-    }));
-  };
+    const confirmImport = async () => {
+        if (!selectedTemplateId) return;
+        try {
+            const result = await getWeightsTemplateAction(caseId, selectedTemplateId);
+            if (!result.success) {
+                toast.error(result.error);
+                return;
+            }
+            setEditedWeights(result.data.content);
+        } finally {
+            setImportConfirmOpen(false);
+            setSelectedTemplateId(null);
+        }
+    };
 
-  const handleSave = () => {
-    onSave(editedWeights);
-  };
+    return (
+        <div className="space-y-3">
+            {WEIGHT_METADATA.map((metadata) => {
+                const value = editedWeights[metadata.key];
 
-  const handleReset = () => {
-    setEditedWeights(weights);
-  };
+                return (
+                    <div key={metadata.key} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
+                        <div className="flex items-center justify-between gap-4 mb-2">
+                            <div className="flex items-center gap-2 flex-1">
+                                <Label className="font-medium text-sm">{metadata.label}</Label>
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help"/>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-xs">
+                                            <p className="text-xs">{metadata.description}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            </div>
+                            <div className="w-28 sm:w-24 md:w-28">
+                                <Input
+                                    type="number"
+                                    inputMode="numeric"
+                                    value={value}
+                                    onChange={(e) => handleWeightChange(metadata.key, parseInt(e.target.value) || 0)}
+                                    className="w-full text-center h-8 text-sm"
+                                />
+                            </div>
+                        </div>
 
-  const handleSaveAsTemplate = (description: string) => {
-    createTemplate(
-      { content: editedWeights, description },
-      {
-        onSuccess: () => {
-          setSaveDialogOpen(false);
-        },
-      }
-    );
-  };
+                    </div>
+                );
+            })}
 
-  const handleImportTemplate = (templateId: string) => {
-    setSelectedTemplateId(templateId);
-    setImportDialogOpen(false);
-    // Open confirmation dialog but do NOT perform import yet
-    setImportConfirmOpen(true);
-  };
-
-  const confirmImport = () => {
-    // User confirmed: set flag which triggers the actual import in useEffect
-    setImportConfirmed(true);
-  };
-
-  return (
-    <div className="space-y-3">
-      {WEIGHT_METADATA.map((metadata) => {
-        const value = editedWeights[metadata.key];
-        
-        return (
-          <div key={metadata.key} className="border rounded-lg p-4 hover:bg-accent/5 transition-colors">
-            <div className="flex items-center justify-between gap-4 mb-2">
-              <div className="flex items-center gap-2 flex-1">
-                <Label className="font-medium text-sm">{metadata.label}</Label>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="max-w-xs">
-                      <p className="text-xs">{metadata.description}</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
-              <div className="w-28 sm:w-24 md:w-28">
-                <Input
-                  type="number"
-                  inputMode="numeric"
-                  value={value}
-                  onChange={(e) => handleWeightChange(metadata.key, parseInt(e.target.value) || 0)}
-                  className="w-full text-center h-8 text-sm"
-                />
-              </div>
+            <div className="flex gap-2 justify-between pt-4 border-t sticky bottom-0 bg-background py-3">
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={() => setImportDialogOpen(true)}
+                        disabled={isSaving}
+                        size="sm"
+                    >
+                        <Upload className="mr-2 h-4 w-4"/>
+                        Template laden
+                    </Button>
+                    <Button
+                        variant="outline"
+                        onClick={() => setSaveDialogOpen(true)}
+                        disabled={isSaving}
+                        size="sm"
+                    >
+                        <Save className="mr-2 h-4 w-4"/>
+                        Als Template speichern
+                    </Button>
+                </div>
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        onClick={handleReset}
+                        disabled={!hasChanges || isSaving}
+                        size="sm"
+                    >
+                        Zurücksetzen
+                    </Button>
+                    <Button
+                        onClick={handleSave}
+                        disabled={!hasChanges || isSaving}
+                        size="sm"
+                    >
+                        {isSaving ? 'Speichern...' : 'Speichern'}
+                    </Button>
+                </div>
             </div>
 
-          </div>
-        );
-      })}
+            <SaveTemplateDialog
+                open={saveDialogOpen}
+                onOpenChange={setSaveDialogOpen}
+                onSave={handleSaveAsTemplate}
+                isSaving={isCreating}
+                title="Gewichtungen als Template speichern"
+                descriptionPlaceholder="z.B. 'Standardkonfiguration für Nachtschichten' oder 'Optimiert für Wochenenden'"
+            />
 
-      <div className="flex gap-2 justify-between pt-4 border-t sticky bottom-0 bg-background py-3">
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setImportDialogOpen(true)}
-            disabled={isSaving}
-            size="sm"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Template laden
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setSaveDialogOpen(true)}
-            disabled={isSaving}
-            size="sm"
-          >
-            <Save className="mr-2 h-4 w-4" />
-            Als Template speichern
-          </Button>
+            <ImportTemplateDialog
+                open={importDialogOpen}
+                onOpenChange={setImportDialogOpen}
+                templates={templates}
+                onImport={handleImportTemplate}
+                title="Gewichtungs-Template laden"
+            />
+
+            <AlertDialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Template laden?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Die aktuellen Gewichtungen werden durch das gewählte Template ersetzt.
+                            Nicht gespeicherte Änderungen gehen verloren. Möchten Sie fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setSelectedTemplateId(null)}>
+                            Abbrechen
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={confirmImport}>
+                            Laden
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={handleReset}
-            disabled={!hasChanges || isSaving}
-            size="sm"
-          >
-            Zurücksetzen
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!hasChanges || isSaving}
-            size="sm"
-          >
-            {isSaving ? 'Speichern...' : 'Speichern'}
-          </Button>
-        </div>
-      </div>
-
-      <SaveTemplateDialog
-        open={saveDialogOpen}
-        onOpenChange={setSaveDialogOpen}
-        onSave={handleSaveAsTemplate}
-        isSaving={isCreating}
-        title="Gewichtungen als Template speichern"
-        descriptionPlaceholder="z.B. 'Standardkonfiguration für Nachtschichten' oder 'Optimiert für Wochenenden'"
-      />
-
-      <ImportTemplateDialog
-        open={importDialogOpen}
-        onOpenChange={setImportDialogOpen}
-        templates={templates}
-        onImport={handleImportTemplate}
-        title="Gewichtungs-Template laden"
-      />
-
-      <AlertDialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Template laden?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Die aktuellen Gewichtungen werden durch das gewählte Template ersetzt.
-              Nicht gespeicherte Änderungen gehen verloren. Möchten Sie fortfahren?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setSelectedTemplateId(null)}>
-              Abbrechen
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={confirmImport}>
-              Laden
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div>
-  );
+    );
 }

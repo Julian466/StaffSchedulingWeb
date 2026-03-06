@@ -1,247 +1,138 @@
-'use client';
+﻿'use client';
 
 import React, {useState} from 'react';
-import {useCase} from '@/components/case-provider';
-import {
-    useFetch,
-    useSolve,
-    useSolveMultiple,
-    useInsert,
-    useDelete,
-    useImportSolution,
-} from '@/features/solver/hooks/use-solver';
+import {usePathname, useRouter, useSearchParams} from 'next/navigation';
+import {parseMonthYear} from '@/lib/utils/case-utils';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Progress} from '@/components/ui/progress';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {Loader2, Database, Play, Trash2, Upload} from 'lucide-react';
-import {SolverCommandType} from '@/types/solver';
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
+import {Database, Loader2, Play, Trash2, Upload} from 'lucide-react';
+import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
+import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
 
 // Commands that don't require date range
 const COMMANDS_WITHOUT_DATE: SolverCommandType[] = [];
 
-export function SolverControlPanel() {
-    const {currentCaseId: selectedCase, currentCase, switchCase} = useCase();
+interface SolverControlPanelProps {
+    caseId: number;
+    monthYear: string;
+    onAfterOperation?: () => Promise<void>;
+    isLocked?: boolean;
+}
+
+export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocked}: SolverControlPanelProps) {
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const router = useRouter();
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [timeout, setTimeout] = useState('300');
 
     // Month and year state
     const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
     const [selectedYear, setSelectedYear] = useState<number | null>(null);
-    
-    // Progress tracking
-    const [progress, setProgress] = useState(0);
-    const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
 
-    // Set default month and year from case information
+    // Set default month and year from URL params
     React.useEffect(() => {
-        if (currentCase && selectedMonth === null && selectedYear === null) {
-            setSelectedMonth(currentCase.month);
-            setSelectedYear(currentCase.year);
+        if (caseId && monthYear && selectedMonth === null && selectedYear === null) {
+            const {month, year} = parseMonthYear(monthYear);
+            setSelectedMonth(month);
+            setSelectedYear(year);
         }
-    }, [currentCase, selectedMonth, selectedYear]);
+    }, [caseId, monthYear, selectedMonth, selectedYear]);
 
-    // Import dialog state
-    const [showImportDialog, setShowImportDialog] = useState(false);
-    const [importParams, setImportParams] = useState<{
-        caseId: number;
-        start: string;
-        end: string;
-        solutionType: string;
-    } | null>(null);
-    
-    // Multiple import dialog state
-    const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
-    const [multipleImportParams, setMultipleImportParams] = useState<{
-        caseId: number;
-        start: string;
-        end: string;
-        solutionCount: number;
-        feasibleSolutions?: number[];
-    } | null>(null);
+    const {
+        isExecuting,
+        isImporting,
+        progress,
+        showImportDialog,
+        setShowImportDialog,
+        importDialogParams,
+        showMultipleImportDialog,
+        setShowMultipleImportDialog,
+        multipleImportDialogParams,
+        executeFetch,
+        executeSolve,
+        executeSolveMultiple,
+        executeInsert,
+        executeDelete,
+        handleImport,
+    } = useSolverOperations({onAfterOperation});
 
-    const fetchMutation = useFetch();
-    const solveMutation = useSolve();
-    const solveMultipleMutation = useSolveMultiple();
-    const insertMutation = useInsert();
-    const deleteMutation = useDelete();
-    const importSolutionMutation = useImportSolution();
-
-    const isExecuting =
-        fetchMutation.isPending ||
-        solveMutation.isPending ||
-        solveMultipleMutation.isPending ||
-        insertMutation.isPending ||
-        deleteMutation.isPending;
-
-    // Update progress based on elapsed time vs timeout
-    React.useEffect(() => {
-        if (!isExecuting || !executionStartTime) {
-            setProgress(0);
-            return;
-        }
-
-        // Calculate timeout: solve-multiple runs 3 times, so multiply by 3
-        let currentTimeout = 60000; // Default 60s for other commands
-        if (command === 'solve') {
-            currentTimeout = parseInt(timeout, 10) * 1000 + 10000; // timeout + 10s buffer
-        } else if (command === 'solve-multiple') {
-            currentTimeout = parseInt(timeout, 10) * 3 * 1000 + 20000; // 3x timeout for 3 runs + 20s buffer
-        }
-
-        const interval = setInterval(() => {
-            const elapsed = Date.now() - executionStartTime;
-            const calculatedProgress = Math.min((elapsed / currentTimeout) * 100, 99);
-            setProgress(calculatedProgress);
-        }, 100); // Update every 100ms for smooth animation
-
-        return () => clearInterval(interval);
-    }, [isExecuting, executionStartTime, timeout, command]);
-
-    // Reset progress when execution completes
-    React.useEffect(() => {
-        if (!isExecuting) {
-            setProgress(0);
-            setExecutionStartTime(null);
-        }
-    }, [isExecuting]);
-
-    const handleExecute = () => {
-        if (!selectedCase) {
-            return;
-        }
-
-        // Track execution start time for progress
-        setExecutionStartTime(Date.now());
-        setProgress(0);
+    const handleExecute = async () => {
+        if (!caseId) return;
 
         const requiresDate = !COMMANDS_WITHOUT_DATE.includes(command);
-
-        // For all other commands, dates are required
-        if (requiresDate && (selectedMonth === null || selectedYear === null)) {
-            return;
-        }
+        if (requiresDate && (selectedMonth === null || selectedYear === null)) return;
 
         // Calculate first and last day of selected month
         const firstDay = new Date(selectedYear!, selectedMonth! - 1, 1);
         const lastDay = new Date(selectedYear!, selectedMonth!, 0);
 
-        const baseParams = {
-            unit: selectedCase,
-            start: firstDay.getFullYear() + "-" + String(firstDay.getMonth() + 1).padStart(2, '0') + "-" + String(firstDay.getDate()).padStart(2, '0'),
-            end: lastDay.getFullYear() + "-" + String(lastDay.getMonth() + 1).padStart(2, '0') + "-" + String(lastDay.getDate()).padStart(2, '0'),
-        };
+        const start =
+            firstDay.getFullYear() + '-' +
+            String(firstDay.getMonth() + 1).padStart(2, '0') + '-' +
+            String(firstDay.getDate()).padStart(2, '0');
+        const end =
+            lastDay.getFullYear() + '-' +
+            String(lastDay.getMonth() + 1).padStart(2, '0') + '-' +
+            String(lastDay.getDate()).padStart(2, '0');
+
+        const execOpts = {caseId, monthYear, start, end};
 
         switch (command) {
-            case 'fetch':
-                fetchMutation.mutate(baseParams, {
-                    onSuccess: async () => {
-                        // Update case information with selected month and year after successful fetch -
-                        if (selectedMonth !== null && selectedYear !== null) {
-                            // Be sure that selectedMonth is MM format
-                            const monthStr = String(selectedMonth).padStart(2, '0');
-                            const monthYear = `${monthStr}_${selectedYear}`;
-                            await switchCase(selectedCase, monthYear);
-                        }
-                    }
-                });
-                break;
-            case 'solve':
-                solveMutation.mutate(
-                    {
-                        ...baseParams,
-                        timeout: parseInt(timeout, 10),
-                    },
-                    {
-                        onSuccess: (data) => {
-                            if (data.job.status === 'completed') {
-                                // Show import dialog after successful solve
-                                setImportParams({
-                                    caseId: selectedCase,
-                                    start: baseParams.start,
-                                    end: baseParams.end,
-                                    solutionType: 'wdefault',
-                                });
-                                setShowImportDialog(true);
-                            }
-                        },
-                    }
-                );
-                break;
-            case 'solve-multiple':
-                solveMultipleMutation.mutate(
-                    {
-                        ...baseParams,
-                        timeout: parseInt(timeout, 10),
-                    },
-                    {
-                        onSuccess: (data) => {
-                            if (data.job.status === 'completed') {
-                                // Show multiple import dialog
-                                setMultipleImportParams({
-                                    caseId: selectedCase,
-                                    start: baseParams.start,
-                                    end: baseParams.end,
-                                    solutionCount: data.scheduleInfo.solutionsGenerated || 3,
-                                    feasibleSolutions: data.scheduleInfo.feasibleSolutions,
-                                });
-                                setShowMultipleImportDialog(true);
-                            }
-                        },
-                    }
-                );
-                break;
-            case 'insert':
-                insertMutation.mutate(baseParams);
-                break;
-            case 'delete':
-                if (confirm('Möchten Sie wirklich alle Daten für diesen Zeitraum löschen?')) {
-                    deleteMutation.mutate(baseParams);
+            case 'fetch': {
+                const result = await executeFetch(execOpts);
+                if (result.succeeded && selectedMonth !== null && selectedYear !== null) {
+                    const monthStr = String(selectedMonth).padStart(2, '0');
+                    const newMonthYear = `${monthStr}_${selectedYear}`;
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.set('caseId', String(caseId));
+                    params.set('monthYear', newMonthYear);
+                    router.push(`${pathname}?${params.toString()}`);
                 }
                 break;
+            }
+            case 'solve':
+                await executeSolve(execOpts, parseInt(timeout, 10));
+                break;
+            case 'solve-multiple':
+                await executeSolveMultiple(execOpts, parseInt(timeout, 10));
+                break;
+            case 'insert':
+                await executeInsert(execOpts, false);
+                break;
+            case 'delete': {
+                if (!confirm('Möchten Sie wirklich alle Daten für diesen Zeitraum löschen?')) return;
+                await executeDelete(execOpts);
+                break;
+            }
         }
     };
 
     const getCommandIcon = (cmd: SolverCommandType) => {
         switch (cmd) {
-            case 'fetch':
-                return <Database className="h-4 w-4"/>;
+            case 'fetch': return <Database className="h-4 w-4"/>;
             case 'solve':
-            case 'solve-multiple':
-                return <Play className="h-4 w-4"/>;
-            case 'insert':
-                return <Upload className="h-4 w-4"/>;
-            case 'delete':
-                return <Trash2 className="h-4 w-4"/>;
-            default:
-                return <Play className="h-4 w-4"/>;
+            case 'solve-multiple': return <Play className="h-4 w-4"/>;
+            case 'insert': return <Upload className="h-4 w-4"/>;
+            case 'delete': return <Trash2 className="h-4 w-4"/>;
+            default: return <Play className="h-4 w-4"/>;
         }
     };
 
     const getCommandDescription = (cmd: SolverCommandType) => {
         switch (cmd) {
-            case 'fetch':
-                return 'Ruft Daten aus der Datenbank ab und schreibt JSON-Dateien';
-            case 'solve':
-                return 'Löst das Planungsproblem für eine einzelne Lösung';
-            case 'solve-multiple':
-                return 'Generiert mehrere Lösungen für das Planungsproblem';
-            case 'insert':
-                return 'Fügt Daten aus JSON-Dateien in die Datenbank ein';
-            case 'delete':
-                return 'Löscht Daten aus der Datenbank (Reset)';
-            default:
-                return '';
+            case 'fetch': return 'Ruft Daten aus der Datenbank ab und schreibt JSON-Dateien';
+            case 'solve': return 'Löst das Planungsproblem für eine einzelne Lösung';
+            case 'solve-multiple': return 'Generiert mehrere Lösungen für das Planungsproblem';
+            case 'insert': return 'Fügt Daten aus JSON-Dateien in die Datenbank ein';
+            case 'delete': return 'Löscht Daten aus der Datenbank (Reset)';
+            default: return '';
         }
     };
 
@@ -250,8 +141,8 @@ export function SolverControlPanel() {
             <CardHeader>
                 <CardTitle>Solver steuern</CardTitle>
                 <CardDescription>
-                    {selectedCase
-                        ? `Ausgewählter Fall: ${selectedCase}`
+                    {caseId
+                        ? `Ausgewählter Fall: ${caseId}`
                         : 'Bitte wählen Sie einen Fall aus'}
                 </CardDescription>
             </CardHeader>
@@ -304,12 +195,13 @@ export function SolverControlPanel() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="month">Monat</Label>
-                            <Select 
-                                value={selectedMonth?.toString() || ''} 
+                            <Select
+                                value={selectedMonth?.toString() || ''}
                                 onValueChange={(v) => setSelectedMonth(parseInt(v))}
+                                disabled={isLocked}
                             >
                                 <SelectTrigger id="month">
-                                    <SelectValue placeholder="Monat wählen" />
+                                    <SelectValue placeholder="Monat wählen"/>
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="1">Januar</SelectItem>
@@ -329,15 +221,16 @@ export function SolverControlPanel() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="year">Jahr</Label>
-                            <Select 
-                                value={selectedYear?.toString() || ''} 
+                            <Select
+                                value={selectedYear?.toString() || ''}
                                 onValueChange={(v) => setSelectedYear(parseInt(v))}
+                                disabled={isLocked}
                             >
                                 <SelectTrigger id="year">
-                                    <SelectValue placeholder="Jahr wählen" />
+                                    <SelectValue placeholder="Jahr wählen"/>
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {Array.from({ length: 15 }, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
+                                    {Array.from({length: 15}, (_, i) => new Date().getFullYear() - 5 + i).map((year) => (
                                         <SelectItem key={year} value={year.toString()}>
                                             {year}
                                         </SelectItem>
@@ -367,7 +260,7 @@ export function SolverControlPanel() {
                 <Button
                     onClick={handleExecute}
                     disabled={
-                        !selectedCase ||
+                        !caseId ||
                         (!COMMANDS_WITHOUT_DATE.includes(command) && (selectedMonth === null || selectedYear === null)) ||
                         isExecuting
                     }
@@ -397,50 +290,43 @@ export function SolverControlPanel() {
                                     {progress.toFixed(0)}%
                                 </span>
                             </div>
-                            <Progress value={progress} className="h-2" />
+                            <Progress value={progress} className="h-2"/>
                         </div>
                         <p className="text-xs text-center text-muted-foreground">
                             {command === 'solve' && `Geschätzte Laufzeit: ${timeout}s`}
-                            {command === 'solve-multiple' && `Geschätzte Laufzeit: ${parseInt(timeout, 10) * 3}s (3× ${timeout}s)`}
+                            {command === 'solve-multiple' && `Geschätzte Laufzeit: ${parseInt(timeout, 10) * 3}s (3x ${timeout}s)`}
                             {command !== 'solve' && command !== 'solve-multiple' && 'Der Befehl wird ausgeführt...'}
-                        </p>
-                        <p className="text-xs text-center text-muted-foreground">
-                            {executionStartTime && `Gestartet: ${new Date(executionStartTime).toLocaleTimeString('de-DE')}`}
                         </p>
                     </div>
                 )}
             </CardContent>
 
             {/* Import Solution Dialog */}
-            {importParams && (
+            {importDialogParams && (
                 <ImportSolutionDialog
                     open={showImportDialog}
                     onOpenChange={setShowImportDialog}
-                    caseId={importParams.caseId}
-                    start={importParams.start}
-                    end={importParams.end}
-                    solutionType={importParams.solutionType}
-                    onImport={async (params) => {
-                        await importSolutionMutation.mutateAsync(params);
-                    }}
-                    isImporting={importSolutionMutation.isPending}
+                    caseId={importDialogParams.caseId}
+                    start={importDialogParams.start}
+                    end={importDialogParams.end}
+                    solutionType={importDialogParams.solutionType}
+                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    isImporting={isImporting}
                 />
             )}
-            
+
             {/* Import Multiple Solutions Dialog */}
-            {multipleImportParams && (
+            {multipleImportDialogParams && (
                 <ImportMultipleSolutionsDialog
                     open={showMultipleImportDialog}
                     onOpenChange={setShowMultipleImportDialog}
-                    caseId={multipleImportParams.caseId}
-                    start={multipleImportParams.start}
-                    end={multipleImportParams.end}
-                    solutionCount={multipleImportParams.solutionCount}
-                    feasibleSolutions={multipleImportParams.feasibleSolutions}
-                    onImport={async (params) => {
-                        await importSolutionMutation.mutateAsync(params);
-                    }}
-                    isImporting={importSolutionMutation.isPending}
+                    caseId={multipleImportDialogParams.caseId}
+                    start={multipleImportDialogParams.start}
+                    end={multipleImportDialogParams.end}
+                    solutionCount={multipleImportDialogParams.solutionCount}
+                    feasibleSolutions={multipleImportDialogParams.feasibleSolutions}
+                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    isImporting={isImporting}
                 />
             )}
         </Card>

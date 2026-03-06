@@ -1,27 +1,39 @@
-'use client';
+import {SolverPageClient} from './solver-page-client';
+import {getJobs, validateConfig} from '@/features/solver/solver.actions';
+import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 
-import {ConfigValidator} from '@/features/solver/components/config-validator';
-import {SolverControlPanel} from '@/features/solver/components/solver-control-panel';
-import {JobHistoryTable} from '@/features/solver/components/job-history-table';
+export default async function SolverPage({
+                                             searchParams,
+                                         }: {
+    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+}) {
+    const [{caseId: caseIdStr, monthYear}, workflowState] = await Promise.all([
+        searchParams,
+        getWorkflowSession(),
+    ]);
 
-export default function SolverPage() {
-    return (
-        <div className="space-y-6 py-6">
-            <div>
-                <h1 className="text-3xl font-bold">Solver</h1>
-                <p className="text-muted-foreground mt-2">
-                    Steuern Sie den Python-Solver zur automatischen Dienstplanerstellung
-                </p>
-            </div>
+    if (!caseIdStr || !monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-            <ConfigValidator/>
+    const caseId = Number(caseIdStr);
+    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <SolverControlPanel/>
-                <div className="space-y-6">
-                    <JobHistoryTable/>
-                </div>
-            </div>
-        </div>
-    );
+    const [configResult, jobsData] = await Promise.all([
+        validateConfig(),
+        getJobs(caseId, monthYear).catch(() => ({jobs: []})),
+    ]);
+    const configValidation = configResult.success ? configResult.data : null;
+
+    return <SolverPageClient
+        caseId={caseId}
+        monthYear={monthYear}
+        initialConfigValidation={configValidation}
+        initialJobs={jobsData.jobs}
+        isLocked={workflowState.isWorkflowMode}
+    />;
 }

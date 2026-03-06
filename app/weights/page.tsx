@@ -1,92 +1,25 @@
-'use client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { WeightsEditor } from '@/features/weights/components/weights-editor';
-import { useWeights, useUpdateWeights } from '@/features/weights/hooks/use-weights';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AlertCircle, Scale, Info } from 'lucide-react';
+import {WeightsPageClient} from './weights-page-client';
+import {getWeightsAction} from '@/features/weights/weights.actions';
 
-export default function WeightsPage() {
-  const { data: weights, isLoading, error } = useWeights();
-  const { mutate: updateWeights, isPending } = useUpdateWeights();
+export default async function WeightsPage({
+                                              searchParams,
+                                          }: {
+    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+}) {
+    const {caseId: caseIdStr, monthYear} = await searchParams;
 
-  if (error) {
-    return (
-      <div className="py-6 space-y-4">
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Fehler beim Laden</AlertTitle>
-          <AlertDescription>
-            Die Gewichtungen konnten nicht geladen werden. Bitte versuchen Sie es später erneut.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+    if (!caseIdStr || !monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  if (isLoading) {
-    return (
-      <div className="py-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <Scale className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <CardTitle>Solver-Gewichtungen</CardTitle>
-                <CardDescription>
-                  Konfigurieren Sie die Wichtigkeit der verschiedenen Optimierungsziele
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Skeleton className="h-[120px] w-full" />
-            <Skeleton className="h-[120px] w-full" />
-            <Skeleton className="h-[120px] w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+    const caseId = Number(caseIdStr);
+    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  if (!weights) {
-    return null;
-  }
+    const weights = await getWeightsAction(caseId, monthYear);
 
-  return (
-    <div className="py-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-primary/10 rounded-lg">
-              <Scale className="h-6 w-6 text-primary" />
-            </div>
-            <div className="flex-1">
-              <CardTitle>Solver-Gewichtungen</CardTitle>
-              <CardDescription>
-                Konfigurieren Sie die Wichtigkeit der verschiedenen Optimierungsziele für den Scheduling-Solver
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle>Hinweis</AlertTitle>
-        <AlertDescription>
-          Höhere Werte bedeuten, dass das entsprechende Ziel stärker gewichtet wird. 
-          Ein Wert von 0 deaktiviert das Ziel komplett. Änderungen werden sofort für neue Solver-Läufe verwendet.
-        </AlertDescription>
-      </Alert>
-
-      <WeightsEditor
-        weights={weights}
-        onSave={updateWeights}
-        isSaving={isPending}
-      />
-    </div>
-  );
+    return <WeightsPageClient caseId={caseId} monthYear={monthYear} weights={weights}/>;
 }

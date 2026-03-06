@@ -1,38 +1,25 @@
-'use client';
+import {EmployeesPageClient} from './employees-page-client';
+import {getAllEmployeesAction} from '@/features/employees/employees.actions';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { EmployeeList } from '@/features/employees/components/employee-list';
-import {
-  useEmployees,
-} from '@/features/employees/hooks/use-employees';
+export default async function EmployeesPage({
+                                                searchParams,
+                                            }: {
+    searchParams: Promise<{ caseId?: string; monthYear?: string }>;
+}) {
+    const {caseId: caseIdStr, monthYear} = await searchParams;
 
-export default function EmployeesPage() {
-  // TanStack Query Hooks
-  const { data: employees = [], isLoading } = useEmployees();
+    if (!caseIdStr || !monthYear) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
 
-  return (
-    <div className="py-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Mitarbeiter-Datenbank</CardTitle>
-              <CardDescription>
-                Verwalte alle Mitarbeiter an einem Ort
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="text-center py-8">Lädt...</div>
-          ) : (
-            <EmployeeList
-              employees={employees}
-            />
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+    const caseId = Number(caseIdStr);
+    if (isNaN(caseId) || caseId <= 0 || !/^(0?[1-9]|1[0-2])_\d{4}$/.test(monthYear)) {
+        return <div className="flex items-center justify-center h-64 text-muted-foreground">Bitte wähle einen Case
+            aus</div>;
+    }
+
+    const employees = await getAllEmployeesAction(caseId, monthYear);
+
+    return <EmployeesPageClient employees={employees}/>;
 }

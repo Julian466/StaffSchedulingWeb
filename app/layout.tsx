@@ -1,26 +1,30 @@
-import { Providers } from '@/components/providers';
-import { AppNavigation } from '@/components/app-navigation';
-import { WorkflowBanner } from '@/components/workflow-banner';
-import { Toaster } from '@/components/ui/sonner';
+import {NavigationWrapper} from '@/components/app-navigation';
+import {WorkflowBanner} from '@/components/workflow-banner';
+import {Toaster} from '@/components/ui/sonner';
+import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
 import './globals.css';
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
+export default async function RootLayout({
+                                             children,
+                                         }: {
+    children: React.ReactNode;
 }) {
-  return (
-    <html lang="de">
-      <body>
-        <Providers>
-          <AppNavigation />
-          <main className="container mx-auto p-4">
-            <WorkflowBanner />
+    const workflowState = await getWorkflowSession();
+
+    return (
+        <html lang="de">
+        <body>
+        <NavigationWrapper
+            isLocked={workflowState.isWorkflowMode}
+            lockedCaseId={workflowState.caseId}
+            lockedMonthYear={workflowState.monthYear}
+        />
+        <main className="container mx-auto p-4">
+            <WorkflowBanner state={workflowState}/>
             {children}
-          </main>
-          <Toaster />
-        </Providers>
-      </body>
-    </html>
-  );
+        </main>
+        <Toaster/>
+        </body>
+        </html>
+    );
 }
