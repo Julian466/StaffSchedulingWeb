@@ -20,6 +20,8 @@ import {makeExecuteSolverInsertController} from '@/src/controllers/solver/execut
 import {makeExecuteSolverDeleteController} from '@/src/controllers/solver/execute-solver-delete.controller';
 import {makeImportSolutionController} from '@/src/controllers/solver/import-solution.controller';
 import {SolverApiService} from "@/src/infrastructure/services/solver-api-service";
+import {makeGetSolverProgressController} from "@/src/controllers/solver/get-solver-progress.controller";
+import {makeGetSolverProgressUseCase} from "@/src/application/use-cases/solver/get-solver-progress.use-case";
 
 export function createSolverModule() {
     const m = createModule();
@@ -87,6 +89,14 @@ export function createSolverModule() {
         makeImportSolutionController,
         [DI_SYMBOLS.IImportSolutionUseCase]
     );
+    m.bind(DI_SYMBOLS.IGetSolverProgressController).toHigherOrderFunction(
+        makeGetSolverProgressController,
+        [DI_SYMBOLS.IGetSolverProgressUseCase]
+    );
+    m.bind(DI_SYMBOLS.IGetSolverProgressUseCase).toHigherOrderFunction(
+        makeGetSolverProgressUseCase,
+        [DI_SYMBOLS.ISolverService]
+    )
 
 
     return m;

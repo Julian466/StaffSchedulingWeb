@@ -204,6 +204,8 @@ import type {
 import type {IExecuteSolverInsertController} from '@/src/controllers/solver/execute-solver-insert.controller';
 import type {IExecuteSolverDeleteController} from '@/src/controllers/solver/execute-solver-delete.controller';
 import type {IImportSolutionController} from '@/src/controllers/solver/import-solution.controller';
+import {IGetSolverProgressUseCase} from "@/src/application/use-cases/solver/get-solver-progress.use-case";
+import {IGetSolverProgressController} from "@/src/controllers/solver/get-solver-progress.controller";
 
 export const DI_SYMBOLS = {
     // Repositories
@@ -299,6 +301,7 @@ export const DI_SYMBOLS = {
     IExecuteSolverInsertUseCase: Symbol.for('IExecuteSolverInsertUseCase'),
     IExecuteSolverDeleteUseCase: Symbol.for('IExecuteSolverDeleteUseCase'),
     IImportSolutionUseCase: Symbol.for('IImportSolutionUseCase'),
+    IGetSolverProgressUseCase: Symbol.for('IGetSolverProgressUseCase'),
 
     // Controllers — Employees
     IGetAllEmployeesController: Symbol.for('IGetAllEmployeesController'),
@@ -376,6 +379,7 @@ export const DI_SYMBOLS = {
     IExecuteSolverInsertController: Symbol.for('IExecuteSolverInsertController'),
     IExecuteSolverDeleteController: Symbol.for('IExecuteSolverDeleteController'),
     IImportSolutionController: Symbol.for('IImportSolutionController'),
+    IGetSolverProgressController: Symbol.for('IGetSolverProgressController'),
 } as const;
 
 export interface DI_RETURN_TYPES {
@@ -472,6 +476,7 @@ export interface DI_RETURN_TYPES {
     IExecuteSolverInsertUseCase: IExecuteSolverInsertUseCase;
     IExecuteSolverDeleteUseCase: IExecuteSolverDeleteUseCase;
     IImportSolutionUseCase: IImportSolutionUseCase;
+    IGetSolverProgressUseCase: IGetSolverProgressUseCase;
 
     // Controllers — Employees
     IGetAllEmployeesController: IGetAllEmployeesController;
@@ -549,4 +554,5 @@ export interface DI_RETURN_TYPES {
     IExecuteSolverInsertController: IExecuteSolverInsertController;
     IExecuteSolverDeleteController: IExecuteSolverDeleteController;
     IImportSolutionController: IImportSolutionController;
+    IGetSolverProgressController: IGetSolverProgressController;
 }
