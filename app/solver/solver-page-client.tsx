@@ -5,12 +5,13 @@ import {ConfigValidator} from '@/features/solver/components/config-validator';
 import {SolverControlPanel} from '@/features/solver/components/solver-control-panel';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {getJobs} from '@/features/solver/solver.actions';
-import type {SolverConfigResult, SolverJob} from '@/src/entities/models/solver.model';
+import type {SolverJob} from '@/src/entities/models/solver.model';
+import type {SolverHealthResult} from '@/src/application/ports/solver.service';
 
 interface SolverPageClientProps {
     caseId: number;
     monthYear: string;
-    initialConfigValidation: SolverConfigResult | null;
+    initialConfigValidation: SolverHealthResult | null;
     initialJobs: SolverJob[];
     isLocked?: boolean;
 }

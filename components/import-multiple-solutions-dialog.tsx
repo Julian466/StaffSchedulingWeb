@@ -27,7 +27,8 @@ interface ImportMultipleSolutionsDialogProps {
         caseId: number;
         start: string;
         end: string;
-        solutionType: string;
+        solutionType: string; // e.g., 'w0', 'w1', 'w2'
+        solutionIndex: number;
     }) => Promise<void>;
     isImporting: boolean;
 }
@@ -101,7 +102,9 @@ export function ImportMultipleSolutionsDialog({
                 setImportProgress({current, total: selectedSolutions.size});
 
                 const solutionType = `w${index}`;
-                await onImport({caseId, start, end, solutionType});
+                // index = weight_id; solutionIndex = position in the solutions array
+                const solutionIndex = availableSolutions.indexOf(index);
+                await onImport({caseId, start, end, solutionType, solutionIndex});
             }
 
             setImportProgress(null);

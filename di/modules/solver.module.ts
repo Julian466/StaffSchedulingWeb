@@ -57,7 +57,7 @@ export function createSolverModule() {
     );
     m.bind(DI_SYMBOLS.IImportSolutionUseCase).toHigherOrderFunction(
         makeImportSolutionUseCase,
-        [DI_SYMBOLS.ISolverService, DI_SYMBOLS.IScheduleRepository]
+        [DI_SYMBOLS.IScheduleRepository]
     );
 
     // Controllers

@@ -37,7 +37,9 @@ import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {getJobs} from '@/features/solver/solver.actions';
 import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
-import type {SolverConfigResult, SolverJob} from '@/src/entities/models/solver.model';
+
+import type { SolverJob } from '@/src/entities/models/solver.model';
+import type { SolverHealthResult } from '@/src/application/ports/solver.service';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -53,7 +55,7 @@ interface WorkflowPageClientProps {
     endDate: string;
     isoStart: string;
     isoEnd: string;
-    initialConfig: SolverConfigResult | null;
+    initialConfig: SolverHealthResult | null;
     initialJobs: SolverJob[];
 }
 
@@ -215,7 +217,7 @@ export function WorkflowPageClient({
         actionStates[action].status === 'success' ? 'outline' : 'default';
 
     const isActionDisabled = (action: WorkflowAction): boolean => {
-        if (!initialConfig?.isValid) return true;
+        if (!initialConfig?.healthy) return true;
         return actionStates[action].status === 'running' || isExecuting;
     };
 
@@ -228,12 +230,15 @@ export function WorkflowPageClient({
                 <p className="text-muted-foreground">Wählen Sie die gewünschten Aktionen aus</p>
             </div>
 
-            {initialConfig && !initialConfig.isValid && (
+            {initialConfig && !initialConfig.healthy && (
                 <Alert variant="destructive" className="mb-6">
                     <AlertCircle className="h-4 w-4"/>
-                    <AlertTitle>Konfiguration ungültig</AlertTitle>
+                    <AlertTitle>Solver nicht erreichbar</AlertTitle>
                     <AlertDescription>
-                        Bitte konfigurieren Sie das StaffScheduling-Projekt und die Python-Executable in der config.json.
+                        {initialConfig.message}
+                        {initialConfig.details && (
+                            <span className="block mt-1 text-xs opacity-75">{initialConfig.details}</span>
+                        )}
                     </AlertDescription>
                 </Alert>
             )}
@@ -374,7 +379,10 @@ export function WorkflowPageClient({
                     start={importDialogParams.start}
                     end={importDialogParams.end}
                     solutionType={importDialogParams.solutionType}
-                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    onImport={(params) => handleImport(caseId, monthYear, {
+                        ...params,
+                        solution: importDialogParams.solution,  // ← solution aus params
+                    })}
                     isImporting={isImporting}
                 />
             )}
@@ -389,7 +397,10 @@ export function WorkflowPageClient({
                     end={multipleImportDialogParams.end}
                     solutionCount={multipleImportDialogParams.solutionCount}
                     feasibleSolutions={multipleImportDialogParams.feasibleSolutions}
-                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    onImport={(params) => handleImport(caseId, monthYear, {
+                        ...params,
+                        solution: multipleImportDialogParams.solutions[params.solutionIndex ?? 0],  // ← richtige Solution anhand Index
+                    })}
                     isImporting={isImporting}
                 />
             )}

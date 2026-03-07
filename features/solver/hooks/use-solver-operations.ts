@@ -1,7 +1,7 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
-import {toast} from 'sonner';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
     importSolution,
     solverDelete,
@@ -10,6 +10,7 @@ import {
     solverSolve,
     solverSolveMultiple,
 } from '@/features/solver/solver.actions';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 export interface SolverExecOptions {
     caseId: number;
@@ -23,6 +24,7 @@ export interface ImportDialogParams {
     start: string;
     end: string;
     solutionType: string;
+    solution: ScheduleSolutionRaw;       // ← neu
 }
 
 export interface MultipleImportDialogParams {
@@ -31,6 +33,7 @@ export interface MultipleImportDialogParams {
     end: string;
     solutionCount: number;
     feasibleSolutions?: number[];
+    solutions: ScheduleSolutionRaw[];    // ← neu
 }
 
 export interface SolverOperationResult {
@@ -41,38 +44,32 @@ interface UseSolverOperationsOptions {
     onAfterOperation?: () => Promise<void>;
 }
 
-export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptions = {}) {
+export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOptions = {}) {
     const [isExecuting, setIsExecuting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [progress, setProgress] = useState(0);
     const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
     const currentTimeoutMsRef = useRef<number>(60_000);
 
-    // Import dialog state
     const [showImportDialog, setShowImportDialog] = useState(false);
     const [importDialogParams, setImportDialogParams] = useState<ImportDialogParams | null>(null);
 
-    // Multiple import dialog state
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
     const [multipleImportDialogParams, setMultipleImportDialogParams] = useState<MultipleImportDialogParams | null>(null);
 
-    // Progress interval
     useEffect(() => {
         if (!isExecuting || executionStartTime === null) {
             setProgress(0);
             return;
         }
-
         const timeoutMs = currentTimeoutMsRef.current;
         const interval = setInterval(() => {
             const elapsed = Date.now() - executionStartTime;
             setProgress(Math.min((elapsed / timeoutMs) * 100, 99));
         }, 100);
-
         return () => clearInterval(interval);
     }, [isExecuting, executionStartTime]);
 
-    // Reset progress when done
     useEffect(() => {
         if (!isExecuting) {
             setProgress(0);
@@ -92,10 +89,6 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
         await onAfterOperation?.();
     };
 
-    // ------------------------------------------------------------------ //
-    //  Execute operations
-    // ------------------------------------------------------------------ //
-
     async function executeFetch(opts: SolverExecOptions): Promise<SolverOperationResult> {
         startExecution(60_000);
         try {
@@ -106,14 +99,14 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich von der Datenbank abgerufen');
-                return {succeeded: true};
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Abrufen der Daten', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Abrufen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
@@ -130,16 +123,22 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Dienstplan erfolgreich erstellt');
-                setImportDialogParams({caseId: opts.caseId, start: opts.start, end: opts.end, solutionType: 'wdefault'});
+                setImportDialogParams({
+                    caseId: opts.caseId,
+                    start: opts.start,
+                    end: opts.end,
+                    solutionType: 'wdefault',
+                    solution: result.data.solution,     // ← neu
+                });
                 setShowImportDialog(true);
-                return {succeeded: true};
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Erstellen des Dienstplans', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Erstellen des Dienstplans', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
@@ -156,7 +155,7 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 const successCount = result.data.scheduleInfo.solutionsGenerated;
@@ -181,13 +180,14 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
                         end: opts.end,
                         solutionCount: successCount,
                         feasibleSolutions: result.data.scheduleInfo.feasibleSolutions,
+                        solutions: result.data.solutions,   // ← neu
                     });
                     setShowMultipleImportDialog(true);
                 }
-                return {succeeded: successCount > 0};
+                return { succeeded: successCount > 0 };
             }
-            toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Erstellen mehrerer Dienstpläne', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
@@ -203,14 +203,14 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich in die Datenbank eingefügt');
-                return {succeeded: true};
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Einfügen der Daten', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Einfügen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
@@ -226,27 +226,23 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich aus der Datenbank gelöscht');
-                return {succeeded: true};
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Löschen der Daten', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Löschen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
     }
 
-    // ------------------------------------------------------------------ //
-    //  Import handler (shared by both dialog types)
-    // ------------------------------------------------------------------ //
-
     async function handleImport(
         caseId: number,
         monthYear: string,
-        params: {start: string; end: string; solutionType: string},
+        params: { start: string; end: string; solutionType: string; solution: ScheduleSolutionRaw },  // ← solution neu
     ): Promise<void> {
         setIsImporting(true);
         try {
@@ -262,20 +258,16 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
     }
 
     return {
-        // State
         isExecuting,
         isImporting,
         progress,
         executionStartTime,
-        // Import dialog
         showImportDialog,
         setShowImportDialog,
         importDialogParams,
-        // Multiple import dialog
         showMultipleImportDialog,
         setShowMultipleImportDialog,
         multipleImportDialogParams,
-        // Operations
         executeFetch,
         executeSolve,
         executeSolveMultiple,

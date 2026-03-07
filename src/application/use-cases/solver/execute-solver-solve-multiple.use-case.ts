@@ -26,7 +26,7 @@ export function makeExecuteSolverSolveMultipleUseCase(
         const scheduleInfo: SolveMultipleScheduleInfo = {
             solutionsGenerated: result.feasibleCount,
             scheduleFiles: [],           // Nur CLI-relevant, API liefert direkt
-            feasibleSolutions: Array.from({ length: result.feasibleCount }, (_, i) => i),
+            feasibleSolutions: result.feasibleWeightIds,
         };
 
         const job: SolverJob = {
@@ -42,7 +42,7 @@ export function makeExecuteSolverSolveMultipleUseCase(
             metadata: {
                 solutionsGenerated: result.feasibleCount,
                 expectedSolutions: 3,
-                feasibleSolutions: scheduleInfo.feasibleSolutions,
+                feasibleSolutions: result.feasibleWeightIds,
             },
         };
 

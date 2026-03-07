@@ -310,7 +310,10 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocke
                     start={importDialogParams.start}
                     end={importDialogParams.end}
                     solutionType={importDialogParams.solutionType}
-                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    onImport={(params) => handleImport(caseId, monthYear, {
+                        ...params,
+                        solution: importDialogParams.solution,  // ← solution aus params
+                    })}
                     isImporting={isImporting}
                 />
             )}
@@ -325,7 +328,10 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocke
                     end={multipleImportDialogParams.end}
                     solutionCount={multipleImportDialogParams.solutionCount}
                     feasibleSolutions={multipleImportDialogParams.feasibleSolutions}
-                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    onImport={(params) => handleImport(caseId, monthYear, {
+                        ...params,
+                        solution: multipleImportDialogParams.solutions[params.solutionIndex ?? 0],  // ← richtige Solution anhand Index
+                    })}
                     isImporting={isImporting}
                 />
             )}

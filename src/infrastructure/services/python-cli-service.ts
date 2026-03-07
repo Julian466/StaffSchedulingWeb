@@ -285,22 +285,34 @@ export class PythonCliService implements ISolverService {
                 success: false,
                 solutions: [],
                 feasibleCount: 0,
+                feasibleWeightIds: [],
                 duration: result.duration,
                 error: result.consoleOutput,
             };
         }
 
         const newFiles = findNewSolutionFiles(beforeRun);
+
+        // Extract weight ID from filenames like "solution_77_..._w2.json" → 2
+        // Fall back to sequential index if the pattern is not found (e.g. legacy files).
+        const parseWeightId = (filePath: string, fallback: number): number => {
+            const match = path.basename(filePath).match(/_w(\d+)\.json$/);
+            return match ? parseInt(match[1], 10) : fallback;
+        };
+
         const solutions = newFiles.map((f) => readJsonFile(f));
+        const feasibleWeightIds = newFiles.map((f, i) => parseWeightId(f, i));
 
         return {
             success: solutions.length > 0,
             solutions,
             feasibleCount: solutions.length,
+            feasibleWeightIds,
             duration: result.duration,
         };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async insertSolution(params: InsertParams, _solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         // CLI liest die Solution selbst aus der Datei, ignoriert den Parameter
         const args = [String(params.unit), formatDateForPython(params.start), formatDateForPython(params.end)];
@@ -312,6 +324,7 @@ export class PythonCliService implements ISolverService {
         };
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async deleteData(params: DeleteParams, _solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         const args = [
             String(params.unit),

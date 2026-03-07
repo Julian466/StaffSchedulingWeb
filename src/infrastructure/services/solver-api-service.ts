@@ -45,6 +45,7 @@ interface ApiSolveResponse extends ApiOperationResponse {
 }
 
 interface ApiSolveMultipleResult {
+    weight_id: number;
     status: string;
     solution_data: ScheduleSolutionRaw | null;
 }
@@ -239,7 +240,6 @@ export class SolverApiService implements ISolverService {
                 },
                 httpTimeoutMs
             );
-
             const duration = Date.now() - startTime;
 
             const feasibleResults = result.results.filter(
@@ -248,10 +248,12 @@ export class SolverApiService implements ISolverService {
             const solutions = feasibleResults
                 .map((r) => r.solution_data)
                 .filter((s): s is ScheduleSolutionRaw => s !== null);
+            const feasibleWeightIds = feasibleResults.map((r) => r.weight_id);
 
             logger.info('Solve-multiple completed', {
                 success: result.success,
                 feasibleCount: solutions.length,
+                feasibleWeightIds,
                 totalRuns: result.results.length,
                 duration,
             });
@@ -260,13 +262,14 @@ export class SolverApiService implements ISolverService {
                 success: solutions.length > 0,
                 solutions,
                 feasibleCount: solutions.length,
+                feasibleWeightIds,
                 duration,
                 error: solutions.length === 0 ? 'No feasible solutions produced' : undefined,
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             logger.error('Solve-multiple failed', { error: message });
-            return { success: false, solutions: [], feasibleCount: 0, duration: Date.now() - startTime, error: message };
+            return { success: false, solutions: [], feasibleCount: 0, feasibleWeightIds: [], duration: Date.now() - startTime, error: message };
         }
     }
 
@@ -301,7 +304,7 @@ export class SolverApiService implements ISolverService {
         }
     }
 
-    async deleteData(params: DeleteParams): Promise<SolverOperationResult> {
+    async deleteData(params: DeleteParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
         const startTime = Date.now();
         logger.info('Deleting data via API', { unit: params.unit });
 
@@ -313,6 +316,7 @@ export class SolverApiService implements ISolverService {
                     planning_unit: params.unit,
                     from_date: toIsoDate(params.start),
                     till_date: toIsoDate(params.end),
+                    solution_data: solution ?? null,
                 }
             );
 

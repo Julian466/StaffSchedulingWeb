@@ -31,6 +31,8 @@ export interface SolveOperationResult extends SolverOperationResult {
 export interface SolveMultipleOperationResult extends SolverOperationResult {
     solutions: ScheduleSolutionRaw[];
     feasibleCount: number;
+    /** The actual weight-preset indices that produced a feasible/optimal solution, in the same order as `solutions`. */
+    feasibleWeightIds: number[];
 }
 
 export interface SolverProgress {
