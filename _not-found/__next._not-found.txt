@@ -1,4 +1,4 @@
 1:"$Sreact.fragment"
 2:I[39756,["/StaffSchedulingWeb/_next/static/chunks/ff1a16fafef87110.js","/StaffSchedulingWeb/_next/static/chunks/d2be314c3ece3fbe.js","/StaffSchedulingWeb/_next/static/chunks/cd564aaf68f01632.js","/StaffSchedulingWeb/_next/static/chunks/ccf0962934aab6a3.js","/StaffSchedulingWeb/_next/static/chunks/83e963bdb42e5a9e.js"],"default"]
 3:I[37457,["/StaffSchedulingWeb/_next/static/chunks/ff1a16fafef87110.js","/StaffSchedulingWeb/_next/static/chunks/d2be314c3ece3fbe.js","/StaffSchedulingWeb/_next/static/chunks/cd564aaf68f01632.js","/StaffSchedulingWeb/_next/static/chunks/ccf0962934aab6a3.js","/StaffSchedulingWeb/_next/static/chunks/83e963bdb42e5a9e.js"],"default"]
-0:{"buildId":"dDw_pK5cv7GPZ9FSA860J","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}
+0:{"buildId":"JHB-MG7WPkxuUKzT-0l9a","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}
