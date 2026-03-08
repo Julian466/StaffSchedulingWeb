@@ -356,7 +356,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                 )}
             </CardContent>
 
-            {/* Import Solution Dialog */}
+            {/* Import solution dialog */}
             {importDialogParams && (
                 <ImportSolutionDialog
                     open={showImportDialog}
@@ -367,13 +367,13 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                     solutionType={importDialogParams.solutionType}
                     onImport={(params) => handleImport(caseId, monthYear, {
                         ...params,
-                        solution: importDialogParams.solution,  // ← solution aus params
+                        solution: importDialogParams.solution,
                     })}
                     isImporting={isImporting}
                 />
             )}
 
-            {/* Import Multiple Solutions Dialog */}
+            {/* Import multiple solutions dialog */}
             {multipleImportDialogParams && (
                 <ImportMultipleSolutionsDialog
                     open={showMultipleImportDialog}
@@ -385,7 +385,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                     feasibleSolutions={multipleImportDialogParams.feasibleSolutions}
                     onImport={(params) => handleImport(caseId, monthYear, {
                         ...params,
-                        solution: multipleImportDialogParams.solutions[params.solutionIndex ?? 0],  // ← richtige Solution anhand Index
+                        solution: multipleImportDialogParams.solutions[params.solutionIndex ?? 0],
                     })}
                     isImporting={isImporting}
                 />

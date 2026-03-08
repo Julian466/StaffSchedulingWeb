@@ -23,10 +23,10 @@ export function makeExecuteSolverSolveMultipleUseCase(
         const startTime = Date.now();
         const result = await solverService.solveMultiple(params);
 
-        // scheduleInfo bleibt als bekanntes Shape für Consumers
+        // Keep the legacy scheduleInfo shape for existing consumers.
         const scheduleInfo: SolveMultipleScheduleInfo = {
             solutionsGenerated: result.feasibleCount,
-            scheduleFiles: [],           // Nur CLI-relevant, API liefert direkt
+            scheduleFiles: [],           // CLI-only field; the API returns solutions directly.
             feasibleSolutions: result.feasibleWeightIds,
         };
 

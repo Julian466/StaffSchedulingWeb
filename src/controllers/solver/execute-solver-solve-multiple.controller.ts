@@ -21,7 +21,7 @@ export interface IExecuteSolverSolveMultipleController {
         data: {
             job: SolverJob;
             scheduleInfo: SolveMultipleScheduleInfo;
-            solutions: ScheduleSolutionRaw[];  // ← neu, vorher nicht im Return
+            solutions: ScheduleSolutionRaw[];  // Included explicitly for API-based solve-multiple results.
         };
     } | { error: string }>;
 }

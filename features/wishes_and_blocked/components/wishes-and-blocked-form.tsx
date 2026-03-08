@@ -198,7 +198,7 @@ export function WishesAndBlockedForm({
         )
     );
 
-    // Categories for day types (Wunsch, Blockiert)
+    // Categories for day types (preferred day, blocked day)
     const dayCategories = [
         {id: 'wish', name: 'Wunsch-Tag', color: '#bbf7d0'},
         {id: 'blocked', name: 'Blockiert', color: '#fecaca'},

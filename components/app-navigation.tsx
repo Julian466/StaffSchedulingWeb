@@ -8,8 +8,8 @@ import {Button} from '@/components/ui/button';
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from '@/components/ui/dropdown-menu';
 import {Briefcase, Calendar, ChevronDown, Cog, FileText, Heart, Scale, UserCog} from 'lucide-react';
 import {cn} from '@/lib/utils';
-// wrapper needed because AppNavigation uses useSearchParams which is a client hook
-// and must be rendered inside a Suspense boundary during SSR/prerendering.
+// This wrapper is required because AppNavigation uses useSearchParams, a client hook.
+// During SSR/prerendering it must be rendered inside a Suspense boundary.
 import {Suspense} from 'react';
 
 interface AppNavigationProps {
@@ -42,9 +42,9 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
             </span>
                     </Link>
 
-                    {/* Navigation Links */}
+                    {/* Navigation links */}
                     <div className="flex items-center gap-1 flex-1">
-                        {/* Mitarbeiter */}
+                        {/* Employees */}
                         <Button
                             variant="ghost"
                             asChild
@@ -57,7 +57,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                         </Button>
 
 
-                        {/* Wünsche Dropdown */}
+                        {/* Wishes dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -91,7 +91,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                         </DropdownMenu>
 
 
-                        {/* Konfiguration Dropdown */}
+                        {/* Configuration dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -125,7 +125,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                             </DropdownMenuContent>
                         </DropdownMenu>
 
-                        {/* Dienstplan */}
+                        {/* Schedule */}
                         <Button
                             variant="ghost"
                             asChild
@@ -150,7 +150,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
                             </Link>
                         </Button>
 
-                        {/* Stammdaten Dropdown */}
+                        {/* Templates dropdown */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
@@ -200,7 +200,7 @@ export function AppNavigation({isLocked, lockedCaseId, lockedMonthYear}: AppNavi
 
                     <Separator orientation="vertical" className="h-8 hidden lg:block"/>
 
-                    {/* Case Selector */}
+                    {/* Case selector */}
                     <div className="min-w-fit">
                         <CaseSelector
                             disabled={isLocked}

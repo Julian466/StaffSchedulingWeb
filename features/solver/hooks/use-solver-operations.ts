@@ -24,7 +24,7 @@ export interface ImportDialogParams {
     start: string;
     end: string;
     solutionType: string;
-    solution: ScheduleSolutionRaw;       // ← neu
+    solution: ScheduleSolutionRaw;
 }
 
 export interface MultipleImportDialogParams {
@@ -33,7 +33,7 @@ export interface MultipleImportDialogParams {
     end: string;
     solutionCount: number;
     feasibleSolutions?: number[];
-    solutions: ScheduleSolutionRaw[];    // ← neu
+    solutions: ScheduleSolutionRaw[];
 }
 
 export interface SolverOperationResult {
@@ -264,7 +264,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
                     start: opts.start,
                     end: opts.end,
                     solutionType: 'wdefault',
-                    solution: result.data.solution,     // ← neu
+                    solution: result.data.solution,
                 });
                 setShowImportDialog(true);
                 return { succeeded: true };
@@ -312,7 +312,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
                         end: opts.end,
                         solutionCount: successCount,
                         feasibleSolutions: result.data.scheduleInfo.feasibleSolutions,
-                        solutions: result.data.solutions,   // ← neu
+                        solutions: result.data.solutions,
                     });
                     setShowMultipleImportDialog(true);
                 }
@@ -376,7 +376,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
     async function handleImport(
         caseId: number,
         monthYear: string,
-        params: { start: string; end: string; solutionType: string; solution: ScheduleSolutionRaw },  // ← solution neu
+        params: { start: string; end: string; solutionType: string; solution: ScheduleSolutionRaw },
     ): Promise<void> {
         setIsImporting(true);
         try {

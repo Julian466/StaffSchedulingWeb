@@ -10,7 +10,7 @@ const PROTECTED_PREFIXES = [
 ];
 
 export function proxy(request: NextRequest) {
-    // 1. Ist der Modus überhaupt aktiv?
+    // Ignore the request unless workflow mode is enabled.
     const workflowMode = request.cookies.get('workflow_mode')?.value;
     if (workflowMode !== 'true') {
         return NextResponse.next();
@@ -18,18 +18,18 @@ export function proxy(request: NextRequest) {
 
     const { pathname } = request.nextUrl;
 
-    // 2. Sind wir auf einer geschützten Route?
+    // Only enforce workflow routing on protected pages.
     const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
     if (!isProtected) {
         return NextResponse.next();
     }
 
-    // 3. Cookie-Werte sicher auslesen
+    // Read the workflow context from cookies.
     const cookieCaseId = request.cookies.get('workflow_case')?.value;
     const cookieStart = request.cookies.get('workflow_start')?.value;
 
-    // Sicherheits-Check: Wenn der Modus "true" ist, aber die Daten fehlen,
-    // ist der State korrupt. Um Endlosschleifen/Leerstings zu vermeiden, brechen wir hier ab.
+    // Abort when workflow mode is active but required cookie state is missing.
+    // This prevents redirects based on incomplete or corrupt workflow context.
     if (!cookieCaseId || !cookieStart) {
         return NextResponse.next();
     }
@@ -44,7 +44,7 @@ export function proxy(request: NextRequest) {
         return NextResponse.next();
     }
 
-    // 4. URL abgleichen und korrigieren
+    // Redirect to the locked workflow case if the URL does not match the cookie state.
     const url = request.nextUrl.clone();
     const urlCaseId = url.searchParams.get('caseId');
     const urlMonthYear = url.searchParams.get('monthYear');

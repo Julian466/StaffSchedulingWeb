@@ -836,22 +836,22 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                                     <td
                                                         key={dayIdx}
                                                         className={cn(
-                                                            // Standard-Basis: Wenn keine Farbe aktiv ist, greift dieser graue Hover
+                                                            // Default cell state when no other status color applies.
                                                             'border-b border-border px-2 text-center relative z-0 cursor-pointer hover:bg-foreground/5',
 
-                                                            // Wochenende: Leicht dunkleres Grau beim Hover
+                                                            // Weekends use a slightly darker hover state.
                                                             isWeekend(day) && 'bg-muted/30 hover:bg-muted/90',
 
-                                                            // Urlaub erfüllt (Amber): Bleibt Amber, wird intensiver
+                                                            // Fulfilled day-off wishes stay amber and intensify on hover.
                                                             isDayOffFulfilled && 'bg-amber-400/10 hover:bg-amber-400/25',
 
-                                                            // Wunsch erfüllt (Emerald): Bleibt Emerald, wird intensiver
+                                                            // Fulfilled shift wishes stay emerald and intensify on hover.
                                                             isShiftWishFulfilled && 'bg-emerald-400/10 hover:bg-emerald-400/25',
 
-                                                            // Nicht verfügbar (Rose): Bleibt Rot, wird intensiver
+                                                            // Unavailable days stay rose and intensify on hover.
                                                             isUnavailable && 'bg-rose-400/10 hover:bg-rose-400/25',
 
-                                                            // Wunsch offen (Rose): Bleibt Rot, wird intensiver
+                                                            // Unfulfilled day-off wishes keep a lighter rose highlight.
                                                             !shiftsForCell.length && !isDayOffFulfilled && hasDayOffWish && 'bg-rose-400/5 hover:bg-rose-400/20'
                                                         )}
                                                         onMouseLeave={() => handleMouseLeave()}
@@ -1076,22 +1076,22 @@ export function ScheduleTable(props: ScheduleTableProps) {
                                                     <td
                                                         key={dayIdx}
                                                         className={cn(
-                                                            // Standard-Basis: Wenn keine Farbe aktiv ist, greift dieser graue Hover
+                                                            // Default cell state when no other status color applies.
                                                             'border-b border-border p-2 text-center relative z-0 cursor-pointer hover:bg-foreground/5',
 
-                                                            // Wochenende: Leicht dunkleres Grau beim Hover
+                                                            // Weekends use a slightly darker hover state.
                                                             isWeekend(day) && 'bg-muted/30 hover:bg-muted/90',
 
-                                                            // Urlaub erfüllt (Amber): Bleibt Amber, wird intensiver
+                                                            // Fulfilled day-off wishes stay amber and intensify on hover.
                                                             isDayOffFulfilled && 'bg-amber-400/10 hover:bg-amber-400/25',
 
-                                                            // Wunsch erfüllt (Emerald): Bleibt Emerald, wird intensiver
+                                                            // Fulfilled shift wishes stay emerald and intensify on hover.
                                                             isShiftWishFulfilled && 'bg-emerald-400/10 hover:bg-emerald-400/25',
 
-                                                            // Nicht verfügbar (Rose): Bleibt Rot, wird intensiver
+                                                            // Unavailable days stay rose and intensify on hover.
                                                             isUnavailable && 'bg-rose-400/10 hover:bg-rose-400/25',
 
-                                                            // Wunsch offen (Rose): Bleibt Rot, wird intensiver
+                                                            // Unfulfilled day-off wishes keep a lighter rose highlight.
                                                             !shiftsForCell.length && !isDayOffFulfilled && hasDayOffWish && 'bg-rose-400/5 hover:bg-rose-400/20'
                                                         )}
                                                         onMouseLeave={() => handleMouseLeave()}

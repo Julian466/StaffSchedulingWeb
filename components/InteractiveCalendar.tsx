@@ -32,17 +32,17 @@ export interface DayData {
 }
 
 export interface InteractiveCalendarProps {
-    month: number; // 1-12 (Januar = 1)
+    month: number; // 1-12 (January = 1)
     year: number;
     categories: Category[];
-    eventCategories?: EventCategory[]; // Kategorien für Termine (z.B. Wunsch-Schicht)
+    eventCategories?: EventCategory[]; // Categories for events (for example, a preferred shift)
     initialDayData?: DayData[];
     onDayDataChange?: (dayData: DayData[]) => void;
-    maxVisibleEvents?: number; // Maximale Anzahl sichtbarer Termine pro Tag (Standard: alle anzeigen)
-    showLegend?: boolean; // Zeigt die Kategorien-Legende an (Standard: true)
-    showCategoryTitle?: boolean; // Zeigt den Kategorienamen im Tag an (Standard: true)
-    className?: string; // Zusätzliche CSS-Klassen für das Container-Element
-    readOnly?: boolean; // Aktiviert den Read-Only-Modus (Standard: false)
+    maxVisibleEvents?: number; // Maximum number of visible events per day (default: show all)
+    showLegend?: boolean; // Whether to show the category legend (default: true)
+    showCategoryTitle?: boolean; // Whether to show the category name inside the day cell (default: true)
+    className?: string; // Additional CSS classes for the container element
+    readOnly?: boolean; // Enables read-only mode (default: false)
     container?: HTMLElement | null; // Portal container for fullscreen mode
     view?: 'month' | 'week'; // View mode
     /** If provided, event titles are restricted to these values and shown as toggle buttons */
@@ -98,14 +98,14 @@ export function InteractiveCalendar({
         });
     };
 
-    // Hilfsfunktionen für Datum
+    // Date helpers.
     const getDaysInMonth = (month: number, year: number) => {
         return new Date(year, month, 0).getDate();
     };
 
     const getFirstDayOfMonth = (month: number, year: number) => {
         const day = new Date(year, month - 1, 1).getDay();
-        return day === 0 ? 6 : day - 1; // Montag = 0, Sonntag = 6
+        return day === 0 ? 6 : day - 1; // Monday = 0, Sunday = 6
     };
 
     const formatDate = (day: number) => {
@@ -171,7 +171,7 @@ export function InteractiveCalendar({
         return eventCategories.find((c) => c.id === categoryId)?.name;
     };
 
-    // Kalender rendern
+    // Render calendar data.
     const daysInMonth = getDaysInMonth(month, year);
     const firstDay = getFirstDayOfMonth(month, year);
     const weekDays = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
@@ -190,7 +190,7 @@ export function InteractiveCalendar({
         "Dezember",
     ];
 
-    // Tage vom vorherigen Monat berechnen
+    // Precompute the leading days from the previous month.
     const prevMonth = month === 1 ? 12 : month - 1;
     const prevYear = month === 1 ? year - 1 : year;
     const daysInPrevMonth = getDaysInMonth(prevMonth, prevYear);
@@ -198,12 +198,12 @@ export function InteractiveCalendar({
     const calendarDays: Array<{ day: number; isCurrentMonth: boolean }> = [];
 
     if (view === "month") {
-        // Tage vom vorherigen Monat
+        // Fill the grid with trailing days from the previous month.
         for (let i = firstDay - 1; i >= 0; i--) {
             calendarDays.push({day: daysInPrevMonth - i, isCurrentMonth: false});
         }
 
-        // Tage vom aktuellen Monat
+        // Add the current month days.
         for (let day = 1; day <= daysInMonth; day++) {
             calendarDays.push({day, isCurrentMonth: true});
         }
@@ -222,18 +222,18 @@ export function InteractiveCalendar({
             </CardHeader>
             <CardContent>
                 <div className="grid grid-cols-7 gap-2">
-                    {/* Wochentage Header */}
+                    {/* Weekday header */}
                     {weekDays.map((day) => (
                         <div key={day} className="text-center p-2 font-medium">
                             {day}
                         </div>
                     ))}
 
-                    {/* Kalendertage */}
+                    {/* Calendar day cells */}
                     {calendarDays.map((dayObj, index) => {
                         const {day, isCurrentMonth} = dayObj;
 
-                        // Vorheriger Monat - ausgegraut und nicht interaktiv
+                        // Previous-month filler days stay dimmed and non-interactive.
                         if (!isCurrentMonth) {
                             return (
                                 <div
@@ -263,7 +263,7 @@ export function InteractiveCalendar({
                                     >
                                         <div className="mb-1">{day}</div>
 
-                                        {/* Termine anzeigen - pro Kategorie gruppiert */}
+                                        {/* Show events grouped by category when applicable. */}
                                         <div className="flex-1 flex flex-wrap gap-1 content-start overflow-hidden">
                                             {allowedEventTitles
                                                 ? // Grouped mode: one badge per eventCategory
@@ -331,7 +331,7 @@ export function InteractiveCalendar({
                                     </button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80" align="start" container={container}>
-                                    {/* Übersicht Modus */}
+                                    {/* Overview mode */}
                                     {(!popoverMode[date] || popoverMode[date] === "overview") && (
                                         <div className="space-y-4">
                                             <div>
@@ -341,7 +341,7 @@ export function InteractiveCalendar({
                                                 </h3>
                                             </div>
 
-                                            {/* Kategorie auswählen */}
+                                            {/* Choose the day category */}
                                             <div>
                                                 <Label>Kategorie</Label>
                                                 <div className="flex flex-wrap gap-2 mt-2">
@@ -374,7 +374,7 @@ export function InteractiveCalendar({
                                                 </div>
                                             </div>
 
-                                            {/* Schichten - eingeschränkte Auswahl (F/S/N) */}
+                                            {/* Restricted shift selection (for example F/S/N) */}
                                             {allowedEventTitles && !readOnly && eventCategories.length > 0 && (
                                                 <div className="space-y-3">
                                                     <Label>Schichten</Label>
@@ -444,12 +444,12 @@ export function InteractiveCalendar({
                                                 </div>
                                             )}
 
-                                            {/* Termine - freie Eingabe (Fallback wenn kein allowedEventTitles) */}
+                                            {/* Free-text events fallback when allowedEventTitles is not provided */}
                                             {!allowedEventTitles && (
                                                 <div>
                                                     <Label>Termine</Label>
 
-                                                    {/* Termin-Kategorie Buttons - nur anzeigen wenn nicht readOnly */}
+                                                    {/* Event-category buttons are only available outside read-only mode. */}
                                                     {!readOnly && eventCategories.length > 0 && (
                                                         <div className="flex flex-wrap gap-2 mt-2">
                                                             {eventCategories.map((eventCat) => (
@@ -478,7 +478,7 @@ export function InteractiveCalendar({
                                                         </div>
                                                     )}
 
-                                                    {/* Termine Liste mit ScrollArea */}
+                                                    {/* Event list inside a scroll area */}
                                                     {data.events.length > 0 && (
                                                         <ScrollArea
                                                             className="h-[200px] mt-2"
@@ -521,7 +521,7 @@ export function InteractiveCalendar({
                                                 </div>
                                             )}
 
-                                            {/* Termine Liste - auch bei allowedEventTitles readOnly zeigen */}
+                                            {/* Show the event list in read-only mode even when titles are restricted. */}
                                             {allowedEventTitles && readOnly && data.events.length > 0 && (
                                                 <div>
                                                     <Label>Schichten</Label>
@@ -557,7 +557,7 @@ export function InteractiveCalendar({
                                         </div>
                                     )}
 
-                                    {/* Termin hinzufügen Modus - nur bei freier Eingabe */}
+                                    {/* Add-event mode is only used for free-text input. */}
                                     {!allowedEventTitles && popoverMode[date] === "add-event" && selectedEventCategory[date] && (
                                         <div className="space-y-4">
                                             <div className="text-sm text-gray-600">
@@ -616,7 +616,7 @@ export function InteractiveCalendar({
                     })}
                 </div>
 
-                {/* Legende */}
+                {/* Legend */}
                 {showLegend && (categories.length > 0 || eventCategories.length > 0) && (
                     <div className="mt-6 space-y-3">
                         {categories.length > 0 && (

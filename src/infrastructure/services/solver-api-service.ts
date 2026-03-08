@@ -1,5 +1,3 @@
-// src/infrastructure/services/solver-api-service.ts
-
 import { createApiLogger } from '@/lib/logging/logger';
 import { getSolverApiConfig } from '@/lib/config/app-config';
 import type {
@@ -21,7 +19,7 @@ import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 const logger = createApiLogger('solver-api-service');
 
 // ---------------------------------------------------------------------------
-// API Response Types (1:1 aus src/api/main.py)
+// API response types mirroring src/api/main.py.
 // ---------------------------------------------------------------------------
 
 interface ApiStatusResponse {
@@ -55,7 +53,7 @@ interface ApiSolveMultipleResponse extends ApiOperationResponse {
 }
 
 // ---------------------------------------------------------------------------
-// HTTP Helper
+// HTTP helpers.
 // ---------------------------------------------------------------------------
 
 async function apiPost<TBody, TResponse>(
@@ -97,14 +95,14 @@ async function apiGet<TResponse>(baseUrl: string, path: string): Promise<TRespon
     return response.json() as Promise<TResponse>;
 }
 
-// API erwartet ISO-Datum (YYYY-MM-DD), nicht DD.MM.YYYY wie der CLI
+// The API expects ISO dates (YYYY-MM-DD), unlike the CLI.
 function toIsoDate(date: string | Date): string {
     const d = typeof date === 'string' ? new Date(date) : date;
     return d.toISOString().split('T')[0];
 }
 
 // ---------------------------------------------------------------------------
-// ISolverService Implementation
+// ISolverService implementation.
 // ---------------------------------------------------------------------------
 
 export class SolverApiService implements ISolverService {
@@ -112,7 +110,7 @@ export class SolverApiService implements ISolverService {
 
     constructor() {
         const config = getSolverApiConfig();
-        this.baseUrl = config.baseUrl; // z.B. 'http://127.0.0.1:8000'
+        this.baseUrl = config.baseUrl; // For example: 'http://127.0.0.1:8000'
     }
 
     async checkHealth(): Promise<SolverHealthResult> {
@@ -182,7 +180,7 @@ export class SolverApiService implements ISolverService {
         const startTime = Date.now();
         logger.info('Solving via API', { unit: params.unit, start: params.start, end: params.end, timeout: params.timeout });
 
-        // Solver-Timeout als HTTP-Timeout: (timeout + 30s Puffer) * 2 für Sicherheit
+        // Stretch the HTTP timeout beyond the solver timeout to avoid premature aborts.
         const httpTimeoutMs = params.timeout ? (params.timeout + 30) * 2 * 1000 : undefined;
 
         try {
@@ -231,7 +229,7 @@ export class SolverApiService implements ISolverService {
         const startTime = Date.now();
         logger.info('Solving multiple via API', { unit: params.unit, timeout: params.timeout });
 
-        // solve-multiple läuft 3x → 3-facher Timeout-Puffer
+        // solve-multiple runs three solver passes, so give it a larger timeout buffer.
         const httpTimeoutMs = params.timeout ? (params.timeout * 3 + 60) * 2 * 1000 : undefined;
 
         try {

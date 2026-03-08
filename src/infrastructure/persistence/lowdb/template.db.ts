@@ -13,5 +13,5 @@ export async function getTemplateDb(caseId: number, templateType: TemplateType) 
     const dir = path.join(casesDir, caseId.toString(), 'templates');
     await fs.mkdir(dir, {recursive: true});
     const filePath = path.join(dir, `${templateType}.json`);
-    return JSONFilePreset<TemplateDatabase>(filePath, { templates: [] }); // ← inline, nie mutierbar
+    return JSONFilePreset<TemplateDatabase>(filePath, { templates: [] });
 }

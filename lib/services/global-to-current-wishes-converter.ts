@@ -7,15 +7,15 @@ export function getDaysByWeekday(year?: number, month?: number): number[][] {
 
     if (m < 1 || m > 12) throw new RangeError('month must be between 1 and 12');
 
-    // Anzahl Tage im Monat (wenn month 1-12 ist, liefert new Date(y, m, 0) den letzten Tag des Monats)
+    // new Date(y, m, 0) returns the last day of the requested month when month is in the 1-12 range.
     const daysInMonth = new Date(y, m, 0).getDate();
 
-    // Ergebnis: 0 = Montag, 1 = Dienstag, ..., 6 = Sonntag
+    // Result: 0 = Monday, 1 = Tuesday, ..., 6 = Sunday.
     const result: number[][] = Array.from({length: 7}, () => []);
 
     for (let d = 1; d <= daysInMonth; d++) {
-        const jsWeekday = new Date(y, m - 1, d).getDay(); // 0 = Sonntag, 1 = Montag, ..., 6 = Samstag
-        const index = (jsWeekday + 6) % 7; // mappt 1->0 (Montag) ... 0->6 (Sonntag)
+        const jsWeekday = new Date(y, m - 1, d).getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        const index = (jsWeekday + 6) % 7; // maps 1->0 (Monday) ... 0->6 (Sunday)
         result[index].push(d);
     }
 
@@ -41,7 +41,7 @@ export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlock
         blocked_shifts: []
     };
 
-    // wish_days und blocked_days
+    // Expand wished and blocked weekdays into concrete calendar days.
     weeklyEmployee.wish_days.forEach(weekday => {
         if (weekday >= 1 && weekday <= 7) {
             monthlyEmployee.wish_days.push(...daysByWeekday[weekday - 1]);
@@ -53,7 +53,7 @@ export function generateMonthlyDataFromWeeklyData(weeklyEmployee: WishesAndBlock
         }
     });
 
-    // wish_shifts und blocked_shifts
+    // Expand wished and blocked shifts into concrete day-shift pairs.
     weeklyEmployee.wish_shifts.forEach(([weekday, shift]) => {
         if (weekday >= 1 && weekday <= 7) {
             daysByWeekday[weekday - 1].forEach(day => {

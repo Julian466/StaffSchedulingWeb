@@ -27,7 +27,7 @@ export function CaseSelector({disabled, lockedCaseId, lockedMonthYear}: CaseSele
     const urlCaseIdStr = searchParams.get('caseId');
     const urlMonthYear = searchParams.get('monthYear');
 
-    // 2. Entscheide: Wenn gelockt, nimm die lock-Werte, sonst URL
+    // Use the locked workflow values when navigation is fixed; otherwise read from the URL.
     const effectiveCaseId = disabled && lockedCaseId
         ? lockedCaseId
         : (urlCaseIdStr ? parseInt(urlCaseIdStr, 10) : null);
@@ -109,7 +109,7 @@ export function CaseSelector({disabled, lockedCaseId, lockedMonthYear}: CaseSele
                 </SelectContent>
             </Select>
 
-            {/* add button next to dropdown */}
+            {/* Add button next to the dropdown */}
             <Button
                 size="sm"
                 className="ml-2"

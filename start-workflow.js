@@ -4,7 +4,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-// Kommandozeilen-Argumente auslesen
+// Read command-line arguments.
 // node start-workflow.js <START> <END> <CASE>
 const args = process.argv.slice(2);
 
@@ -18,13 +18,13 @@ const startDate = args[0];
 const endDate = args[1];
 const caseId = args[2];
 
-// Die Ziel-URL für deinen neuen Cookie-Endpoint
+// Build the workflow start URL.
 const url = `http://localhost:3000/api/workflow/start?caseId=${caseId}&start=${startDate}&end=${endDate}`;
 
-// Plattformunabhängiger npm-Befehl
+// Use the correct npm executable for the current platform.
 const npmCmd = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
-// Plattformunabhängiger Befehl zum Öffnen des Browsers
+// Open the browser with a platform-specific command.
 function openBrowser(targetUrl) {
     const platform = process.platform;
     let command;
@@ -66,7 +66,7 @@ async function ensurePrerequisites() {
     }
 }
 
-// Prüfen, ob der Server schon läuft (Port 3000)
+// Check whether the server is already running on port 3000.
 (async () => {
     try {
         await ensurePrerequisites();
@@ -76,11 +76,11 @@ async function ensurePrerequisites() {
     }
 
     http.get('http://localhost:3000', (res) => {
-        // Server läuft bereits! Einfach nur den Browser öffnen.
+        // The server is already running, so only the browser needs to be opened.
         console.log(`Server läuft bereits. Öffne Browser für Case ${caseId}...`);
         openBrowser(url);
     }).on('error', (e) => {
-        // Server läuft noch nicht. Wir müssen ihn starten!
+        // The server is not running yet, so start it first.
         console.log('Server läuft noch nicht. Starte Next.js...');
 
         const nextProcess = spawn(npmCmd, ['run', 'start'], {
@@ -90,14 +90,14 @@ async function ensurePrerequisites() {
 
         console.log('Warte auf Server-Start...');
 
-        // Polling: Warte, bis der Server erreichbar ist, und öffne dann den Browser
+        // Poll until the server is reachable, then open the browser.
         const checkServer = setInterval(() => {
             http.get('http://localhost:3000', (res) => {
                 clearInterval(checkServer);
                 console.log(`Server ist online! Öffne Browser für Case ${caseId}...`);
                 openBrowser(url);
             }).on('error', () => {
-                // Noch nicht bereit, warte weiter...
+                // The server is not ready yet; keep waiting.
             });
         }, 1000);
     });
