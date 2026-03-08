@@ -22,6 +22,7 @@ export function makeExecuteSolverFetchUseCase(
             caseId,
             params,
             error: result.error,
+            consoleOutput: result.consoleOutput,
             createdAt: new Date(startTime).toISOString(),
             completedAt: new Date().toISOString(),
             duration: result.duration,

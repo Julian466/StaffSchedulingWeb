@@ -231,6 +231,7 @@ export class PythonCliService implements ISolverService {
             success: result.success,
             duration: result.duration,
             error: result.success ? undefined : result.consoleOutput,
+            consoleOutput: result.consoleOutput,
         };
     }
 
@@ -255,6 +256,7 @@ export class PythonCliService implements ISolverService {
                 status: 'INFEASIBLE',
                 duration: result.duration,
                 error: result.consoleOutput,
+                consoleOutput: result.consoleOutput,
             };
         }
 
@@ -266,6 +268,7 @@ export class PythonCliService implements ISolverService {
                 status: 'UNKNOWN',
                 duration: result.duration,
                 error: 'No solution file produced by solver',
+                consoleOutput: result.consoleOutput,
             };
         }
 
@@ -275,6 +278,7 @@ export class PythonCliService implements ISolverService {
             status: 'FEASIBLE',
             solution,
             duration: result.duration,
+            consoleOutput: result.consoleOutput,
         };
     }
 
@@ -301,6 +305,7 @@ export class PythonCliService implements ISolverService {
                 feasibleWeightIds: [],
                 duration: result.duration,
                 error: result.consoleOutput,
+                consoleOutput: result.consoleOutput,
             };
         }
 
@@ -322,6 +327,7 @@ export class PythonCliService implements ISolverService {
             feasibleCount: solutions.length,
             feasibleWeightIds,
             duration: result.duration,
+            consoleOutput: result.consoleOutput,
         };
     }
 
@@ -338,7 +344,8 @@ export class PythonCliService implements ISolverService {
         return {
             success: result.success,
             duration: result.duration,
-            error: result.success ? undefined : result.consoleOutput
+            error: result.success ? undefined : result.consoleOutput,
+            consoleOutput: result.consoleOutput,
         };
     }
 
@@ -360,6 +367,7 @@ export class PythonCliService implements ISolverService {
             success: result.success,
             duration: result.duration,
             error: result.success ? undefined : result.consoleOutput,
+            consoleOutput: result.consoleOutput,
         };
     }
 

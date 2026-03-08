@@ -21,6 +21,7 @@ export interface SolverOperationResult {
     success: boolean;
     duration?: number;
     error?: string;
+    consoleOutput?: string;
 }
 
 export interface SolveOperationResult extends SolverOperationResult {

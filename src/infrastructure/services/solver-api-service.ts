@@ -166,6 +166,7 @@ export class SolverApiService implements ISolverService {
                 success: result.success,
                 duration,
                 error: result.success ? undefined : result.log,
+                consoleOutput: result.console_output
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -205,6 +206,7 @@ export class SolverApiService implements ISolverService {
                     status: (result.status as SolveOperationResult['status']) ?? 'UNKNOWN',
                     duration,
                     error: result.log ?? 'No solution produced',
+                    consoleOutput: result.console_output,
                 };
             }
 
@@ -213,6 +215,7 @@ export class SolverApiService implements ISolverService {
                 status,
                 solution: result.solution_data,
                 duration,
+                consoleOutput: result.console_output,
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -265,6 +268,7 @@ export class SolverApiService implements ISolverService {
                 feasibleWeightIds,
                 duration,
                 error: solutions.length === 0 ? 'No feasible solutions produced' : undefined,
+                consoleOutput: result.console_output,
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -296,6 +300,7 @@ export class SolverApiService implements ISolverService {
                 success: result.success,
                 duration,
                 error: result.success ? undefined : result.log,
+                consoleOutput: result.console_output,
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
@@ -327,6 +332,7 @@ export class SolverApiService implements ISolverService {
                 success: result.success,
                 duration,
                 error: result.success ? undefined : result.log,
+                consoleOutput: result.console_output,
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

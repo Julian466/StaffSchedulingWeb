@@ -24,6 +24,7 @@ import {makeGetSolverProgressController} from "@/src/controllers/solver/get-solv
 import {makeGetSolverProgressUseCase} from "@/src/application/use-cases/solver/get-solver-progress.use-case";
 import {makeGetLastInsertedSolutionUseCase} from "@/src/application/use-cases/solver/get-last-inserted-solution.use-case";
 import {makeGetLastInsertedSolutionController} from "@/src/controllers/solver/get-last-inserted-solution.controller";
+import {PythonCliService} from "@/src/infrastructure/services/python-cli-service";
 
 export function createSolverModule() {
     const m = createModule();
