@@ -9,7 +9,18 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {SolverProgressDisplay} from '@/features/solver/components/solver-progress-display';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
-import {CheckCircle2, Database, Info, Loader2, Play, Trash2, Upload} from 'lucide-react';
+import {CheckCircle2, Database, Info, Loader2, Play, Trash2, Upload, AlertTriangle} from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import type {SolverExecOptions} from '@/features/solver/hooks/use-solver-operations';
 import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
@@ -33,6 +44,26 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
     const router = useRouter();
     const [command, setCommand] = useState<SolverCommandType>('solve');
     const [timeout, setTimeout] = useState('300');
+
+    const [showDeleteMissingDialog, setShowDeleteMissingDialog] = useState(false);
+    const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
+    const [showInsertMissingDialog, setShowInsertMissingDialog] = useState(false);
+
+    // queue for deferred execution when user confirms via dialog
+    const [queuedOpts, setQueuedOpts] = useState<SolverExecOptions | null>(null);
+    const [queuedCmd, setQueuedCmd] = useState<SolverCommandType | null>(null);
+
+    const performQueued = async () => {
+        if (!queuedCmd || !queuedOpts) return;
+        const opts = queuedOpts;
+        setQueuedCmd(null);
+        setQueuedOpts(null);
+        if (queuedCmd === 'delete') {
+            await executeDelete(opts);
+        } else if (queuedCmd === 'insert') {
+            await executeInsert(opts);
+        }
+    };
 
     // Month and year state
     const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
@@ -111,12 +142,26 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                 await executeSolveMultiple(execOpts, parseInt(timeout, 10));
                 break;
             case 'insert':
+                if (!pendingInsertSolution) {
+                    setQueuedCmd('insert');
+                    setQueuedOpts(execOpts);
+                    setShowInsertMissingDialog(true);
+                    return;
+                }
                 await executeInsert(execOpts);
                 break;
             case 'delete': {
-                if (!confirm('Möchten Sie wirklich alle Daten für diesen Zeitraum löschen?')) return;
-                await executeDelete(execOpts);
-                break;
+                if (!lastInsertedSolution) {
+                    setQueuedCmd('delete');
+                    setQueuedOpts(execOpts);
+                    setShowDeleteMissingDialog(true);
+                    return;
+                }
+                // ask for final confirmation too
+                setQueuedCmd('delete');
+                setQueuedOpts(execOpts);
+                setShowDeleteConfirmDialog(true);
+                return;
             }
         }
     };
@@ -350,6 +395,83 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                     isImporting={isImporting}
                 />
             )}
+
+            {/* Confirmation dialogs */}
+            <AlertDialog open={showDeleteMissingDialog} onOpenChange={setShowDeleteMissingDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Löschung ohne eingespielten Plan
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Es existiert kein zuletzt eingespielter Dienstplan im Speicher.
+                            Der Löschvorgang greift auf die Festplatte zurück.
+                            <br/><br/>
+                            Fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={async () => {
+                            setShowDeleteMissingDialog(false);
+                            await performQueued();
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Dienstplan wirklich löschen?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Die ausgewählten Daten werden aus der Datenbank entfernt.
+                            Dies kann nicht rückgängig gemacht werden.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={async () => {
+                            setShowDeleteConfirmDialog(false);
+                            await performQueued();
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={showInsertMissingDialog} onOpenChange={setShowInsertMissingDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Export ohne Plan im Speicher
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Es befindet sich kein Dienstplan im Speicher. Beim Export werden die
+                            Daten von der Festplatte gelesen.
+                            <br/><br/>
+                            Fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={async () => {
+                            setShowInsertMissingDialog(false);
+                            await performQueued();
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     );
 }

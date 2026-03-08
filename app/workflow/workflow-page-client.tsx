@@ -25,6 +25,7 @@ import {
     Download,
     Edit,
     FolderOpen,
+    Info,
     Loader2,
     Play,
     PlayCircle,
@@ -77,6 +78,8 @@ export function WorkflowPageClient({
     const router = useRouter();
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
     const [showFetchWarning, setShowFetchWarning] = useState(false);
+    const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+    const [showInsertWarning, setShowInsertWarning] = useState(false);
     const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
     const [pendingAction, setPendingAction] = useState<'solve' | 'multi-solve' | null>(null);
     const [executingAction, setExecutingAction] = useState<WorkflowAction | null>(null);
@@ -118,6 +121,8 @@ export function WorkflowPageClient({
         executeInsert,
         executeDelete,
         handleImport,
+        pendingInsertSolution,
+        lastInsertedSolution,
     } = useSolverOperations({onAfterOperation: refreshJobs, initialLastInsertedSolution, initialPendingInsertSolution});
 
     const execOpts = {caseId, monthYear, start: isoStart, end: isoEnd};
@@ -176,6 +181,15 @@ export function WorkflowPageClient({
         if (action === 'solve' || action === 'multi-solve') {
             setPendingAction(action);
             setShowTimeoutDialog(true);
+            return;
+        }
+        // guard delete/insert when no plan data available
+        if (action === 'delete' && !lastInsertedSolution) {
+            setShowDeleteWarning(true);
+            return;
+        }
+        if (action === 'insert' && !pendingInsertSolution) {
+            setShowInsertWarning(true);
             return;
         }
         runAction(action);
@@ -313,9 +327,11 @@ export function WorkflowPageClient({
                         <Card
                             key={action}
                             className={
-                                state.status === 'success' ? 'border-green-200 bg-green-50/50' :
-                                state.status === 'error' ? 'border-red-200 bg-red-50/50' :
-                                state.status === 'running' ? 'border-blue-200 bg-blue-50/50' : ''
+                                `flex flex-col h-full ${
+                                    state.status === 'success' ? 'border-green-200 bg-green-50/50' :
+                                    state.status === 'error' ? 'border-red-200 bg-red-50/50' :
+                                    state.status === 'running' ? 'border-blue-200 bg-blue-50/50' : ''
+                                }`
                             }
                         >
                             <CardHeader>
@@ -331,18 +347,38 @@ export function WorkflowPageClient({
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                {state.message && (
-                                    <Alert className="mb-4" variant={state.status === 'error' ? 'destructive' : 'default'}>
-                                        <AlertDescription>{state.message}</AlertDescription>
-                                    </Alert>
-                                )}
+                            <CardContent className="flex flex-col grow justify-between">
+                                <div>
+                                    {state.message && (
+                                        <Alert className="mb-4" variant={state.status === 'error' ? 'destructive' : 'default'}>
+                                            <AlertDescription>{state.message}</AlertDescription>
+                                        </Alert>
+                                    )}
+
+                                    {/* additional info for insert/delete */}
+                                    {action === 'insert' && (
+                                        <div className={`flex items-center gap-1.5 text-xs mb-2 ${pendingInsertSolution ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                            {pendingInsertSolution
+                                                ? <><CheckCircle2 className="h-3.5 w-3.5"/>Lösung bereit für Einspielung</>
+                                                : <><Info className="h-3.5 w-3.5"/>Keine Lösung im Speicher -  API/CLI versucht den Dienstplan auf der Disk zu finden</>
+                                            }
+                                        </div>
+                                    )}
+                                    {action === 'delete' && (
+                                        <div className={`flex items-center gap-1.5 text-xs mb-2 ${lastInsertedSolution ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                            {lastInsertedSolution
+                                                ? <><CheckCircle2 className="h-3.5 w-3.5"/>Letzte eingespielten Lösung vorhanden - wird direkt übergeben</>
+                                                : <><Info className="h-3.5 w-3.5"/>Keine eingespielte Lösung im Speicher - API/CLI versucht den Dienstplan auf der Disk zu finden</>
+                                            }
+                                        </div>
+                                    )}
+                                </div>
 
                                 <Button
                                     onClick={() => executeAction(action)}
                                     disabled={isActionDisabled(action)}
                                     variant={getActionButtonVariant(action)}
-                                    className="w-full"
+                                    className="w-full mt-4"
                                 >
                                     {state.status === 'running' && (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
@@ -381,6 +417,60 @@ export function WorkflowPageClient({
                         <AlertDialogAction onClick={() => {
                             setShowFetchWarning(false);
                             runAction('fetch');
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Delete warning when no lastInsertedSolution */}
+            <AlertDialog open={showDeleteWarning} onOpenChange={setShowDeleteWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Löschen ohne eingespielten Plan
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Es ist kein zuletzt eingespielter Dienstplan vorhanden. Der Löschvorgang
+                            versucht die Daten auf der Disk zu finden (CLI-Verhalten).
+                            <br/><br/>
+                            Möchten Sie trotzdem fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setShowDeleteWarning(false);
+                            runAction('delete');
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Insert warning when no pendingInsertSolution */}
+            <AlertDialog open={showInsertWarning} onOpenChange={setShowInsertWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Export ohne Plan im Speicher
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Es befindet sich derzeit kein Dienstplan im Speicher. Beim Export werden die
+                            Daten von der Festplatte verwendet.
+                            <br/><br/>
+                            Fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setShowInsertWarning(false);
+                            runAction('insert');
                         }}>
                             Fortfahren
                         </AlertDialogAction>
