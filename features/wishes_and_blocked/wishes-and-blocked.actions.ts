@@ -22,10 +22,10 @@ export async function getWishesByKeyAction(caseId: number, monthYear: string, ke
 export async function createWishesAction(
     caseId: number,
     monthYear: string,
-    data: Omit<WishesAndBlockedEmployee, 'key'>
+    data: WishesAndBlockedEmployee
 ): Promise<ActionResult> {
     const controller = getInjection('ICreateWishesController');
-    const result = await controller({caseId, monthYear, entry: data as WishesAndBlockedEmployee});
+    const result = await controller({caseId, monthYear, entry: data});
     if ('error' in result) return {success: false, error: result.error};
     revalidatePath('/wishes-and-blocked');
     return {success: true, data: undefined};

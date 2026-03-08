@@ -40,7 +40,7 @@ export function WishesAndBlockedPageClient({caseId, monthYear, employees}: Wishe
         setDialogOpen(true);
     };
 
-    const handleSubmit = async (data: Omit<WishesAndBlockedEmployee, 'key'>) => {
+    const handleSubmit = async (data: WishesAndBlockedEmployee) => {
         startSubmitTransition(async () => {
             let result;
             if (editingEmployee) {
