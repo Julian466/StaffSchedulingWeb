@@ -21,7 +21,6 @@ const nextConfig = {
     // distDir: "build"
 }
 const withNextra = nextra({
-    contentDirBasePath: '/docs',
 })
 
 export default withNextra(nextConfig)
