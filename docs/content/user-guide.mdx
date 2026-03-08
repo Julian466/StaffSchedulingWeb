@@ -1,0 +1,279 @@
+# User Guide
+
+This guide walks you through installing, configuring, and using the StaffSchedulingWeb application
+to manage employee schedules in a healthcare environment.
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+| Requirement | Minimum Version | Recommended |
+|---|---|---|
+| **Node.js** | 20.x | 24.x (LTS) |
+| **npm** | 9.x | 11.x |
+
+Verify your installation:
+
+```bash
+node --version
+npm --version
+```
+
+**Optional** — if you intend to run the constraint-programming solver:
+
+| Requirement | Details |
+|---|---|
+| **Python** | 3.10+ (or the `uv` package runner) |
+| **StaffScheduling** | The Python solver project ([repository](https://github.com/CombiRWTH/StaffScheduling)) |
+
+### Installation
+
+1. **Clone the repository**
+
+```bash
+git clone https://github.com/Julian466/StaffSchedulingWeb.git
+cd StaffSchedulingWeb
+```
+
+2. **Install dependencies**
+
+```bash
+npm install
+```
+
+3. **Create a configuration file**
+
+Copy the template and adjust the paths:
+
+```bash
+cp config.template.json config.json
+```
+
+Open `config.json` and set the cases directory:
+
+```json
+{
+  "casesDirectory": "/cases",
+  "staffSchedulingProject": {
+    "include": false,
+    "path": "-",
+    "pythonExecutable": "uv"
+  }
+}
+```
+
+| Key | Description |
+|---|---|
+| `casesDirectory` | Path to the case data folder. Can be absolute (`C:\data\cases`) or relative to the project root (`/cases`). To share data with the StaffScheduling solver, point this to its `cases/` directory (e.g. `../StaffScheduling/cases`). |
+| `staffSchedulingProject.include` | Set to `true` to enable solver integration. |
+| `staffSchedulingProject.path` | Absolute path to the StaffScheduling Python project on disk. |
+| `staffSchedulingProject.pythonExecutable` | The command used to invoke Python — `uv`, `python`, or `python3`. |
+
+4. **Start the development server**
+
+```bash
+npm run dev
+```
+
+5. **Open the application**
+
+Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Building for Production
+
+```bash
+npm run build
+npm start
+```
+
+The production server will be available at [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Application Workflow
+
+The diagram below shows how StaffSchedulingWeb fits into the larger scheduling pipeline. Each numbered
+section below describes one phase of this workflow in detail.
+
+> 📸 **[Screenshot: High-level workflow diagram — the Mermaid flowchart from the README showing
+> TimeOffice → Data Fetcher → JSON Files → StaffSchedulingWeb → Solver → StaffSchedulingWeb → Deployment]**
+
+### Phase 1 — Select a Case
+
+A *Case* represents a single month of scheduling data for a specific hospital ward
+(e.g. *Case 77, November 2024*).
+
+1. Open the application in your browser.
+2. Use the **Case Selector** dropdown in the top navigation bar.
+3. Select an existing case **or** create a new one with the **"+"** button by specifying a month and year.
+
+After selecting a case, all subsequent pages (Employees, Wishes, Schedule, etc.) operate on data
+within that case.
+
+> 📸 **[Screenshot: Navigation bar with the Case Selector dropdown expanded, showing available cases]**
+
+### Phase 2 — Review Employee Data
+
+Employee data is imported from TimeOffice via the StaffScheduling data fetcher tool. The web
+application displays employees in a read-only table.
+
+1. Navigate to **"Mitarbeiter"** (Employees) in the sidebar.
+2. Browse the employee list showing ID, first name, last name, and role type
+(e.g. *Krankenpfleger*, *Pflegeassistenz*).
+
+> 📸 **[Screenshot: Employees page showing the employee table with columns for ID, name, and type]**
+
+### Phase 3 — Define Wishes & Blocked Periods
+
+Wishes and blocked periods are employee preferences that the solver tries to respect as soft
+constraints. There are two scopes:
+
+#### Monthly Wishes (Per-Case)
+
+1. Navigate to **"Wünsche & Blockierungen"** (Wishes & Blocked).
+2. Click **"Neuer Eintrag"** (New Entry).
+3. Select an employee from the dropdown.
+4. Choose the preference type:
+
+| Type | German Label | Meaning |
+|---|---|---|
+| **Wish Days** | Wunschtage | Days the employee prefers to have off |
+| **Wish Shifts** | Wunschschichten | Specific shifts the employee prefers (F, S, or N) |
+| **Blocked Days** | Blockierte Tage | Days the employee is unavailable |
+| **Blocked Shifts** | Blockierte Schichten | Specific shifts the employee cannot work |
+
+5. Use the interactive calendar to select dates.
+6. For shift-specific entries, also choose the shift type (**F** = Early, **S** = Late, **N** = Night).
+7. Click **"Speichern"** (Save).
+
+> 📸 **[Screenshot: Wishes & Blocked page with the calendar interface open, showing selected dates
+> highlighted in colour and the shift type selector]**
+
+#### Global Wishes (Recurring Weekly Patterns)
+
+Global wishes define recurring weekly preferences that apply to every week in the scheduling period.
+
+1. Navigate to **"Globale Wünsche & Blockierungen"** (Global Wishes & Blocked).
+2. Create or edit entries using the same preference types.
+3. These entries can be **imported into a monthly case** to generate all weekly occurrences automatically.
+
+> 📸 **[Screenshot: Global Wishes page showing weekly recurring preference entries]**
+
+### Phase 4 — Configure Solver Parameters
+
+Before running the solver, review the constraint weights and minimum staffing levels.
+
+#### Weights
+
+Navigate to **"Gewichtung"** (Weights) to view and adjust penalty weights for soft constraints.
+Higher weights cause the solver to prioritize avoiding specific violations (e.g. forward rotation,
+consecutive night shifts).
+
+> 📸 **[Screenshot: Weights configuration page showing sliders or input fields for constraint weights]**
+
+#### Minimum Staff
+
+Navigate to **"Mindestbesetzung"** (Minimum Staff) to define the minimum number of employees required
+per shift type (F, S, N) for each day of the week.
+
+> 📸 **[Screenshot: Minimum Staff page showing the staffing matrix with shift types as columns
+> and weekdays as rows]**
+
+#### Templates
+
+Both weights and minimum staff configurations can be saved as **templates** for reuse across cases.
+Use the template dialogs to save, load, or import presets.
+
+> 📸 **[Screenshot: Template save/load dialog]**
+
+### Phase 5 — Generate Schedules
+
+Schedules are generated by the StaffScheduling Python solver. There are two approaches:
+
+#### Option A — Via the Solver API (Workflow Mode)
+
+If the solver integration is enabled in `config.json`:
+
+1. Navigate to **"Workflow"**.
+2. The application orchestrates the solver pipeline: **Fetch → Solve → Insert**.
+3. Monitor progress in real time.
+
+> 📸 **[Screenshot: Workflow page showing solver progress (fetch, solve, insert steps)]**
+
+#### Option B — Manual Import
+
+If using the solver externally:
+
+1. Run the solver from the StaffScheduling project:
+```bash
+cd ../StaffScheduling
+uv run staff-scheduling solve-multiple <case_id> <start_date> <end_date>
+   ```
+2. Navigate to **"Dienstplan"** (Schedule) in the web application.
+3. Click **"Upload"** and select one or more `solution_*.json` files.
+
+> 📸 **[Screenshot: Schedule import dialog with file selector]**
+
+### Phase 6 — Compare & Select Schedules
+
+After importing schedules, the application provides comprehensive analysis tools.
+
+1. Use the **Schedule Selector** dropdown to switch between uploaded schedules.
+2. View quality metrics for each schedule:
+
+| Metric | Description |
+|---|---|
+| Forward Rotation Violations | Shifts should rotate F → S → N |
+| Consecutive Working Days > 5 | Extended work periods without a break |
+| Free Weekend Violations | Weekends without at least two consecutive days off |
+| Consecutive Night Shifts > 3 | Too many night shifts in a row |
+| Wish Fulfillment (%) | Percentage of employee wishes that were satisfied |
+| Overtime Hours | Total overtime summed across all employees |
+
+3. Click **"Alle Pläne"** (All Schedules) to open a **side-by-side comparison** of all imported schedules.
+
+> 📸 **[Screenshot: Schedule comparison dialog showing metrics for multiple schedules in a table]**
+
+4. The schedule detail view displays a **shift matrix**: a day-by-day, employee-by-employee grid
+with colour-coded cells:
+
+| Code | Shift | Colour |
+|---|---|---|
+| **F** | Früh (Early) | Light colour |
+| **S** | Spät (Late) | Medium colour |
+| **N** | Nacht (Night) | Dark colour |
+| *(empty)* | Day off | No fill |
+
+> 📸 **[Screenshot: Schedule detail view showing the colour-coded shift matrix with employees as rows
+> and days as columns]**
+
+5. Select the optimal schedule by clicking **"Auswählen"** (Select).
+
+### Phase 7 — Deploy the Schedule
+
+After selecting the optimal schedule:
+
+1. The selected schedule is persisted and marked as the active plan for the case.
+2. Export the schedule JSON file from the `cases/<case_id>/<month_year>/web/` directory.
+3. Use the StaffScheduling insert tool to write the schedule back to TimeOffice.
+4. Perform a final manual review in TimeOffice before publishing to staff.
+
+> 📸 **[Screenshot: Schedule page with a banner indicating the currently selected/active schedule]**
+
+---
+
+## Quick Reference — Navigation Structure
+
+| Page | Path | Purpose |
+|---|---|---|
+| Home | `/` | Case selection and overview |
+| Employees | `/employees` | View employee roster |
+| Wishes & Blocked | `/wishes-and-blocked` | Monthly per-employee preferences |
+| Global Wishes | `/global-wishes-and-blocked` | Recurring weekly preferences |
+| Weights | `/weights` | Solver constraint weights |
+| Minimum Staff | `/minimal-staff` | Minimum staffing levels |
+| Templates | `/templates` | Saved configuration presets |
+| Schedule | `/schedule` | View, compare, and select schedules |
+| Workflow | `/workflow` | Automated solver pipeline |

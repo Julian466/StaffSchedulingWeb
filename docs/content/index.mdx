@@ -1,0 +1,62 @@
+# StaffSchedulingWeb — Documentation
+
+**A web-based interface for automated staff schedule generation in healthcare environments.**
+
+---
+
+## Overview
+
+StaffSchedulingWeb is a modern Next.js web application that covers the complete staff scheduling workflow
+in hospitals. It was developed as part of a collaboration between the **Chair of Combinatorial Optimization**
+at RWTH Aachen University, **St. Marien-Hospital Düren**, and **Pradtke GmbH**. The project extends the
+Python-based [StaffScheduling](https://github.com/CombiRWTH/StaffScheduling) optimization engine with a
+full-featured user interface.
+
+The application bridges every step between exporting employee data from the TimeOffice system and
+re-importing a finalized, optimized schedule:
+
+1. **Manage employee data** — Import and display employee rosters from TimeOffice exports.
+2. **Define wishes & blocked periods** — Calendar-based input for shift preferences, days off, and unavailabilities.
+3. **Generate schedules** — Integration with a Python CP-SAT constraint-programming solver.
+4. **Compare & select plans** — Quality metrics, constraint violations, and wish-fulfillment rates.
+5. **Deploy** — Export the optimal schedule for re-import into TimeOffice.
+
+---
+
+## Tech Stack
+
+| Technology | Version | Purpose |
+|---|---|---|
+| **Next.js** | 16 | App Router, Server Components & Server Actions |
+| **React** | 19 | UI rendering |
+| **TypeScript** | 5.9 | Type safety |
+| **Zod** | 4 | Schema validation & type inference |
+| **@evyweb/ioctopus** | 1.3 | Dependency Injection container |
+| **LowDB** | 7 | File-based JSON database |
+| **Tailwind CSS** | 4 | Utility-first CSS framework |
+| **Radix UI / shadcn/ui** | – | Accessible UI component primitives |
+
+---
+
+## Structure of This Documentation
+
+This documentation is divided into two main parts:
+
+### [User Guide →](./user-guide)
+
+Aimed at **end-users and academic reviewers**. Contains the complete installation and usage guide:
+prerequisites, configuration, and the full scheduling workflow from start to finish.
+
+### [Developer Guide →](./developer-guide)
+
+Aimed at **developers who will take over and extend the project**. Explains the Clean Architecture layers,
+the Dependency Injection mechanism, the folder structure, and a step-by-step tutorial for adding new features.
+
+---
+
+## References
+
+- **This project:** [github.com/Julian466/StaffSchedulingWeb](https://github.com/Julian466/StaffSchedulingWeb)
+- **Solver project:** [github.com/CombiRWTH/StaffScheduling](https://github.com/CombiRWTH/StaffScheduling)
+- **Solver documentation:** [CombiRWTH.github.io/StaffScheduling](https://combirwth.github.io/StaffScheduling/)
+- **Clean Architecture reference:** [github.com/nikolovlazar/nextjs-clean-architecture](https://github.com/nikolovlazar/nextjs-clean-architecture/tree/main)

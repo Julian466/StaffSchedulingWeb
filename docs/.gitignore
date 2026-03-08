@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/public/
 
 # production
 /build
@@ -42,7 +43,3 @@ next-env.d.ts
 /.idea/
 config.json
 /.vscode/
-
-cases/*
-.github/skills/*
-docs/node_modules/*
