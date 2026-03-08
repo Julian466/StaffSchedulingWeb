@@ -5,6 +5,7 @@ import nextra from 'nextra'
  */
 const nextConfig = {
     output: 'export',
+    basePath: '/StaffSchedulingWeb',
     images: {
         unoptimized: true // mandatory, otherwise won't export
     }
@@ -12,7 +13,7 @@ const nextConfig = {
     // distDir: "build"
 }
 const withNextra = nextra({
-    // ... other Nextra config options
+    contentDirBasePath: '/docs',
 })
 
 export default withNextra(nextConfig)
