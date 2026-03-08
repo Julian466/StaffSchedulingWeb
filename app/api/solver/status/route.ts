@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSolverApiConfig } from '@/lib/config/app-config';
+import {getInjection} from "@/di/container";
 
 /**
  * GET /api/solver/status
@@ -11,15 +11,12 @@ import { getSolverApiConfig } from '@/lib/config/app-config';
  */
 export async function GET() {
     try {
-        const { baseUrl } = getSolverApiConfig();
-        const response = await fetch(`${baseUrl}/status`, { cache: 'no-store' });
-
-        if (!response.ok) {
-            return NextResponse.json({ error: `Solver API returned ${response.status}` }, { status: 502 });
+        const controller = getInjection('IGetSolverProgressController');
+        const result = await controller();
+        if ('error' in result) {
+            return NextResponse.json(null); // Graceful degradation
         }
-
-        const data = await response.json();
-        return NextResponse.json(data);
+        return NextResponse.json(result.data); // SolverProgress | null
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         return NextResponse.json({ error: message }, { status: 502 });
