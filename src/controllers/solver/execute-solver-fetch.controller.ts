@@ -30,6 +30,7 @@ export function makeExecuteSolverFetchController(
         } catch (error) {
             if (isDomainError(error)) return {error: error.message};
             if (error instanceof z.ZodError) return {error: error.issues[0]?.message ?? 'Invalid input'};
+            if (error instanceof Error) return {error: error.message};
             throw error;
         }
     };

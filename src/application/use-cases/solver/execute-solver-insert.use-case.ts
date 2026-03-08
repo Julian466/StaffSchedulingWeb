@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import type { ISolverService } from '@/src/application/ports/solver.service';
 import type { IJobRepository } from '@/src/application/ports/job.repository';
+import type { IScheduleRepository } from '@/src/application/ports/schedule.repository';
 import type { InsertParams, SolverJob } from '@/src/entities/models/solver.model';
 import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
@@ -9,13 +10,14 @@ export interface IExecuteSolverInsertUseCase {
         caseId: number;
         monthYear: string;
         params: InsertParams;
-        solution?: ScheduleSolutionRaw; // API braucht es, CLI ignoriert es
+        solution?: ScheduleSolutionRaw; // API sends directly, CLI ignores it
     }): Promise<{ job: SolverJob }>;
 }
 
 export function makeExecuteSolverInsertUseCase(
     solverService: ISolverService,
-    jobRepository: IJobRepository
+    jobRepository: IJobRepository,
+    scheduleRepository: IScheduleRepository,
 ): IExecuteSolverInsertUseCase {
     return async ({ caseId, monthYear, params, solution }) => {
         const startTime = Date.now();
@@ -37,6 +39,11 @@ export function makeExecuteSolverInsertUseCase(
 
         if (!result.success) {
             throw new Error(`Insert failed: ${result.error}`);
+        }
+
+        // Persist which solution was inserted so delete can reference it later
+        if (solution) {
+            await scheduleRepository.saveLastInserted(caseId, monthYear, solution);
         }
 
         return { job };

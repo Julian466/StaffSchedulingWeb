@@ -40,6 +40,7 @@ import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations
 
 import type { SolverJob } from '@/src/entities/models/solver.model';
 import type { SolverHealthResult } from '@/src/application/ports/solver.service';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -57,6 +58,8 @@ interface WorkflowPageClientProps {
     isoEnd: string;
     initialConfig: SolverHealthResult | null;
     initialJobs: SolverJob[];
+    initialLastInsertedSolution: ScheduleSolutionRaw | null;
+    initialPendingInsertSolution: ScheduleSolutionRaw | null;
 }
 
 export function WorkflowPageClient({
@@ -68,6 +71,8 @@ export function WorkflowPageClient({
     isoEnd,
     initialConfig,
     initialJobs,
+    initialLastInsertedSolution,
+    initialPendingInsertSolution,
 }: WorkflowPageClientProps) {
     const router = useRouter();
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
@@ -108,7 +113,7 @@ export function WorkflowPageClient({
         executeInsert,
         executeDelete,
         handleImport,
-    } = useSolverOperations({onAfterOperation: refreshJobs});
+    } = useSolverOperations({onAfterOperation: refreshJobs, initialLastInsertedSolution, initialPendingInsertSolution});
 
     const execOpts = {caseId, monthYear, start: isoStart, end: isoEnd};
 

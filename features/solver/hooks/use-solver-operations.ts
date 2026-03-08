@@ -42,9 +42,11 @@ export interface SolverOperationResult {
 
 interface UseSolverOperationsOptions {
     onAfterOperation?: () => Promise<void>;
+    initialLastInsertedSolution?: ScheduleSolutionRaw | null;
+    initialPendingInsertSolution?: ScheduleSolutionRaw | null;
 }
 
-export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOptions = {}) {
+export function useSolverOperations({ onAfterOperation, initialLastInsertedSolution, initialPendingInsertSolution }: UseSolverOperationsOptions = {}) {
     const [isExecuting, setIsExecuting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -56,6 +58,26 @@ export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOpt
 
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
     const [multipleImportDialogParams, setMultipleImportDialogParams] = useState<MultipleImportDialogParams | null>(null);
+
+    /**
+     * Solution that is ready to be inserted into TimeOffice.
+     * Set after a successful solve or after the user imports a solution to local storage.
+     * Initialized from the server-selected schedule so insert always has a solution ready.
+     * Passed to solverInsert when available; null falls back to CLI disk-read.
+     */
+    const [pendingInsertSolution, setPendingInsertSolution] = useState<ScheduleSolutionRaw | null>(
+        initialPendingInsertSolution ?? null
+    );
+
+    /**
+     * Solution that was last successfully inserted into TimeOffice.
+     * Passed to solverDelete so the API can identify exactly which entries to remove.
+     * Null falls back to CLI disk-read.
+     * Initialized from server-persisted value so it survives page refreshes.
+     */
+    const [lastInsertedSolution, setLastInsertedSolution] = useState<ScheduleSolutionRaw | null>(
+        initialLastInsertedSolution ?? null
+    );
 
     useEffect(() => {
         if (!isExecuting || executionStartTime === null) {
@@ -127,6 +149,7 @@ export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOpt
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Dienstplan erfolgreich erstellt');
+                setPendingInsertSolution(result.data.solution);
                 setImportDialogParams({
                     caseId: opts.caseId,
                     start: opts.start,
@@ -200,13 +223,14 @@ export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOpt
                 unit: opts.caseId,
                 start: opts.start,
                 end: opts.end,
-            });
+            }, pendingInsertSolution ?? undefined);
             if (!result.success) {
                 toast.error(result.error);
                 return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich in die Datenbank eingefügt');
+                setLastInsertedSolution(pendingInsertSolution);
                 return { succeeded: true };
             }
             toast.error('Fehler beim Einfügen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
@@ -223,13 +247,14 @@ export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOpt
                 unit: opts.caseId,
                 start: opts.start,
                 end: opts.end,
-            });
+            }, lastInsertedSolution ?? undefined);
             if (!result.success) {
                 toast.error(result.error);
                 return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich aus der Datenbank gelöscht');
+                setLastInsertedSolution(null);
                 return { succeeded: true };
             }
             toast.error('Fehler beim Löschen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
@@ -251,6 +276,8 @@ export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOpt
                 toast.error(result.error);
             } else {
                 toast.success('Lösung erfolgreich importiert');
+                // The imported solution becomes the candidate for the next insert into TimeOffice
+                setPendingInsertSolution(params.solution);
             }
         } finally {
             setIsImporting(false);
@@ -268,6 +295,8 @@ export function useSolverOperations({ onAfterOperation }: UseSolverOperationsOpt
         showMultipleImportDialog,
         setShowMultipleImportDialog,
         multipleImportDialogParams,
+        pendingInsertSolution,
+        lastInsertedSolution,
         executeFetch,
         executeSolve,
         executeSolveMultiple,

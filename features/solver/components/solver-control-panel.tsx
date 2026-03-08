@@ -9,7 +9,7 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {Progress} from '@/components/ui/progress';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
-import {Database, Loader2, Play, Trash2, Upload} from 'lucide-react';
+import {CheckCircle2, Database, Info, Loader2, Play, Trash2, Upload} from 'lucide-react';
 import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
@@ -22,10 +22,12 @@ interface SolverControlPanelProps {
     caseId: number;
     monthYear: string;
     onAfterOperation?: () => Promise<void>;
+    initialLastInsertedSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
+    initialPendingInsertSolution?: import('@/src/entities/models/schedule.model').ScheduleSolutionRaw | null;
     isLocked?: boolean;
 }
 
-export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocked}: SolverControlPanelProps) {
+export function SolverControlPanel({caseId, monthYear, onAfterOperation, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverControlPanelProps) {
     const searchParams = useSearchParams();
     const pathname = usePathname();
     const router = useRouter();
@@ -61,7 +63,9 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocke
         executeInsert,
         executeDelete,
         handleImport,
-    } = useSolverOperations({onAfterOperation});
+        pendingInsertSolution,
+        lastInsertedSolution,
+    } = useSolverOperations({onAfterOperation, initialLastInsertedSolution: initialLastInsertedSolution ?? null, initialPendingInsertSolution: initialPendingInsertSolution ?? null});
 
     const handleExecute = async () => {
         if (!caseId) return;
@@ -188,6 +192,22 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, isLocke
                         </SelectContent>
                     </Select>
                     <p className="text-sm text-muted-foreground">{getCommandDescription(command)}</p>
+                    {command === 'insert' && (
+                        <div className={`flex items-center gap-1.5 text-xs mt-1 ${pendingInsertSolution ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {pendingInsertSolution
+                                ? <><CheckCircle2 className="h-3.5 w-3.5"/>Lösung bereit für Einspielung</>
+                                : <><Info className="h-3.5 w-3.5"/>Keine Lösung im Speicher – API liest von Disk (nur CLI)</>
+                            }
+                        </div>
+                    )}
+                    {command === 'delete' && (
+                        <div className={`flex items-center gap-1.5 text-xs mt-1 ${lastInsertedSolution ? 'text-amber-600' : 'text-muted-foreground'}`}>
+                            {lastInsertedSolution
+                                ? <><CheckCircle2 className="h-3.5 w-3.5"/>Letzte eingespielten Lösung vorhanden – wird direkt übergeben</>
+                                : <><Info className="h-3.5 w-3.5"/>Keine eingespielnte Lösung im Speicher – API/CLI liest von Disk</>
+                            }
+                        </div>
+                    )}
                 </div>
 
                 {/* Month and Year Selection */}

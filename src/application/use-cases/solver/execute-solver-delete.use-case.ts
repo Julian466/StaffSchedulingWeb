@@ -1,6 +1,7 @@
 import {randomUUID} from 'crypto';
 import type {ISolverService} from '@/src/application/ports/solver.service';
 import type {IJobRepository} from '@/src/application/ports/job.repository';
+import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
 import type {DeleteParams, SolverJob} from '@/src/entities/models/solver.model';
 import type {ScheduleSolutionRaw} from "@/src/entities/models";
 
@@ -12,7 +13,8 @@ export interface IExecuteSolverDeleteUseCase {
 
 export function makeExecuteSolverDeleteUseCase(
     solverService: ISolverService,
-    jobRepository: IJobRepository
+    jobRepository: IJobRepository,
+    scheduleRepository: IScheduleRepository,
 ): IExecuteSolverDeleteUseCase {
     return async ({caseId, monthYear, params, solution}) => {
         const startTime = Date.now();
@@ -35,6 +37,9 @@ export function makeExecuteSolverDeleteUseCase(
         if (!result.success) {
             throw new Error(`Delete failed: ${result.error}`);
         }
+
+        // Remove the last-inserted marker now that the data has been deleted
+        await scheduleRepository.clearLastInserted(caseId, monthYear);
 
         return {job};
     };

@@ -204,8 +204,10 @@ import type {
 import type {IExecuteSolverInsertController} from '@/src/controllers/solver/execute-solver-insert.controller';
 import type {IExecuteSolverDeleteController} from '@/src/controllers/solver/execute-solver-delete.controller';
 import type {IImportSolutionController} from '@/src/controllers/solver/import-solution.controller';
-import {IGetSolverProgressUseCase} from "@/src/application/use-cases/solver/get-solver-progress.use-case";
-import {IGetSolverProgressController} from "@/src/controllers/solver/get-solver-progress.controller";
+import type {IGetSolverProgressUseCase} from '@/src/application/use-cases/solver/get-solver-progress.use-case';
+import type {IGetSolverProgressController} from '@/src/controllers/solver/get-solver-progress.controller';
+import type {IGetLastInsertedSolutionUseCase} from '@/src/application/use-cases/solver/get-last-inserted-solution.use-case';
+import type {IGetLastInsertedSolutionController} from '@/src/controllers/solver/get-last-inserted-solution.controller';
 
 export const DI_SYMBOLS = {
     // Repositories
@@ -302,6 +304,7 @@ export const DI_SYMBOLS = {
     IExecuteSolverDeleteUseCase: Symbol.for('IExecuteSolverDeleteUseCase'),
     IImportSolutionUseCase: Symbol.for('IImportSolutionUseCase'),
     IGetSolverProgressUseCase: Symbol.for('IGetSolverProgressUseCase'),
+    IGetLastInsertedSolutionUseCase: Symbol.for('IGetLastInsertedSolutionUseCase'),
 
     // Controllers — Employees
     IGetAllEmployeesController: Symbol.for('IGetAllEmployeesController'),
@@ -380,6 +383,7 @@ export const DI_SYMBOLS = {
     IExecuteSolverDeleteController: Symbol.for('IExecuteSolverDeleteController'),
     IImportSolutionController: Symbol.for('IImportSolutionController'),
     IGetSolverProgressController: Symbol.for('IGetSolverProgressController'),
+    IGetLastInsertedSolutionController: Symbol.for('IGetLastInsertedSolutionController'),
 } as const;
 
 export interface DI_RETURN_TYPES {
@@ -477,6 +481,7 @@ export interface DI_RETURN_TYPES {
     IExecuteSolverDeleteUseCase: IExecuteSolverDeleteUseCase;
     IImportSolutionUseCase: IImportSolutionUseCase;
     IGetSolverProgressUseCase: IGetSolverProgressUseCase;
+    IGetLastInsertedSolutionUseCase: IGetLastInsertedSolutionUseCase;
 
     // Controllers — Employees
     IGetAllEmployeesController: IGetAllEmployeesController;
@@ -555,4 +560,5 @@ export interface DI_RETURN_TYPES {
     IExecuteSolverDeleteController: IExecuteSolverDeleteController;
     IImportSolutionController: IImportSolutionController;
     IGetSolverProgressController: IGetSolverProgressController;
+    IGetLastInsertedSolutionController: IGetLastInsertedSolutionController;
 }

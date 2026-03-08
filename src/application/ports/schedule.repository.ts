@@ -17,4 +17,13 @@ export interface IScheduleRepository {
         description?: string;
         comment?: string
     }): Promise<void>;
+
+    /** Persists the solution that was last successfully inserted into TimeOffice.  */
+    saveLastInserted(caseId: number, monthYear: string, solution: ScheduleSolutionRaw): Promise<void>;
+
+    /** Returns the solution last inserted into TimeOffice, or null when none exists. */
+    getLastInserted(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null>;
+
+    /** Removes the last-inserted marker (call after a successful delete). */
+    clearLastInserted(caseId: number, monthYear: string): Promise<void>;
 }

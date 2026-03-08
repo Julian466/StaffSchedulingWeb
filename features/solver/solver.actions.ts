@@ -124,3 +124,13 @@ export async function getJob(
     if ('error' in result) throw new Error('Job not found');
     return { job: result.data };
 }
+
+export async function getLastInsertedSolution(
+    caseId: number,
+    monthYear: string
+): Promise<ActionResult<ScheduleSolutionRaw | null>> {
+    const controller = getInjection('IGetLastInsertedSolutionController');
+    const result = await controller({ caseId, monthYear });
+    if ('error' in result) return { success: false, error: result.error };
+    return { success: true, data: result.data };
+}

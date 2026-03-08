@@ -22,6 +22,8 @@ import {makeImportSolutionController} from '@/src/controllers/solver/import-solu
 import {SolverApiService} from "@/src/infrastructure/services/solver-api-service";
 import {makeGetSolverProgressController} from "@/src/controllers/solver/get-solver-progress.controller";
 import {makeGetSolverProgressUseCase} from "@/src/application/use-cases/solver/get-solver-progress.use-case";
+import {makeGetLastInsertedSolutionUseCase} from "@/src/application/use-cases/solver/get-last-inserted-solution.use-case";
+import {makeGetLastInsertedSolutionController} from "@/src/controllers/solver/get-last-inserted-solution.controller";
 
 export function createSolverModule() {
     const m = createModule();
@@ -49,11 +51,11 @@ export function createSolverModule() {
     );
     m.bind(DI_SYMBOLS.IExecuteSolverInsertUseCase).toHigherOrderFunction(
         makeExecuteSolverInsertUseCase,
-        [DI_SYMBOLS.ISolverService, DI_SYMBOLS.IJobRepository]
+        [DI_SYMBOLS.ISolverService, DI_SYMBOLS.IJobRepository, DI_SYMBOLS.IScheduleRepository]
     );
     m.bind(DI_SYMBOLS.IExecuteSolverDeleteUseCase).toHigherOrderFunction(
         makeExecuteSolverDeleteUseCase,
-        [DI_SYMBOLS.ISolverService, DI_SYMBOLS.IJobRepository]
+        [DI_SYMBOLS.ISolverService, DI_SYMBOLS.IJobRepository, DI_SYMBOLS.IScheduleRepository]
     );
     m.bind(DI_SYMBOLS.IImportSolutionUseCase).toHigherOrderFunction(
         makeImportSolutionUseCase,
@@ -96,8 +98,15 @@ export function createSolverModule() {
     m.bind(DI_SYMBOLS.IGetSolverProgressUseCase).toHigherOrderFunction(
         makeGetSolverProgressUseCase,
         [DI_SYMBOLS.ISolverService]
-    )
-
+    );
+    m.bind(DI_SYMBOLS.IGetLastInsertedSolutionUseCase).toHigherOrderFunction(
+        makeGetLastInsertedSolutionUseCase,
+        [DI_SYMBOLS.IScheduleRepository]
+    );
+    m.bind(DI_SYMBOLS.IGetLastInsertedSolutionController).toHigherOrderFunction(
+        makeGetLastInsertedSolutionController,
+        [DI_SYMBOLS.IGetLastInsertedSolutionUseCase]
+    );
 
     return m;
 }

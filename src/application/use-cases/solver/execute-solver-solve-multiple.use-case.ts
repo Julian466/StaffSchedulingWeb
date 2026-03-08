@@ -3,6 +3,7 @@ import type { ISolverService } from '@/src/application/ports/solver.service';
 import type { IJobRepository } from '@/src/application/ports/job.repository';
 import type { SolveMultipleParams, SolveMultipleScheduleInfo, SolverJob } from '@/src/entities/models/solver.model';
 import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
+import { SolveUnknownError } from '@/src/entities/errors/solver.errors';
 
 export type { SolveMultipleScheduleInfo };
 
@@ -49,7 +50,7 @@ export function makeExecuteSolverSolveMultipleUseCase(
         await jobRepository.create(caseId, monthYear, job);
 
         if (!result.success) {
-            throw new Error(`Solve-multiple failed: ${result.error}`);
+            throw new SolveUnknownError(result.error);
         }
 
         return { job, scheduleInfo, solutions: result.solutions };

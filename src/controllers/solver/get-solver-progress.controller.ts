@@ -15,6 +15,7 @@ export function makeGetSolverProgressController(
             return { data };
         } catch (error) {
             if (isDomainError(error)) return { error: error.message };
+            if (error instanceof Error) return { error: error.message };
             throw error;
         }
     };

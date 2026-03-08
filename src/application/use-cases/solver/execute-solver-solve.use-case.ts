@@ -3,6 +3,7 @@ import type { ISolverService } from '@/src/application/ports/solver.service';
 import type { IJobRepository } from '@/src/application/ports/job.repository';
 import type { SolveParams, SolverJob } from '@/src/entities/models/solver.model';
 import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
+import { SolveInfeasibleError, SolveUnknownError } from '@/src/entities/errors/solver.errors';
 
 export interface IExecuteSolverSolveUseCase {
     (input: {
@@ -40,7 +41,8 @@ export function makeExecuteSolverSolveUseCase(
         await jobRepository.create(caseId, monthYear, job);
 
         if (!result.success || !result.solution) {
-            throw new Error(`Solve failed (${result.status}): ${result.error}`);
+            if (result.status === 'INFEASIBLE') throw new SolveInfeasibleError(result.error);
+            throw new SolveUnknownError(result.error);
         }
 
         return { job, solution: result.solution };
