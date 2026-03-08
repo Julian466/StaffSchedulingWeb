@@ -128,7 +128,10 @@ export class SolverApiService implements ISolverService {
                 message: status.is_solving
                     ? `Solver is currently solving (phase: ${status.phase})`
                     : 'Solver API is healthy and idle',
-                details: JSON.stringify(status),
+                // if phase is idle, weight_id and total_weights might be undefined, so we only show them if phase is not idle
+                details: status.phase === 'idle'
+                    ? ''
+                    : `Phase: ${status.phase}${status.weight_id !== undefined ? `, Weight ID: ${status.weight_id}` : ''}, Total Weights: ${status.total_weights ?? 'N/A'}, Timeout for Phase 3: ${status.timeout_set_for_phase_3}s`,
             };
         } catch (error) {
             const duration = Date.now() - startTime;
