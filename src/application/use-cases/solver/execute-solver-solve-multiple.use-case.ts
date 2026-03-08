@@ -50,7 +50,7 @@ export function makeExecuteSolverSolveMultipleUseCase(
         await jobRepository.create(caseId, monthYear, job);
 
         if (!result.success) {
-            throw new SolveUnknownError(result.error);
+            throw new SolveUnknownError();
         }
 
         return { job, scheduleInfo, solutions: result.solutions };

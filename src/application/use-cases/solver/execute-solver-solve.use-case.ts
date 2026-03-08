@@ -41,8 +41,8 @@ export function makeExecuteSolverSolveUseCase(
         await jobRepository.create(caseId, monthYear, job);
 
         if (!result.success || !result.solution) {
-            if (result.status === 'INFEASIBLE') throw new SolveInfeasibleError(result.error);
-            throw new SolveUnknownError(result.error);
+            if (result.status === 'INFEASIBLE') throw new SolveInfeasibleError();
+            throw new SolveUnknownError();
         }
 
         return { job, solution: result.solution };

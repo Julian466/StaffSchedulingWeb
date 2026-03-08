@@ -35,6 +35,14 @@ function formatDateForPython(date: string | Date): string {
     return `${day}.${month}.${year}`;
 }
 
+function formatDateForFilename(date: string | Date): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    const day = String(d.getDate()).padStart(2, '0');  
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${year}-${month}-${day}`;
+}
+
 function executePythonCommand(
     command: string,
     args: string[],
@@ -128,6 +136,11 @@ function getSolutionDir(): string {
     return path.join(pythonConfig.path, 'found_solutions');
 }
 
+function getProcessedSolutionsDir(): string {
+    const pythonConfig = getPythonConfig();
+    return path.join(pythonConfig.path, 'processed_solutions');
+}
+
 function getProcessedSolutionDir(): string {
     const pythonConfig = getPythonConfig();
     return path.join(pythonConfig.path, 'processed_solutions');
@@ -143,7 +156,7 @@ function readJsonFile(filePath: string): ScheduleSolutionRaw {
  * Used to detect which files a solve run produced.
  */
 function findNewSolutionFiles(sinceTimestamp: number): string[] {
-    const dir = getSolutionDir();
+    const dir = getProcessedSolutionsDir();
     if (!existsSync(dir)) return [];
 
     return readdirSync(dir)
@@ -236,7 +249,7 @@ export class PythonCliService implements ISolverService {
         const beforeRun = Date.now();
         const result = executePythonCommand('solve', args, timeoutMs);
 
-        if (!result.success) {
+        if (!result.success)  {
             return {
                 success: false,
                 status: 'INFEASIBLE',
@@ -312,9 +325,14 @@ export class PythonCliService implements ISolverService {
         };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async insertSolution(params: InsertParams, _solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
-        // CLI liest die Solution selbst aus der Datei, ignoriert den Parameter
+        // If a solution is provided, we write it to the expected location before running the insert command
+        // Example: solution_77_2024-01-01-2024-01-31.json"
+        if (_solution) {
+            const filename = `solution_${params.unit}_${formatDateForFilename(params.start)}-${formatDateForFilename(params.end)}.json`;
+            await this.writeSolutionFile(filename, _solution);
+        }
+        
         const args = [String(params.unit), formatDateForPython(params.start), formatDateForPython(params.end)];
         const result = executePythonCommand('insert', args, undefined, true);
         return {
@@ -324,8 +342,14 @@ export class PythonCliService implements ISolverService {
         };
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async deleteData(params: DeleteParams, _solution?: ScheduleSolutionRaw): Promise<SolverOperationResult> {
+        // If a solution is provided, we write it to the expected location before running the delete command
+        // Example: solution_77_2024-01-01-2024-01-31.json"
+        if (_solution) {
+            const filename = `solution_${params.unit}_${formatDateForFilename(params.start)}-${formatDateForFilename(params.end)}.json`;
+            await this.writeSolutionFile(filename, _solution);
+        }
+        
         const args = [
             String(params.unit),
             formatDateForPython(params.start),
@@ -349,7 +373,7 @@ export class PythonCliService implements ISolverService {
     }
 
     readSolutionFile(filename: string): ScheduleSolutionRaw {
-        return readJsonFile(path.join(getSolutionDir(), filename));
+        return readJsonFile(path.join(getProcessedSolutionsDir(), filename));
     }
 
     readProcessedSolutionFile(filename: string): ScheduleSolutionRaw {
