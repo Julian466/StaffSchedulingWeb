@@ -9,7 +9,7 @@ import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
 import {SolverProgressDisplay} from '@/features/solver/components/solver-progress-display';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
-import {CheckCircle2, Database, Info, Loader2, Play, Trash2, Upload, AlertTriangle} from 'lucide-react';
+import {AlertTriangle, CheckCircle2, Database, Info, Loader2, Play, Trash2, Upload} from 'lucide-react';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -21,13 +21,10 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type {SolverExecOptions} from '@/features/solver/hooks/use-solver-operations';
+import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
 import {SolverCommandType} from '@/src/entities/models/solver.model';
 import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
-import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
-
-// Commands that don't require date range
-const COMMANDS_WITHOUT_DATE: SolverCommandType[] = [];
 
 interface SolverControlPanelProps {
     caseId: number;
@@ -43,7 +40,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
     const pathname = usePathname();
     const router = useRouter();
     const [command, setCommand] = useState<SolverCommandType>('solve');
-    const [timeout, setTimeout] = useState('300');
+    const [solveTimeout, setSolveTimeout] = useState('300');
 
     const [showDeleteMissingDialog, setShowDeleteMissingDialog] = useState(false);
     const [showDeleteConfirmDialog, setShowDeleteConfirmDialog] = useState(false);
@@ -104,8 +101,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
     const handleExecute = async () => {
         if (!caseId) return;
 
-        const requiresDate = !COMMANDS_WITHOUT_DATE.includes(command);
-        if (requiresDate && (selectedMonth === null || selectedYear === null)) return;
+        if (selectedMonth === null || selectedYear === null) return;
 
         // Calculate first and last day of selected month
         const firstDay = new Date(selectedYear!, selectedMonth! - 1, 1);
@@ -136,10 +132,10 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                 break;
             }
             case 'solve':
-                await executeSolve(execOpts, parseInt(timeout, 10));
+                await executeSolve(execOpts, parseInt(solveTimeout, 10));
                 break;
             case 'solve-multiple':
-                await executeSolveMultiple(execOpts, parseInt(timeout, 10));
+                await executeSolveMultiple(execOpts, parseInt(solveTimeout, 10));
                 break;
             case 'insert':
                 if (!pendingInsertSolution) {
@@ -259,8 +255,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                 </div>
 
                 {/* Month and Year Selection */}
-                {!COMMANDS_WITHOUT_DATE.includes(command) && (
-                    <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="month">Monat</Label>
                             <Select
@@ -307,7 +302,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                             </Select>
                         </div>
                     </div>
-                )}
+
 
                 {/* Command-specific parameters */}
                 {(command === 'solve' || command === 'solve-multiple') && (
@@ -317,8 +312,8 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                             id="timeout"
                             type="number"
                             min="1"
-                            value={timeout}
-                            onChange={(e) => setTimeout(e.target.value)}
+                            value={solveTimeout}
+                            onChange={(e) => setSolveTimeout(e.target.value)}
                             disabled={isExecuting}
                         />
                     </div>
@@ -329,7 +324,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                     onClick={handleExecute}
                     disabled={
                         !caseId ||
-                        (!COMMANDS_WITHOUT_DATE.includes(command) && (selectedMonth === null || selectedYear === null)) ||
+                        (selectedMonth === null || selectedYear === null) ||
                         isExecuting
                     }
                     className="w-full"
@@ -356,7 +351,7 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                         isIndeterminate={isIndeterminate}
                         runLabel={runLabel}
                         command={command}
-                        timeout={parseInt(timeout, 10)}
+                        timeout={parseInt(solveTimeout, 10)}
                     />
                 )}
             </CardContent>
