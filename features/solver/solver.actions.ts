@@ -13,7 +13,7 @@ import type {
     SolverJob,
 } from '@/src/entities/models/solver.model';
 import type { ActionResult } from '@/src/entities/models/action-result.model';
-import type { SolverHealthResult } from '@/src/application/ports/solver.service';
+import type { SolverHealthResult, SolverProgress } from '@/src/application/ports/solver.service';
 import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 export async function checkSolverHealth(): Promise<ActionResult<SolverHealthResult>> {
@@ -131,6 +131,13 @@ export async function getLastInsertedSolution(
 ): Promise<ActionResult<ScheduleSolutionRaw | null>> {
     const controller = getInjection('IGetLastInsertedSolutionController');
     const result = await controller({ caseId, monthYear });
+    if ('error' in result) return { success: false, error: result.error };
+    return { success: true, data: result.data };
+}
+
+export async function getSolverProgress(): Promise<ActionResult<SolverProgress | null>> {
+    const controller = getInjection('IGetSolverProgressController');
+    const result = await controller();
     if ('error' in result) return { success: false, error: result.error };
     return { success: true, data: result.data };
 }

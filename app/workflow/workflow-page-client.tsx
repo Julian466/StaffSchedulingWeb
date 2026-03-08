@@ -6,7 +6,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {Progress} from '@/components/ui/progress';
+import {SolverProgressDisplay} from '@/features/solver/components/solver-progress-display';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -79,6 +79,8 @@ export function WorkflowPageClient({
     const [showFetchWarning, setShowFetchWarning] = useState(false);
     const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
     const [pendingAction, setPendingAction] = useState<'solve' | 'multi-solve' | null>(null);
+    const [executingAction, setExecutingAction] = useState<WorkflowAction | null>(null);
+    const [executingTimeout, setExecutingTimeout] = useState<number>(60);
     const [actionStates, setActionStates] = useState<Record<WorkflowAction, ActionState>>({
         delete: {status: 'idle'},
         fetch: {status: 'idle'},
@@ -101,6 +103,9 @@ export function WorkflowPageClient({
         isExecuting,
         isImporting,
         progress,
+        phase,
+        isIndeterminate,
+        runLabel,
         showImportDialog,
         setShowImportDialog,
         importDialogParams,
@@ -119,6 +124,8 @@ export function WorkflowPageClient({
 
     const runAction = async (action: WorkflowAction, timeout?: number) => {
         setActionStates(prev => ({...prev, [action]: {status: 'running'}}));
+        setExecutingAction(action);
+        setExecutingTimeout(timeout ?? 60);
         let succeeded = false;
         try {
             switch (action) {
@@ -283,12 +290,18 @@ export function WorkflowPageClient({
 
             {/* Progress bar — shown during any solver operation */}
             {isExecuting && (
-                <div className="mb-6 p-4 bg-muted rounded-lg space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Fortschritt</span>
-                        <span className="text-muted-foreground font-mono">{progress.toFixed(0)}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2"/>
+                <div className="mb-6">
+                    <SolverProgressDisplay
+                        progress={progress}
+                        phase={phase}
+                        isIndeterminate={isIndeterminate}
+                        runLabel={runLabel}
+                        command={
+                            executingAction === 'solve' ? 'solve' :
+                            executingAction === 'multi-solve' ? 'solve-multiple' : 'fetch'
+                        }
+                        timeout={executingTimeout}
+                    />
                 </div>
             )}
 

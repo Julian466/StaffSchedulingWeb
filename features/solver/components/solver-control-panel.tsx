@@ -7,7 +7,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/compo
 import {Button} from '@/components/ui/button';
 import {Input} from '@/components/ui/input';
 import {Label} from '@/components/ui/label';
-import {Progress} from '@/components/ui/progress';
+import {SolverProgressDisplay} from '@/features/solver/components/solver-progress-display';
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from '@/components/ui/select';
 import {CheckCircle2, Database, Info, Loader2, Play, Trash2, Upload} from 'lucide-react';
 import {SolverCommandType} from '@/src/entities/models/solver.model';
@@ -51,6 +51,9 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
         isExecuting,
         isImporting,
         progress,
+        phase,
+        isIndeterminate,
+        runLabel,
         showImportDialog,
         setShowImportDialog,
         importDialogParams,
@@ -302,22 +305,14 @@ export function SolverControlPanel({caseId, monthYear, onAfterOperation, initial
                 </Button>
 
                 {isExecuting && (
-                    <div className="p-4 bg-muted rounded-lg space-y-3">
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-muted-foreground">Fortschritt</span>
-                                <span className="text-muted-foreground font-mono">
-                                    {progress.toFixed(0)}%
-                                </span>
-                            </div>
-                            <Progress value={progress} className="h-2"/>
-                        </div>
-                        <p className="text-xs text-center text-muted-foreground">
-                            {command === 'solve' && `Geschätzte Laufzeit: ${timeout}s`}
-                            {command === 'solve-multiple' && `Geschätzte Laufzeit: ${parseInt(timeout, 10) * 3}s (3x ${timeout}s)`}
-                            {command !== 'solve' && command !== 'solve-multiple' && 'Der Befehl wird ausgeführt...'}
-                        </p>
-                    </div>
+                    <SolverProgressDisplay
+                        progress={progress}
+                        phase={phase}
+                        isIndeterminate={isIndeterminate}
+                        runLabel={runLabel}
+                        command={command}
+                        timeout={parseInt(timeout, 10)}
+                    />
                 )}
             </CardContent>
 

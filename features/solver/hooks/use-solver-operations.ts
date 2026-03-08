@@ -53,6 +53,18 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
     const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
     const currentTimeoutMsRef = useRef<number>(60_000);
 
+    // API-mode progress tracking
+    const apiModeRef = useRef(false);
+    const phase3StartMsRef = useRef<number | null>(null);
+    const totalWeightsRef = useRef<number>(1);
+    const weightIdRef = useRef<number>(0);
+    const phase3TimeoutSecRef = useRef<number>(60);
+    const currentSolveTimeoutRef = useRef<number>(60);
+
+    const [phase, setPhase] = useState<string | null>(null);
+    const [isIndeterminate, setIsIndeterminate] = useState(false);
+    const [runLabel, setRunLabel] = useState<string | null>(null);
+
     const [showImportDialog, setShowImportDialog] = useState(false);
     const [importDialogParams, setImportDialogParams] = useState<ImportDialogParams | null>(null);
 
@@ -79,15 +91,30 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         initialLastInsertedSolution ?? null
     );
 
+    // Single tick: handles CLI time-based progress OR smooth phase-3 fill in API mode
     useEffect(() => {
         if (!isExecuting || executionStartTime === null) {
             setProgress(0);
             return;
         }
-        const timeoutMs = currentTimeoutMsRef.current;
         const interval = setInterval(() => {
-            const elapsed = Date.now() - executionStartTime;
-            setProgress(Math.min((elapsed / timeoutMs) * 100, 99));
+            if (apiModeRef.current) {
+                // API mode: only fill smoothly during phase_3_optimizing
+                if (phase3StartMsRef.current !== null) {
+                    const segmentSize = 100 / totalWeightsRef.current;
+                    const completedProgress = weightIdRef.current * segmentSize;
+                    const elapsed = Date.now() - phase3StartMsRef.current;
+                    const timeoutMs = phase3TimeoutSecRef.current * 1000;
+                    const fraction = Math.min(elapsed / timeoutMs, 0.98);
+                    setProgress(completedProgress + segmentSize * (0.25 + fraction * 0.74));
+                }
+                // For phase_1 / phase_2: progress stays frozen (set by polling)
+            } else {
+                // CLI fallback: time-based linear fill
+                const elapsed = Date.now() - executionStartTime;
+                const timeoutMs = currentTimeoutMsRef.current;
+                setProgress(Math.min((elapsed / timeoutMs) * 100, 99));
+            }
         }, 100);
         return () => clearInterval(interval);
     }, [isExecuting, executionStartTime]);
@@ -96,11 +123,93 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         if (!isExecuting) {
             setProgress(0);
             setExecutionStartTime(null);
+            setPhase(null);
+            setIsIndeterminate(false);
+            setRunLabel(null);
         }
     }, [isExecuting]);
 
-    const startExecution = (timeoutMs: number) => {
+    // API mode: poll GET /status while executing to get live phase info
+    useEffect(() => {
+        if (!isExecuting) return;
+        let active = true;
+
+        const poll = async () => {
+            if (!active) return;
+            // Direct browser fetch to the Route Handler — bypasses Server Action
+            // session locking so this can run concurrently with the solve action.
+            let raw: { isSolving?: boolean; is_solving?: boolean; phase?: string; weight_id?: number; total_weights?: number; timeout_set_for_phase_3?: number } | null = null;
+            try {
+                const res = await fetch('/api/solver/status', { cache: 'no-store' });
+                if (res.ok) raw = await res.json();
+            } catch { /* network error — skip tick */ }
+            if (!active || !raw) return;
+            // Map snake_case API response to camelCase
+            const isSolving = raw.is_solving ?? raw.isSolving ?? false;
+            if (!isSolving) return;
+            const sp = {
+                phase: raw.phase ?? 'idle',
+                weightId: raw.weight_id,
+                totalWeights: raw.total_weights,
+                timeoutForPhase3: raw.timeout_set_for_phase_3,
+            };
+            apiModeRef.current = true;
+
+            const totalWeights = sp.totalWeights ?? 1;
+            const weightId = sp.weightId ?? 0;
+
+            // Detect run change in solve-multiple
+            if (weightIdRef.current !== weightId) {
+                weightIdRef.current = weightId;
+                phase3StartMsRef.current = null;
+            }
+            totalWeightsRef.current = totalWeights;
+            phase3TimeoutSecRef.current =
+                sp.timeoutForPhase3 && sp.timeoutForPhase3 > 0
+                    ? sp.timeoutForPhase3
+                    : currentSolveTimeoutRef.current;
+
+            setRunLabel(totalWeights > 1 ? `Lauf ${weightId + 1}/${totalWeights}` : null);
+            setPhase(sp.phase);
+
+            const segmentSize = 100 / totalWeights;
+            const completedProgress = weightId * segmentSize;
+
+            if (sp.phase === 'phase_1_upper_bound') {
+                setProgress(completedProgress + segmentSize * 0.02);
+                setIsIndeterminate(true);
+            } else if (sp.phase === 'phase_2_tight_bound') {
+                setProgress(completedProgress + segmentSize * 0.12);
+                setIsIndeterminate(true);
+            } else if (sp.phase === 'phase_3_optimizing') {
+                if (phase3StartMsRef.current === null) {
+                    phase3StartMsRef.current = Date.now();
+                }
+                setIsIndeterminate(false);
+                // Actual smooth fill is handled by the 100ms tick interval above
+            }
+        };
+
+        const timeoutId = setTimeout(poll, 500);
+        const intervalId = setInterval(poll, 2000);
+        return () => {
+            active = false;
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+        };
+    }, [isExecuting]);
+
+    const startExecution = (timeoutMs: number, solveTimeoutSec?: number) => {
         currentTimeoutMsRef.current = timeoutMs;
+        currentSolveTimeoutRef.current = solveTimeoutSec ?? 60;
+        apiModeRef.current = false;
+        phase3StartMsRef.current = null;
+        totalWeightsRef.current = 1;
+        weightIdRef.current = 0;
+        phase3TimeoutSecRef.current = solveTimeoutSec ?? 60;
+        setPhase(null);
+        setIsIndeterminate(false);
+        setRunLabel(null);
         setExecutionStartTime(Date.now());
         setProgress(0);
         setIsExecuting(true);
@@ -135,7 +244,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
     }
 
     async function executeSolve(opts: SolverExecOptions, timeout: number): Promise<SolverOperationResult> {
-        startExecution(timeout * 1_000 + 10_000);
+        startExecution(timeout * 1_000 + 10_000, timeout);
         try {
             const result = await solverSolve(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -168,7 +277,7 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
     }
 
     async function executeSolveMultiple(opts: SolverExecOptions, timeout: number): Promise<SolverOperationResult> {
-        startExecution(timeout * 3 * 1_000 + 20_000);
+        startExecution(timeout * 3 * 1_000 + 20_000, timeout);
         try {
             const result = await solverSolveMultiple(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -288,6 +397,9 @@ export function useSolverOperations({ onAfterOperation, initialLastInsertedSolut
         isExecuting,
         isImporting,
         progress,
+        phase,
+        isIndeterminate,
+        runLabel,
         executionStartTime,
         showImportDialog,
         setShowImportDialog,
