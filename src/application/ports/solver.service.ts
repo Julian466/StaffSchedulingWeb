@@ -1,64 +1,86 @@
+// src/application/ports/solver.service.ts
+
 import type {
     DeleteParams,
     FetchParams,
     InsertParams,
-    PythonCommandResult,
     SolveMultipleParams,
     SolveParams,
-    SolverConfigResult,
 } from '@/src/entities/models/solver.model';
-import type {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
-export type { SolverConfigResult };
+// --- Result Types (technology-agnostic) ---
+
+export interface SolverHealthResult {
+    healthy: boolean;
+    message: string;
+    details?: string;
+}
+
+export interface SolverOperationResult {
+    success: boolean;
+    duration?: number;
+    error?: string;
+    consoleOutput?: string;
+}
+
+export interface SolveOperationResult extends SolverOperationResult {
+    solution?: ScheduleSolutionRaw;
+    status: 'FEASIBLE' | 'INFEASIBLE' | 'UNKNOWN';
+}
+
+export interface SolveMultipleOperationResult extends SolverOperationResult {
+    solutions: ScheduleSolutionRaw[];
+    feasibleCount: number;
+    /** The actual weight-preset indices that produced a feasible/optimal solution, in the same order as `solutions`. */
+    feasibleWeightIds: number[];
+}
+
+export interface SolverProgress {
+    isSolving: boolean;
+    phase: string;
+    weightId?: number;
+    totalWeights?: number;
+    timeoutForPhase3?: number;
+}
+
+// --- Port Interface ---
 
 export interface ISolverService {
     /**
-     * Validates the Python solver configuration and optionally tests execution.
+     * Prüft ob der Solver erreichbar und konfiguriert ist.
      */
-    validateConfig(): SolverConfigResult;
+    checkHealth(): Promise<SolverHealthResult>;
 
     /**
-     * Runs the Python 'fetch' command to load data from DB into JSON files.
+     * Holt aktuelle Daten aus TimeOffice und bereitet sie für den Solver vor.
      */
-    runFetch(params: FetchParams): PythonCommandResult;
+    fetchData(params: FetchParams): Promise<SolverOperationResult>;
 
     /**
-     * Runs the Python 'solve' command for a single scheduling solution.
+     * Berechnet einen einzelnen Dienstplan.
      */
-    runSolve(params: SolveParams): PythonCommandResult;
+    solve(params: SolveParams): Promise<SolveOperationResult>;
 
     /**
-     * Runs the Python 'solve-multiple' command (3 solutions with different weight sets).
+     * Berechnet drei Dienstpläne mit verschiedenen Gewichtungen.
      */
-    runSolveMultiple(params: SolveMultipleParams): PythonCommandResult;
+    solveMultiple(params: SolveMultipleParams): Promise<SolveMultipleOperationResult>;
 
     /**
-     * Runs the Python 'insert' command to write a JSON solution back to DB.
+     * Schreibt eine Lösung zurück in TimeOffice.
      */
-    runInsert(params: InsertParams): PythonCommandResult;
+    insertSolution(params: InsertParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult>;
 
     /**
-     * Runs the Python 'delete' command to reset data in DB.
+     * Setzt die Daten in TimeOffice zurück.
      */
-    runDelete(params: DeleteParams): PythonCommandResult;
+    deleteData(params: DeleteParams, solution?: ScheduleSolutionRaw): Promise<SolverOperationResult>;
 
     /**
-     * Checks whether a solution file exists in the found_solutions directory.
+     * Gibt den aktuellen Lösungsfortschritt zurück, falls die
+     * Implementierung Progress-Tracking unterstützt.
+     * Gibt null zurück wenn nicht unterstützt (z.B. CLI).
      */
-    findSolutionFile(filename: string): { exists: boolean; path?: string };
-
-    /**
-     * Reads a raw solution JSON file from the found_solutions directory.
-     */
-    readSolutionFile(filename: string): ScheduleSolutionRaw;
-
-    /**
-     * Reads a processed solution JSON file from the processed_solutions directory.
-     */
-    readProcessedSolutionFile(filename: string): ScheduleSolutionRaw;
-
-    /**
-     * Writes a JSON schedule to the found_solutions directory.
-     */
-    writeSolutionFile(filename: string, content: ScheduleSolutionRaw): Promise<void>;
+    getProgress(): Promise<SolverProgress | null>;
 }

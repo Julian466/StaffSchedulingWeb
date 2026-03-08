@@ -25,7 +25,7 @@ type WishesAndBlockedFormValues = z.infer<typeof wishesAndBlockedSchema>;
 
 interface WishesAndBlockedFormProps {
     employee?: WishesAndBlockedEmployee;
-    onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
+    onSubmit: (data: WishesAndBlockedEmployee) => void;
     onCancel: () => void;
     isSubmitting?: boolean;
     excludedEmployeeKeys?: number[];
@@ -216,6 +216,7 @@ export function WishesAndBlockedForm({
         const {wishDays, wishShifts, blockedDays, blockedShifts} = convertFromDayData(calendarData);
 
         onSubmit({
+            key: selectedEmployee.key,
             firstname: selectedEmployee.firstname,
             name: selectedEmployee.name,
             wish_days: wishDays,

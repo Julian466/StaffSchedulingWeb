@@ -2,7 +2,7 @@ import path from 'path';
 import {JSONFilePreset} from 'lowdb/node';
 import fs from 'fs/promises';
 import {getCasePath} from '@/lib/config/app-config';
-import {ScheduleDatabase, SchedulesMetadata} from "@/src/entities/models";
+import {ScheduleDatabase, SchedulesMetadata, ScheduleSolutionRaw} from "@/src/entities/models";
 
 /**
  * Gets or creates a database connection for schedule metadata.
@@ -44,5 +44,34 @@ export async function deleteSchedule(caseId: number, monthYear: string, schedule
         await fs.unlink(filePath);
     } catch (error) {
         // File might not exist, ignore error
+    }
+}
+
+/** File path for the last-inserted solution marker. */
+function getLastInsertedPath(caseId: number, monthYear: string): string {
+    return path.join(getCasePath(caseId, monthYear), 'web', 'last_inserted.json');
+}
+
+export async function saveLastInsertedDb(caseId: number, monthYear: string, solution: ScheduleSolutionRaw): Promise<void> {
+    const filePath = getLastInsertedPath(caseId, monthYear);
+    await fs.writeFile(filePath, JSON.stringify(solution, null, 2), 'utf-8');
+}
+
+export async function getLastInsertedDb(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null> {
+    const filePath = getLastInsertedPath(caseId, monthYear);
+    try {
+        const content = await fs.readFile(filePath, 'utf-8');
+        return JSON.parse(content) as ScheduleSolutionRaw;
+    } catch {
+        return null;
+    }
+}
+
+export async function clearLastInsertedDb(caseId: number, monthYear: string): Promise<void> {
+    const filePath = getLastInsertedPath(caseId, monthYear);
+    try {
+        await fs.unlink(filePath);
+    } catch {
+        // File might not exist, ignore
     }
 }

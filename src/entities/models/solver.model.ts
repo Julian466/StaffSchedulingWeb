@@ -67,11 +67,14 @@ export const SolverJobSchema = z.object({
     status: SolverJobStatusSchema,
     caseId: z.number(),
     params: SolverParamsSchema,
-    consoleOutput: z.string(),
-    exitCode: z.number(),
+    // Früher CLI-spezifisch, jetzt optional für Backward Compat
+    consoleOutput: z.string().optional(),
+    exitCode: z.number().optional(),
+    // Neu: generischer Fehlertext für alle Implementierungen
+    error: z.string().optional(),
     createdAt: z.string(),
     completedAt: z.string(),
-    duration: z.number(),
+    duration: z.number().optional(),
     metadata: z.object({
         solutionsGenerated: z.number().optional(),
         expectedSolutions: z.number().optional(),

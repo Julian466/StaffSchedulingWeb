@@ -1,6 +1,6 @@
-import type {ISolverService} from '@/src/application/ports/solver.service';
-import type {IScheduleRepository} from '@/src/application/ports/schedule.repository';
-import type {ImportSolutionResult} from '@/src/entities/models/solver.model';
+import type { IScheduleRepository } from '@/src/application/ports/schedule.repository';
+import type { ImportSolutionResult } from '@/src/entities/models/solver.model';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 export type { ImportSolutionResult };
 
@@ -10,6 +10,7 @@ export interface ImportSolutionInput {
     start: string;
     end: string;
     solutionType: string;
+    solution: ScheduleSolutionRaw;
 }
 
 export interface IImportSolutionUseCase {
@@ -25,28 +26,16 @@ function formatDateForFilename(dateStr: string): string {
 }
 
 export function makeImportSolutionUseCase(
-    solverService: ISolverService,
     scheduleRepository: IScheduleRepository
 ): IImportSolutionUseCase {
-    return async ({caseId, monthYear, start, end, solutionType}) => {
-        if (!start || !end || !solutionType) {
-            throw new Error('Missing required fields: start, end, solutionType');
-        }
-
+    return async ({ caseId, monthYear, start, end, solutionType, solution }) => {
         const startFormatted = formatDateForFilename(start);
         const endFormatted = formatDateForFilename(end);
-        const filename = `solution_${caseId}_${startFormatted}-${endFormatted}_${solutionType}_processed.json`;
-
-        let solution;
-        try {
-            solution = solverService.readProcessedSolutionFile(filename);
-        } catch {
-            throw new Error(`Solution file not found. Expected file: ${filename}`);
-        }
 
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const scheduleId = `imported_${solutionType}_${timestamp}`;
         const description = `Automatisch importiert: ${solutionType} (${startFormatted} bis ${endFormatted})`;
+        const filename = `solution_${caseId}_${startFormatted}-${endFormatted}_${solutionType}_processed.json`;
 
         await scheduleRepository.save(caseId, monthYear, scheduleId, solution, description);
         await scheduleRepository.select(caseId, monthYear, scheduleId);

@@ -134,6 +134,15 @@ export function getPythonConfig() {
     return config.staffSchedulingProject;
 }
 
+export interface SolverApiConfig {
+    baseUrl: string;
+}
+
+export function getSolverApiConfig(): SolverApiConfig {
+    const baseUrl = process.env.SOLVER_API_URL ?? 'http://127.0.0.1:8000';
+    return { baseUrl };
+}
+
 /**
  * Validates the Python project configuration.
  * Checks if paths exist and are accessible.

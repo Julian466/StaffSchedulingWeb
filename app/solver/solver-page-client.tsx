@@ -5,17 +5,21 @@ import {ConfigValidator} from '@/features/solver/components/config-validator';
 import {SolverControlPanel} from '@/features/solver/components/solver-control-panel';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
 import {getJobs} from '@/features/solver/solver.actions';
-import type {SolverConfigResult, SolverJob} from '@/src/entities/models/solver.model';
+import type {SolverJob} from '@/src/entities/models/solver.model';
+import type {SolverHealthResult} from '@/src/application/ports/solver.service';
+import type {ScheduleSolutionRaw} from '@/src/entities/models/schedule.model';
 
 interface SolverPageClientProps {
     caseId: number;
     monthYear: string;
-    initialConfigValidation: SolverConfigResult | null;
+    initialConfigValidation: SolverHealthResult | null;
     initialJobs: SolverJob[];
+    initialLastInsertedSolution: ScheduleSolutionRaw | null;
+    initialPendingInsertSolution: ScheduleSolutionRaw | null;
     isLocked?: boolean;
 }
 
-export function SolverPageClient({caseId, monthYear, initialConfigValidation, initialJobs, isLocked}: SolverPageClientProps) {
+export function SolverPageClient({caseId, monthYear, initialConfigValidation, initialJobs, initialLastInsertedSolution, initialPendingInsertSolution, isLocked}: SolverPageClientProps) {
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
 
     const refreshJobs = async () => {
@@ -39,7 +43,7 @@ export function SolverPageClient({caseId, monthYear, initialConfigValidation, in
             <ConfigValidator initialData={initialConfigValidation}/>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <SolverControlPanel caseId={caseId} monthYear={monthYear} onAfterOperation={refreshJobs} isLocked={isLocked}/>
+                <SolverControlPanel caseId={caseId} monthYear={monthYear} onAfterOperation={refreshJobs} initialLastInsertedSolution={initialLastInsertedSolution} initialPendingInsertSolution={initialPendingInsertSolution} isLocked={isLocked}/>
                 <div className="space-y-6">
                     <JobHistoryTable jobs={jobs}/>
                 </div>

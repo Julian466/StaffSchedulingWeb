@@ -1,9 +1,12 @@
 import {IScheduleRepository} from '@/src/application/ports/schedule.repository';
 import {ScheduleMetadata, SchedulesMetadata, ScheduleSolutionRaw,} from '@/src/entities/models/schedule.model';
 import {
+    clearLastInsertedDb,
     deleteSchedule,
+    getLastInsertedDb,
     getScheduleDb,
     getSchedulesMetadataDb,
+    saveLastInsertedDb,
 } from '@/src/infrastructure/persistence/lowdb/schedule.db';
 
 export class LowdbScheduleRepository implements IScheduleRepository {
@@ -97,5 +100,17 @@ export class LowdbScheduleRepository implements IScheduleRepository {
             if (updates.comment !== undefined) schedule.comment = updates.comment;
             await metaDb.write();
         }
+    }
+
+    async saveLastInserted(caseId: number, monthYear: string, solution: ScheduleSolutionRaw): Promise<void> {
+        await saveLastInsertedDb(caseId, monthYear, solution);
+    }
+
+    async getLastInserted(caseId: number, monthYear: string): Promise<ScheduleSolutionRaw | null> {
+        return getLastInsertedDb(caseId, monthYear);
+    }
+
+    async clearLastInserted(caseId: number, monthYear: string): Promise<void> {
+        await clearLastInsertedDb(caseId, monthYear);
     }
 }

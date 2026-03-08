@@ -1,16 +1,16 @@
 'use client';
 
-import {useEffect, useRef, useState} from 'react';
-import {toast} from 'sonner';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 import {
     importSolution,
-    saveSolution,
     solverDelete,
     solverFetch,
     solverInsert,
     solverSolve,
     solverSolveMultiple,
 } from '@/features/solver/solver.actions';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 export interface SolverExecOptions {
     caseId: number;
@@ -24,6 +24,7 @@ export interface ImportDialogParams {
     start: string;
     end: string;
     solutionType: string;
+    solution: ScheduleSolutionRaw;       // ← neu
 }
 
 export interface MultipleImportDialogParams {
@@ -32,6 +33,7 @@ export interface MultipleImportDialogParams {
     end: string;
     solutionCount: number;
     feasibleSolutions?: number[];
+    solutions: ScheduleSolutionRaw[];    // ← neu
 }
 
 export interface SolverOperationResult {
@@ -40,49 +42,174 @@ export interface SolverOperationResult {
 
 interface UseSolverOperationsOptions {
     onAfterOperation?: () => Promise<void>;
+    initialLastInsertedSolution?: ScheduleSolutionRaw | null;
+    initialPendingInsertSolution?: ScheduleSolutionRaw | null;
 }
 
-export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptions = {}) {
+export function useSolverOperations({ onAfterOperation, initialLastInsertedSolution, initialPendingInsertSolution }: UseSolverOperationsOptions = {}) {
     const [isExecuting, setIsExecuting] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [progress, setProgress] = useState(0);
     const [executionStartTime, setExecutionStartTime] = useState<number | null>(null);
     const currentTimeoutMsRef = useRef<number>(60_000);
 
-    // Import dialog state
+    // API-mode progress tracking
+    const apiModeRef = useRef(false);
+    const phase3StartMsRef = useRef<number | null>(null);
+    const totalWeightsRef = useRef<number>(1);
+    const weightIdRef = useRef<number>(0);
+    const phase3TimeoutSecRef = useRef<number>(60);
+    const currentSolveTimeoutRef = useRef<number>(60);
+
+    const [phase, setPhase] = useState<string | null>(null);
+    const [isIndeterminate, setIsIndeterminate] = useState(false);
+    const [runLabel, setRunLabel] = useState<string | null>(null);
+
     const [showImportDialog, setShowImportDialog] = useState(false);
     const [importDialogParams, setImportDialogParams] = useState<ImportDialogParams | null>(null);
 
-    // Multiple import dialog state
     const [showMultipleImportDialog, setShowMultipleImportDialog] = useState(false);
     const [multipleImportDialogParams, setMultipleImportDialogParams] = useState<MultipleImportDialogParams | null>(null);
 
-    // Progress interval
+    /**
+     * Solution that is ready to be inserted into TimeOffice.
+     * Set after a successful solve or after the user imports a solution to local storage.
+     * Initialized from the server-selected schedule so insert always has a solution ready.
+     * Passed to solverInsert when available; null falls back to CLI disk-read.
+     */
+    const [pendingInsertSolution, setPendingInsertSolution] = useState<ScheduleSolutionRaw | null>(
+        initialPendingInsertSolution ?? null
+    );
+
+    /**
+     * Solution that was last successfully inserted into TimeOffice.
+     * Passed to solverDelete so the API can identify exactly which entries to remove.
+     * Null falls back to CLI disk-read.
+     * Initialized from server-persisted value so it survives page refreshes.
+     */
+    const [lastInsertedSolution, setLastInsertedSolution] = useState<ScheduleSolutionRaw | null>(
+        initialLastInsertedSolution ?? null
+    );
+
+    // Single tick: handles CLI time-based progress OR smooth phase-3 fill in API mode
     useEffect(() => {
         if (!isExecuting || executionStartTime === null) {
             setProgress(0);
             return;
         }
-
-        const timeoutMs = currentTimeoutMsRef.current;
         const interval = setInterval(() => {
-            const elapsed = Date.now() - executionStartTime;
-            setProgress(Math.min((elapsed / timeoutMs) * 100, 99));
+            if (apiModeRef.current) {
+                // API mode: only fill smoothly during phase_3_optimizing
+                if (phase3StartMsRef.current !== null) {
+                    const segmentSize = 100 / totalWeightsRef.current;
+                    const completedProgress = weightIdRef.current * segmentSize;
+                    const elapsed = Date.now() - phase3StartMsRef.current;
+                    const timeoutMs = phase3TimeoutSecRef.current * 1000;
+                    const fraction = Math.min(elapsed / timeoutMs, 0.98);
+                    setProgress(completedProgress + segmentSize * (0.25 + fraction * 0.74));
+                }
+                // For phase_1 / phase_2: progress stays frozen (set by polling)
+            } else {
+                // CLI fallback: time-based linear fill
+                const elapsed = Date.now() - executionStartTime;
+                const timeoutMs = currentTimeoutMsRef.current;
+                setProgress(Math.min((elapsed / timeoutMs) * 100, 99));
+            }
         }, 100);
-
         return () => clearInterval(interval);
     }, [isExecuting, executionStartTime]);
 
-    // Reset progress when done
     useEffect(() => {
         if (!isExecuting) {
             setProgress(0);
             setExecutionStartTime(null);
+            setPhase(null);
+            setIsIndeterminate(false);
+            setRunLabel(null);
         }
     }, [isExecuting]);
 
-    const startExecution = (timeoutMs: number) => {
+    // API mode: poll GET /status while executing to get live phase info
+    useEffect(() => {
+        if (!isExecuting) return;
+        let active = true;
+
+        const poll = async () => {
+            if (!active) return;
+            // Direct browser fetch to the Route Handler — bypasses Server Action
+            // session locking so this can run concurrently with the solve action.
+            let raw: { isSolving?: boolean; is_solving?: boolean; phase?: string; weight_id?: number; total_weights?: number; timeout_set_for_phase_3?: number } | null = null;
+            try {
+                const res = await fetch('/api/solver/status', { cache: 'no-store' });
+                if (res.ok) raw = await res.json();
+            } catch { /* network error — skip tick */ }
+            if (!active || !raw) return;
+            // Map snake_case API response to camelCase
+            const isSolving = raw.is_solving ?? raw.isSolving ?? false;
+            if (!isSolving) return;
+            const sp = {
+                phase: raw.phase ?? 'idle',
+                weightId: raw.weight_id,
+                totalWeights: raw.total_weights,
+                timeoutForPhase3: raw.timeout_set_for_phase_3,
+            };
+            apiModeRef.current = true;
+
+            const totalWeights = sp.totalWeights ?? 1;
+            const weightId = sp.weightId ?? 0;
+
+            // Detect run change in solve-multiple
+            if (weightIdRef.current !== weightId) {
+                weightIdRef.current = weightId;
+                phase3StartMsRef.current = null;
+            }
+            totalWeightsRef.current = totalWeights;
+            phase3TimeoutSecRef.current =
+                sp.timeoutForPhase3 && sp.timeoutForPhase3 > 0
+                    ? sp.timeoutForPhase3
+                    : currentSolveTimeoutRef.current;
+
+            setRunLabel(totalWeights > 1 ? `Lauf ${weightId + 1}/${totalWeights}` : null);
+            setPhase(sp.phase);
+
+            const segmentSize = 100 / totalWeights;
+            const completedProgress = weightId * segmentSize;
+
+            if (sp.phase === 'phase_1_upper_bound') {
+                setProgress(completedProgress + segmentSize * 0.02);
+                setIsIndeterminate(true);
+            } else if (sp.phase === 'phase_2_tight_bound') {
+                setProgress(completedProgress + segmentSize * 0.12);
+                setIsIndeterminate(true);
+            } else if (sp.phase === 'phase_3_optimizing') {
+                if (phase3StartMsRef.current === null) {
+                    phase3StartMsRef.current = Date.now();
+                }
+                setIsIndeterminate(false);
+                // Actual smooth fill is handled by the 100ms tick interval above
+            }
+        };
+
+        const timeoutId = setTimeout(poll, 500);
+        const intervalId = setInterval(poll, 2000);
+        return () => {
+            active = false;
+            clearTimeout(timeoutId);
+            clearInterval(intervalId);
+        };
+    }, [isExecuting]);
+
+    const startExecution = (timeoutMs: number, solveTimeoutSec?: number) => {
         currentTimeoutMsRef.current = timeoutMs;
+        currentSolveTimeoutRef.current = solveTimeoutSec ?? 60;
+        apiModeRef.current = false;
+        phase3StartMsRef.current = null;
+        totalWeightsRef.current = 1;
+        weightIdRef.current = 0;
+        phase3TimeoutSecRef.current = solveTimeoutSec ?? 60;
+        setPhase(null);
+        setIsIndeterminate(false);
+        setRunLabel(null);
         setExecutionStartTime(Date.now());
         setProgress(0);
         setIsExecuting(true);
@@ -92,10 +219,6 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
         setIsExecuting(false);
         await onAfterOperation?.();
     };
-
-    // ------------------------------------------------------------------ //
-    //  Execute operations
-    // ------------------------------------------------------------------ //
 
     async function executeFetch(opts: SolverExecOptions): Promise<SolverOperationResult> {
         startExecution(60_000);
@@ -107,21 +230,21 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich von der Datenbank abgerufen');
-                return {succeeded: true};
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Abrufen der Daten', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Abrufen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
     }
 
     async function executeSolve(opts: SolverExecOptions, timeout: number): Promise<SolverOperationResult> {
-        startExecution(timeout * 1_000 + 10_000);
+        startExecution(timeout * 1_000 + 10_000, timeout);
         try {
             const result = await solverSolve(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -131,23 +254,30 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Dienstplan erfolgreich erstellt');
-                setImportDialogParams({caseId: opts.caseId, start: opts.start, end: opts.end, solutionType: 'wdefault'});
+                setPendingInsertSolution(result.data.solution);
+                setImportDialogParams({
+                    caseId: opts.caseId,
+                    start: opts.start,
+                    end: opts.end,
+                    solutionType: 'wdefault',
+                    solution: result.data.solution,     // ← neu
+                });
                 setShowImportDialog(true);
-                return {succeeded: true};
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Erstellen des Dienstplans', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Erstellen des Dienstplans', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
     }
 
     async function executeSolveMultiple(opts: SolverExecOptions, timeout: number): Promise<SolverOperationResult> {
-        startExecution(timeout * 3 * 1_000 + 20_000);
+        startExecution(timeout * 3 * 1_000 + 20_000, timeout);
         try {
             const result = await solverSolveMultiple(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
@@ -157,7 +287,7 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
             });
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 const successCount = result.data.scheduleInfo.solutionsGenerated;
@@ -182,45 +312,38 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
                         end: opts.end,
                         solutionCount: successCount,
                         feasibleSolutions: result.data.scheduleInfo.feasibleSolutions,
+                        solutions: result.data.solutions,   // ← neu
                     });
                     setShowMultipleImportDialog(true);
                 }
-                return {succeeded: successCount > 0};
+                return { succeeded: successCount > 0 };
             }
-            toast.error('Fehler beim Erstellen mehrerer Dienstpläne', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Erstellen mehrerer Dienstpläne', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
     }
 
-    async function executeInsert(opts: SolverExecOptions, withSave = false): Promise<SolverOperationResult> {
+    async function executeInsert(opts: SolverExecOptions): Promise<SolverOperationResult> {
         startExecution(60_000);
         try {
-            if (withSave) {
-                toast.info('Speichere ausgewählten Dienstplan vor dem Export...');
-                const saveResult = await saveSolution(opts.caseId, opts.monthYear, opts.start, opts.end);
-                if (!saveResult.success) {
-                    toast.error(saveResult.error);
-                    return {succeeded: false};
-                }
-                toast.success(`Dienstplan gespeichert als ${saveResult.data.filename}`);
-            }
             const result = await solverInsert(opts.caseId, opts.monthYear, {
                 unit: opts.caseId,
                 start: opts.start,
                 end: opts.end,
-            });
+            }, pendingInsertSolution ?? undefined);
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich in die Datenbank eingefügt');
-                return {succeeded: true};
+                setLastInsertedSolution(pendingInsertSolution);
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Einfügen der Daten', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Einfügen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
@@ -233,30 +356,27 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
                 unit: opts.caseId,
                 start: opts.start,
                 end: opts.end,
-            });
+            }, lastInsertedSolution ?? undefined);
             if (!result.success) {
                 toast.error(result.error);
-                return {succeeded: false};
+                return { succeeded: false };
             }
             if (result.data.job.status === 'completed') {
                 toast.success('Daten erfolgreich aus der Datenbank gelöscht');
-                return {succeeded: true};
+                setLastInsertedSolution(null);
+                return { succeeded: true };
             }
-            toast.error('Fehler beim Löschen der Daten', {description: result.data.job.consoleOutput});
-            return {succeeded: false};
+            toast.error('Fehler beim Löschen der Daten', { description: result.data.job.error ?? result.data.job.consoleOutput });
+            return { succeeded: false };
         } finally {
             await finishExecution();
         }
     }
 
-    // ------------------------------------------------------------------ //
-    //  Import handler (shared by both dialog types)
-    // ------------------------------------------------------------------ //
-
     async function handleImport(
         caseId: number,
         monthYear: string,
-        params: {start: string; end: string; solutionType: string},
+        params: { start: string; end: string; solutionType: string; solution: ScheduleSolutionRaw },  // ← solution neu
     ): Promise<void> {
         setIsImporting(true);
         try {
@@ -265,6 +385,8 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
                 toast.error(result.error);
             } else {
                 toast.success('Lösung erfolgreich importiert');
+                // The imported solution becomes the candidate for the next insert into TimeOffice
+                setPendingInsertSolution(params.solution);
             }
         } finally {
             setIsImporting(false);
@@ -272,20 +394,21 @@ export function useSolverOperations({onAfterOperation}: UseSolverOperationsOptio
     }
 
     return {
-        // State
         isExecuting,
         isImporting,
         progress,
+        phase,
+        isIndeterminate,
+        runLabel,
         executionStartTime,
-        // Import dialog
         showImportDialog,
         setShowImportDialog,
         importDialogParams,
-        // Multiple import dialog
         showMultipleImportDialog,
         setShowMultipleImportDialog,
         multipleImportDialogParams,
-        // Operations
+        pendingInsertSolution,
+        lastInsertedSolution,
         executeFetch,
         executeSolve,
         executeSolveMultiple,

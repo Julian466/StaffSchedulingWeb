@@ -1,12 +1,12 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import {useRouter} from 'next/navigation';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Button} from '@/components/ui/button';
 import {Badge} from '@/components/ui/badge';
 import {Alert, AlertDescription, AlertTitle} from '@/components/ui/alert';
-import {Progress} from '@/components/ui/progress';
+import {SolverProgressDisplay} from '@/features/solver/components/solver-progress-display';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -24,8 +24,8 @@ import {
     CheckCircle2,
     Download,
     Edit,
-    FileCheck,
     FolderOpen,
+    Info,
     Loader2,
     Play,
     PlayCircle,
@@ -36,9 +36,12 @@ import {ImportSolutionDialog} from '@/components/import-solution-dialog';
 import {ImportMultipleSolutionsDialog} from '@/components/import-multiple-solutions-dialog';
 import {TimeoutConfigDialog} from '@/components/timeout-config-dialog';
 import {JobHistoryTable} from '@/features/solver/components/job-history-table';
-import {findSolutionFile, getJobs} from '@/features/solver/solver.actions';
+import {getJobs} from '@/features/solver/solver.actions';
 import {useSolverOperations} from '@/features/solver/hooks/use-solver-operations';
-import type {SolverConfigResult, SolverJob} from '@/src/entities/models/solver.model';
+
+import type { SolverJob } from '@/src/entities/models/solver.model';
+import type { SolverHealthResult } from '@/src/application/ports/solver.service';
+import type { ScheduleSolutionRaw } from '@/src/entities/models/schedule.model';
 
 type WorkflowAction = 'delete' | 'fetch' | 'solve' | 'multi-solve' | 'insert' | 'edit-wishes';
 
@@ -54,8 +57,10 @@ interface WorkflowPageClientProps {
     endDate: string;
     isoStart: string;
     isoEnd: string;
-    initialConfig: SolverConfigResult | null;
+    initialConfig: SolverHealthResult | null;
     initialJobs: SolverJob[];
+    initialLastInsertedSolution: ScheduleSolutionRaw | null;
+    initialPendingInsertSolution: ScheduleSolutionRaw | null;
 }
 
 export function WorkflowPageClient({
@@ -67,14 +72,18 @@ export function WorkflowPageClient({
     isoEnd,
     initialConfig,
     initialJobs,
+    initialLastInsertedSolution,
+    initialPendingInsertSolution,
 }: WorkflowPageClientProps) {
     const router = useRouter();
     const [jobs, setJobs] = useState<SolverJob[]>(initialJobs);
-    const [solutionExists, setSolutionExists] = useState<boolean | null>(null);
-    const [showDeleteWarning, setShowDeleteWarning] = useState(false);
     const [showFetchWarning, setShowFetchWarning] = useState(false);
+    const [showDeleteWarning, setShowDeleteWarning] = useState(false);
+    const [showInsertWarning, setShowInsertWarning] = useState(false);
     const [showTimeoutDialog, setShowTimeoutDialog] = useState(false);
     const [pendingAction, setPendingAction] = useState<'solve' | 'multi-solve' | null>(null);
+    const [executingAction, setExecutingAction] = useState<WorkflowAction | null>(null);
+    const [executingTimeout, setExecutingTimeout] = useState<number>(60);
     const [actionStates, setActionStates] = useState<Record<WorkflowAction, ActionState>>({
         delete: {status: 'idle'},
         fetch: {status: 'idle'},
@@ -97,6 +106,9 @@ export function WorkflowPageClient({
         isExecuting,
         isImporting,
         progress,
+        phase,
+        isIndeterminate,
+        runLabel,
         showImportDialog,
         setShowImportDialog,
         importDialogParams,
@@ -109,28 +121,22 @@ export function WorkflowPageClient({
         executeInsert,
         executeDelete,
         handleImport,
-    } = useSolverOperations({onAfterOperation: refreshJobs});
-
-    // Check if solution file exists for delete button indicator
-    useEffect(() => {
-        if (!initialConfig?.staffSchedulingPath) return;
-        const filename = `solution_${caseId}_${isoStart}-${isoEnd}.json`;
-        findSolutionFile(filename)
-            .then((result) => setSolutionExists(result.success ? result.data.exists : false))
-            .catch(() => setSolutionExists(false));
-    }, [caseId, isoStart, isoEnd, initialConfig]);
+        pendingInsertSolution,
+        lastInsertedSolution,
+    } = useSolverOperations({onAfterOperation: refreshJobs, initialLastInsertedSolution, initialPendingInsertSolution});
 
     const execOpts = {caseId, monthYear, start: isoStart, end: isoEnd};
 
     const runAction = async (action: WorkflowAction, timeout?: number) => {
         setActionStates(prev => ({...prev, [action]: {status: 'running'}}));
+        setExecutingAction(action);
+        setExecutingTimeout(timeout ?? 60);
         let succeeded = false;
         try {
             switch (action) {
                 case 'delete': {
                     const r = await executeDelete(execOpts);
                     succeeded = r.succeeded;
-                    if (succeeded) setSolutionExists(false);
                     break;
                 }
                 case 'fetch': {
@@ -149,7 +155,7 @@ export function WorkflowPageClient({
                     break;
                 }
                 case 'insert': {
-                    const r = await executeInsert(execOpts, true);
+                    const r = await executeInsert(execOpts);
                     succeeded = r.succeeded;
                     break;
                 }
@@ -168,10 +174,6 @@ export function WorkflowPageClient({
             router.push(`/wishes-and-blocked?caseId=${caseId}&monthYear=${monthYear}`);
             return;
         }
-        if (action === 'delete' && !solutionExists) {
-            setShowDeleteWarning(true);
-            return;
-        }
         if (action === 'fetch') {
             setShowFetchWarning(true);
             return;
@@ -179,6 +181,15 @@ export function WorkflowPageClient({
         if (action === 'solve' || action === 'multi-solve') {
             setPendingAction(action);
             setShowTimeoutDialog(true);
+            return;
+        }
+        // guard delete/insert when no plan data available
+        if (action === 'delete' && !lastInsertedSolution) {
+            setShowDeleteWarning(true);
+            return;
+        }
+        if (action === 'insert' && !pendingInsertSolution) {
+            setShowInsertWarning(true);
             return;
         }
         runAction(action);
@@ -232,7 +243,7 @@ export function WorkflowPageClient({
         actionStates[action].status === 'success' ? 'outline' : 'default';
 
     const isActionDisabled = (action: WorkflowAction): boolean => {
-        if (!initialConfig?.isValid) return true;
+        if (!initialConfig?.healthy) return true;
         return actionStates[action].status === 'running' || isExecuting;
     };
 
@@ -245,12 +256,15 @@ export function WorkflowPageClient({
                 <p className="text-muted-foreground">Wählen Sie die gewünschten Aktionen aus</p>
             </div>
 
-            {initialConfig && !initialConfig.isValid && (
+            {initialConfig && !initialConfig.healthy && (
                 <Alert variant="destructive" className="mb-6">
                     <AlertCircle className="h-4 w-4"/>
-                    <AlertTitle>Konfiguration ungültig</AlertTitle>
+                    <AlertTitle>Solver nicht erreichbar</AlertTitle>
                     <AlertDescription>
-                        Bitte konfigurieren Sie das StaffScheduling-Projekt und die Python-Executable in der config.json.
+                        {initialConfig.message}
+                        {initialConfig.details && (
+                            <span className="block mt-1 text-xs opacity-75">{initialConfig.details}</span>
+                        )}
                     </AlertDescription>
                 </Alert>
             )}
@@ -290,27 +304,34 @@ export function WorkflowPageClient({
 
             {/* Progress bar — shown during any solver operation */}
             {isExecuting && (
-                <div className="mb-6 p-4 bg-muted rounded-lg space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Fortschritt</span>
-                        <span className="text-muted-foreground font-mono">{progress.toFixed(0)}%</span>
-                    </div>
-                    <Progress value={progress} className="h-2"/>
+                <div className="mb-6">
+                    <SolverProgressDisplay
+                        progress={progress}
+                        phase={phase}
+                        isIndeterminate={isIndeterminate}
+                        runLabel={runLabel}
+                        command={
+                            executingAction === 'solve' ? 'solve' :
+                            executingAction === 'multi-solve' ? 'solve-multiple' : 'fetch'
+                        }
+                        timeout={executingTimeout}
+                    />
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {actions.map((action) => {
                     const state = actionStates[action];
-                    const isDelete = action === 'delete';
 
                     return (
                         <Card
                             key={action}
                             className={
-                                state.status === 'success' ? 'border-green-200 bg-green-50/50' :
-                                state.status === 'error' ? 'border-red-200 bg-red-50/50' :
-                                state.status === 'running' ? 'border-blue-200 bg-blue-50/50' : ''
+                                `flex flex-col h-full ${
+                                    state.status === 'success' ? 'border-green-200 bg-green-50/50' :
+                                    state.status === 'error' ? 'border-red-200 bg-red-50/50' :
+                                    state.status === 'running' ? 'border-blue-200 bg-blue-50/50' : ''
+                                }`
                             }
                         >
                             <CardHeader>
@@ -326,40 +347,38 @@ export function WorkflowPageClient({
                                     </div>
                                 </div>
                             </CardHeader>
-                            <CardContent>
-                                {isDelete && solutionExists !== null && (
-                                    <Alert className={solutionExists
-                                        ? 'mb-4 border-green-200 bg-green-50'
-                                        : 'mb-4 border-amber-200 bg-amber-50'}>
-                                        {solutionExists ? (
-                                            <>
-                                                <FileCheck className="h-4 w-4 text-green-600"/>
-                                                <AlertDescription className="text-green-800">
-                                                    Dienstplan-Datei gefunden
-                                                </AlertDescription>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <AlertTriangle className="h-4 w-4 text-amber-600"/>
-                                                <AlertDescription className="text-amber-800">
-                                                    Keine Dienstplan-Datei gefunden. Bestätigung erforderlich.
-                                                </AlertDescription>
-                                            </>
-                                        )}
-                                    </Alert>
-                                )}
+                            <CardContent className="flex flex-col grow justify-between">
+                                <div>
+                                    {state.message && (
+                                        <Alert className="mb-4" variant={state.status === 'error' ? 'destructive' : 'default'}>
+                                            <AlertDescription>{state.message}</AlertDescription>
+                                        </Alert>
+                                    )}
 
-                                {state.message && (
-                                    <Alert className="mb-4" variant={state.status === 'error' ? 'destructive' : 'default'}>
-                                        <AlertDescription>{state.message}</AlertDescription>
-                                    </Alert>
-                                )}
+                                    {/* additional info for insert/delete */}
+                                    {action === 'insert' && (
+                                        <div className={`flex items-center gap-1.5 text-xs mb-2 ${pendingInsertSolution ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                            {pendingInsertSolution
+                                                ? <><CheckCircle2 className="h-3.5 w-3.5"/>Lösung bereit für Einspielung</>
+                                                : <><Info className="h-3.5 w-3.5"/>Keine Lösung im Speicher -  API/CLI versucht den Dienstplan auf der Disk zu finden</>
+                                            }
+                                        </div>
+                                    )}
+                                    {action === 'delete' && (
+                                        <div className={`flex items-center gap-1.5 text-xs mb-2 ${lastInsertedSolution ? 'text-green-600' : 'text-muted-foreground'}`}>
+                                            {lastInsertedSolution
+                                                ? <><CheckCircle2 className="h-3.5 w-3.5"/>Letzte eingespielten Lösung vorhanden - wird direkt übergeben</>
+                                                : <><Info className="h-3.5 w-3.5"/>Keine eingespielte Lösung im Speicher - API/CLI versucht den Dienstplan auf der Disk zu finden</>
+                                            }
+                                        </div>
+                                    )}
+                                </div>
 
                                 <Button
                                     onClick={() => executeAction(action)}
                                     disabled={isActionDisabled(action)}
                                     variant={getActionButtonVariant(action)}
-                                    className="w-full"
+                                    className="w-full mt-4"
                                 >
                                     {state.status === 'running' && (
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
@@ -377,32 +396,6 @@ export function WorkflowPageClient({
                 <JobHistoryTable jobs={jobs}/>
             </div>
 
-            {/* Delete Warning Dialog */}
-            <AlertDialog open={showDeleteWarning} onOpenChange={setShowDeleteWarning}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2">
-                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
-                            Keine Dienstplan-Datei gefunden
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Es wurde keine exportierte Dienstplan-Datei für Case {caseId} im
-                            Zeitraum {formatDate(startDate)} bis {formatDate(endDate)} gefunden.
-                            <br/><br/>
-                            Möchten Sie trotzdem fortfahren und den Delete-Befehl ausführen?
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => {
-                            setShowDeleteWarning(false);
-                            runAction('delete');
-                        }}>
-                            Trotzdem ausführen
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
 
             {/* Fetch Warning Dialog */}
             <AlertDialog open={showFetchWarning} onOpenChange={setShowFetchWarning}>
@@ -431,6 +424,60 @@ export function WorkflowPageClient({
                 </AlertDialogContent>
             </AlertDialog>
 
+            {/* Delete warning when no lastInsertedSolution */}
+            <AlertDialog open={showDeleteWarning} onOpenChange={setShowDeleteWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Löschen ohne eingespielten Plan
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Es ist kein zuletzt eingespielter Dienstplan vorhanden. Der Löschvorgang
+                            versucht die Daten auf der Disk zu finden (CLI-Verhalten).
+                            <br/><br/>
+                            Möchten Sie trotzdem fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setShowDeleteWarning(false);
+                            runAction('delete');
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Insert warning when no pendingInsertSolution */}
+            <AlertDialog open={showInsertWarning} onOpenChange={setShowInsertWarning}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600"/>
+                            Export ohne Plan im Speicher
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Es befindet sich derzeit kein Dienstplan im Speicher. Beim Export werden die
+                            Daten von der Festplatte verwendet.
+                            <br/><br/>
+                            Fortfahren?
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Abbrechen</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => {
+                            setShowInsertWarning(false);
+                            runAction('insert');
+                        }}>
+                            Fortfahren
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             {/* Import Solution Dialog */}
             {importDialogParams && (
                 <ImportSolutionDialog
@@ -440,7 +487,10 @@ export function WorkflowPageClient({
                     start={importDialogParams.start}
                     end={importDialogParams.end}
                     solutionType={importDialogParams.solutionType}
-                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    onImport={(params) => handleImport(caseId, monthYear, {
+                        ...params,
+                        solution: importDialogParams.solution,  // ← solution aus params
+                    })}
                     isImporting={isImporting}
                 />
             )}
@@ -455,7 +505,10 @@ export function WorkflowPageClient({
                     end={multipleImportDialogParams.end}
                     solutionCount={multipleImportDialogParams.solutionCount}
                     feasibleSolutions={multipleImportDialogParams.feasibleSolutions}
-                    onImport={(params) => handleImport(caseId, monthYear, params)}
+                    onImport={(params) => handleImport(caseId, monthYear, {
+                        ...params,
+                        solution: multipleImportDialogParams.solutions[params.solutionIndex ?? 0],  // ← richtige Solution anhand Index
+                    })}
                     isImporting={isImporting}
                 />
             )}

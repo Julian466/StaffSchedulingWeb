@@ -103,7 +103,7 @@ import type {
 } from '@/src/application/use-cases/templates/global-wishes/delete-global-wishes-template.use-case';
 
 // Use Case interfaces — Solver
-import type {IValidateConfigUseCase} from '@/src/application/use-cases/solver/validate-config.use-case';
+import type {ICheckSolverHealthUseCase} from '@/src/application/use-cases/solver/check-solver-health.use-case';
 import type {IExecuteSolverFetchUseCase} from '@/src/application/use-cases/solver/execute-solver-fetch.use-case';
 import type {IExecuteSolverSolveUseCase} from '@/src/application/use-cases/solver/execute-solver-solve.use-case';
 import type {
@@ -111,8 +111,6 @@ import type {
 } from '@/src/application/use-cases/solver/execute-solver-solve-multiple.use-case';
 import type {IExecuteSolverInsertUseCase} from '@/src/application/use-cases/solver/execute-solver-insert.use-case';
 import type {IExecuteSolverDeleteUseCase} from '@/src/application/use-cases/solver/execute-solver-delete.use-case';
-import type {IFindSolutionFileUseCase} from '@/src/application/use-cases/solver/find-solution-file.use-case';
-import type {ISaveSolutionUseCase} from '@/src/application/use-cases/solver/save-solution.use-case';
 import type {IImportSolutionUseCase} from '@/src/application/use-cases/solver/import-solution.use-case';
 
 // Controller interfaces
@@ -197,7 +195,7 @@ import type {
 } from '@/src/controllers/templates/global-wishes/delete-global-wishes-template.controller';
 
 // Controller interfaces — Solver
-import type {IValidateConfigController} from '@/src/controllers/solver/validate-config.controller';
+import type {ICheckSolverHealthController} from '@/src/controllers/solver/check-solver-health.controller';
 import type {IExecuteSolverFetchController} from '@/src/controllers/solver/execute-solver-fetch.controller';
 import type {IExecuteSolverSolveController} from '@/src/controllers/solver/execute-solver-solve.controller';
 import type {
@@ -205,9 +203,11 @@ import type {
 } from '@/src/controllers/solver/execute-solver-solve-multiple.controller';
 import type {IExecuteSolverInsertController} from '@/src/controllers/solver/execute-solver-insert.controller';
 import type {IExecuteSolverDeleteController} from '@/src/controllers/solver/execute-solver-delete.controller';
-import type {IFindSolutionFileController} from '@/src/controllers/solver/find-solution-file.controller';
-import type {ISaveSolutionController} from '@/src/controllers/solver/save-solution.controller';
 import type {IImportSolutionController} from '@/src/controllers/solver/import-solution.controller';
+import type {IGetSolverProgressUseCase} from '@/src/application/use-cases/solver/get-solver-progress.use-case';
+import type {IGetSolverProgressController} from '@/src/controllers/solver/get-solver-progress.controller';
+import type {IGetLastInsertedSolutionUseCase} from '@/src/application/use-cases/solver/get-last-inserted-solution.use-case';
+import type {IGetLastInsertedSolutionController} from '@/src/controllers/solver/get-last-inserted-solution.controller';
 
 export const DI_SYMBOLS = {
     // Repositories
@@ -296,15 +296,15 @@ export const DI_SYMBOLS = {
     IScheduleParserService: Symbol.for('IScheduleParserService'),
 
     // Use Cases — Solver
-    IValidateConfigUseCase: Symbol.for('IValidateConfigUseCase'),
+    ICheckSolverHealthUseCase: Symbol.for('ICheckSolverHealthUseCase'),
     IExecuteSolverFetchUseCase: Symbol.for('IExecuteSolverFetchUseCase'),
     IExecuteSolverSolveUseCase: Symbol.for('IExecuteSolverSolveUseCase'),
     IExecuteSolverSolveMultipleUseCase: Symbol.for('IExecuteSolverSolveMultipleUseCase'),
     IExecuteSolverInsertUseCase: Symbol.for('IExecuteSolverInsertUseCase'),
     IExecuteSolverDeleteUseCase: Symbol.for('IExecuteSolverDeleteUseCase'),
-    IFindSolutionFileUseCase: Symbol.for('IFindSolutionFileUseCase'),
-    ISaveSolutionUseCase: Symbol.for('ISaveSolutionUseCase'),
     IImportSolutionUseCase: Symbol.for('IImportSolutionUseCase'),
+    IGetSolverProgressUseCase: Symbol.for('IGetSolverProgressUseCase'),
+    IGetLastInsertedSolutionUseCase: Symbol.for('IGetLastInsertedSolutionUseCase'),
 
     // Controllers — Employees
     IGetAllEmployeesController: Symbol.for('IGetAllEmployeesController'),
@@ -375,15 +375,15 @@ export const DI_SYMBOLS = {
     IDeleteGlobalWishesTemplateController: Symbol.for('IDeleteGlobalWishesTemplateController'),
 
     // Controllers — Solver
-    IValidateConfigController: Symbol.for('IValidateConfigController'),
+    ICheckSolverHealthController: Symbol.for('ICheckSolverHealthController'),
     IExecuteSolverFetchController: Symbol.for('IExecuteSolverFetchController'),
     IExecuteSolverSolveController: Symbol.for('IExecuteSolverSolveController'),
     IExecuteSolverSolveMultipleController: Symbol.for('IExecuteSolverSolveMultipleController'),
     IExecuteSolverInsertController: Symbol.for('IExecuteSolverInsertController'),
     IExecuteSolverDeleteController: Symbol.for('IExecuteSolverDeleteController'),
-    IFindSolutionFileController: Symbol.for('IFindSolutionFileController'),
-    ISaveSolutionController: Symbol.for('ISaveSolutionController'),
     IImportSolutionController: Symbol.for('IImportSolutionController'),
+    IGetSolverProgressController: Symbol.for('IGetSolverProgressController'),
+    IGetLastInsertedSolutionController: Symbol.for('IGetLastInsertedSolutionController'),
 } as const;
 
 export interface DI_RETURN_TYPES {
@@ -473,15 +473,15 @@ export interface DI_RETURN_TYPES {
     IScheduleParserService: IScheduleParserService;
 
     // Use Cases — Solver
-    IValidateConfigUseCase: IValidateConfigUseCase;
+    ICheckSolverHealthUseCase: ICheckSolverHealthUseCase;
     IExecuteSolverFetchUseCase: IExecuteSolverFetchUseCase;
     IExecuteSolverSolveUseCase: IExecuteSolverSolveUseCase;
     IExecuteSolverSolveMultipleUseCase: IExecuteSolverSolveMultipleUseCase;
     IExecuteSolverInsertUseCase: IExecuteSolverInsertUseCase;
     IExecuteSolverDeleteUseCase: IExecuteSolverDeleteUseCase;
-    IFindSolutionFileUseCase: IFindSolutionFileUseCase;
-    ISaveSolutionUseCase: ISaveSolutionUseCase;
     IImportSolutionUseCase: IImportSolutionUseCase;
+    IGetSolverProgressUseCase: IGetSolverProgressUseCase;
+    IGetLastInsertedSolutionUseCase: IGetLastInsertedSolutionUseCase;
 
     // Controllers — Employees
     IGetAllEmployeesController: IGetAllEmployeesController;
@@ -552,13 +552,13 @@ export interface DI_RETURN_TYPES {
     IDeleteGlobalWishesTemplateController: IDeleteGlobalWishesTemplateController;
 
     // Controllers — Solver
-    IValidateConfigController: IValidateConfigController;
+    ICheckSolverHealthController: ICheckSolverHealthController;
     IExecuteSolverFetchController: IExecuteSolverFetchController;
     IExecuteSolverSolveController: IExecuteSolverSolveController;
     IExecuteSolverSolveMultipleController: IExecuteSolverSolveMultipleController;
     IExecuteSolverInsertController: IExecuteSolverInsertController;
     IExecuteSolverDeleteController: IExecuteSolverDeleteController;
-    IFindSolutionFileController: IFindSolutionFileController;
-    ISaveSolutionController: ISaveSolutionController;
     IImportSolutionController: IImportSolutionController;
+    IGetSolverProgressController: IGetSolverProgressController;
+    IGetLastInsertedSolutionController: IGetLastInsertedSolutionController;
 }

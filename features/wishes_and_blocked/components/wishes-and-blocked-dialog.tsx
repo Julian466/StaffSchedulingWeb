@@ -9,7 +9,7 @@ interface WishesAndBlockedDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     employee?: WishesAndBlockedEmployee;
-    onSubmit: (data: Omit<WishesAndBlockedEmployee, 'key'>) => void;
+    onSubmit: (data: WishesAndBlockedEmployee) => void;
     isSubmitting?: boolean;
     excludedEmployeeKeys?: number[];
     isGlobal?: boolean;

@@ -1,7 +1,8 @@
 ﻿import {redirect} from 'next/navigation';
-import {getJobs, validateConfig} from '@/features/solver/solver.actions';
+import {getJobs, checkSolverHealth, getLastInsertedSolution} from '@/features/solver/solver.actions';
 import {WorkflowPageClient} from './workflow-page-client';
 import {getWorkflowSession} from '@/src/infrastructure/services/workflow-session.service';
+import {getSelectedScheduleAction} from '@/features/schedule/schedule.actions';
 
 /** Converts DD.MM.YYYY -> YYYY-MM-DD */
 function convertToISODate(ddmmyyyy: string): string {
@@ -26,11 +27,15 @@ export default async function WorkflowPage() {
     const isoStart = convertToISODate(startDate);
     const isoEnd = convertToISODate(endDate);
 
-    const [configResult, jobsData] = await Promise.all([
-        validateConfig(),
+    const [configResult, jobsData, lastInsertedResult, selectedScheduleData] = await Promise.all([
+        checkSolverHealth(),
         getJobs(caseId, monthYear).catch(() => ({jobs: []})),
+        getLastInsertedSolution(caseId, monthYear).catch(() => ({success: true, data: null})),
+        getSelectedScheduleAction(caseId, monthYear).catch(() => ({solution: null})),
     ]);
     const initialConfig = configResult.success ? configResult.data : null;
+    const initialLastInsertedSolution = lastInsertedResult.success ? lastInsertedResult.data : null;
+    const initialPendingInsertSolution = selectedScheduleData.solution ?? null;
 
     return (
         <WorkflowPageClient
@@ -42,6 +47,8 @@ export default async function WorkflowPage() {
             isoEnd={isoEnd}
             initialConfig={initialConfig}
             initialJobs={jobsData.jobs}
+            initialLastInsertedSolution={initialLastInsertedSolution}
+            initialPendingInsertSolution={initialPendingInsertSolution}
         />
     );
 }

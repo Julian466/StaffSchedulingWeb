@@ -64,7 +64,7 @@ function JobRow({job}: { job: SolverJob }) {
                 <TableCell>
                     {format(new Date(job.createdAt), 'dd.MM.yyyy HH:mm', {locale: de})}
                 </TableCell>
-                <TableCell>{(job.duration / 1000).toFixed(1)}s</TableCell>
+                <TableCell>{job.duration != null ? `${(job.duration / 1000).toFixed(1)}s` : '-'}</TableCell>
                 <TableCell>
                     <Button variant="ghost" size="sm">
                         {expanded ? <ChevronUp className="h-4 w-4"/> : <ChevronDown className="h-4 w-4"/>}
