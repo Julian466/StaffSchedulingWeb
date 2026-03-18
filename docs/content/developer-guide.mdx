@@ -16,35 +16,13 @@ The central principle is the **Dependency Rule**:
 
 > Dependencies always point **inward**. An inner layer never imports from an outer layer.
 
-```
-┌──────────────────────────────────────────────────┐
-│            Frameworks & Drivers                   │
-│   app/  ·  features/  ·  components/  ·  di/      │
-│                                                    │
-│  ┌──────────────────────────────────────────────┐ │
-│  │         Interface Adapters                    │ │
-│  │           src/controllers/                    │ │
-│  │                                               │ │
-│  │  ┌────────────────────────────────────────┐  │ │
-│  │  │       Application Layer                │  │ │
-│  │  │  src/application/use-cases/            │  │ │
-│  │  │  src/application/ports/                │  │ │
-│  │  │                                        │  │ │
-│  │  │  ┌──────────────────────────────────┐  │  │ │
-│  │  │  │        Domain Layer              │  │  │ │
-│  │  │  │     src/entities/models/         │  │  │ │
-│  │  │  │     src/entities/errors/         │  │  │ │
-│  │  │  │     src/entities/validation/     │  │  │ │
-│  │  │  └──────────────────────────────────┘  │  │ │
-│  │  └────────────────────────────────────────┘  │ │
-│  └──────────────────────────────────────────────┘ │
-│                                                    │
-│  Infrastructure (implements Application ports)     │
-│    src/infrastructure/repositories/                │
-│    src/infrastructure/persistence/                 │
-│    src/infrastructure/services/                    │
-└──────────────────────────────────────────────────┘
-```
+<figure>
+    ![Clean Architecture Diagramm](https://raw.githubusercontent.com/nikolovlazar/nextjs-clean-architecture/main/assets/clean-architecture-diagram.jpg)
+
+    <figcaption style={{ textAlign: 'center', fontSize: '0.9em', color: 'gray', marginTop: '10px' }}>
+        Abbildung 1: Clean Architecture in Next.js. Quelle: Lazar Nikolov (2024), [GitHub Repository](https://github.com/nikolovlazar/nextjs-clean-architecture).
+    </figcaption>
+</figure>
 
 ---
 
