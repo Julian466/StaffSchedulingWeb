@@ -4,6 +4,12 @@ import fs from 'fs/promises';
 import {getCasePath} from '@/lib/config/app-config';
 import {ScheduleDatabase, SchedulesMetadata, ScheduleSolutionRaw} from "@/src/entities/models";
 
+async function ensureWebDir(caseId: number, monthYear: string): Promise<string> {
+    const webDir = path.join(getCasePath(caseId, monthYear), 'web');
+    await fs.mkdir(webDir, {recursive: true});
+    return webDir;
+}
+
 /**
  * Gets or creates a database connection for schedule metadata.
  * Manages the list of all schedules for a case.
@@ -13,7 +19,8 @@ import {ScheduleDatabase, SchedulesMetadata, ScheduleSolutionRaw} from "@/src/en
  * @returns Promise resolving to the schedules metadata database instance
  */
 export async function getSchedulesMetadataDb(caseId: number, monthYear: string) {
-    const filePath = path.join(getCasePath(caseId, monthYear), 'web', 'schedules.json');
+    const webDir = await ensureWebDir(caseId, monthYear);
+    const filePath = path.join(webDir, 'schedules.json');
     return JSONFilePreset<SchedulesMetadata>(filePath, {schedules: [], selectedScheduleId: null});
 }
 
@@ -27,7 +34,8 @@ export async function getSchedulesMetadataDb(caseId: number, monthYear: string) 
  * @returns Promise resolving to the schedule database instance
  */
 export async function getScheduleDb(caseId: number, monthYear: string, scheduleId: string) {
-    const filePath = path.join(getCasePath(caseId, monthYear), 'web', `schedule_${scheduleId}.json`);
+    const webDir = await ensureWebDir(caseId, monthYear);
+    const filePath = path.join(webDir, `schedule_${scheduleId}.json`);
     return JSONFilePreset<ScheduleDatabase>(filePath, {solution: null});
 }
 
@@ -53,6 +61,7 @@ function getLastInsertedPath(caseId: number, monthYear: string): string {
 }
 
 export async function saveLastInsertedDb(caseId: number, monthYear: string, solution: ScheduleSolutionRaw): Promise<void> {
+    await ensureWebDir(caseId, monthYear);
     const filePath = getLastInsertedPath(caseId, monthYear);
     await fs.writeFile(filePath, JSON.stringify(solution, null, 2), 'utf-8');
 }
