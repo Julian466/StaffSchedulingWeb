@@ -23,24 +23,63 @@ re-importing a finalized, optimized schedule:
 
 ---
 
+## System Context
+
+The diagram below shows how the three main systems interact. Understanding these boundaries is
+essential for both users and developers.
+
+```mermaid
+flowchart LR
+    TO["fa:fa-database TimeOffice\n(Hospital System)"]
+    SS["fa:fa-cogs StaffScheduling\n(Python Solver)"]
+    WEB["fa:fa-laptop-code StaffSchedulingWeb\n(This App — Next.js)"]
+    FS[("fa:fa-folder-open Shared Filesystem\ncases/ directory")]
+
+    TO -- "ODBC (fetch)" --> SS
+    SS -- "ODBC (insert/delete)" --> TO
+    SS -- "reads & writes JSON" --> FS
+    WEB -- "reads & writes JSON" --> FS
+    WEB -- "HTTP API or CLI" --> SS
+
+    style TO fill:#455A64,color:#FFFFFF,stroke:#455A64
+    style SS fill:#AA00FF,color:#FFFFFF,stroke:#AA00FF
+    style WEB fill:#2962FF,color:#FFFFFF,stroke:#2962FF
+    style FS fill:#F5F5F5,color:#333333,stroke:#BDBDBD
+```
+
+| System | Role | Technology |
+|---|---|---|
+| **TimeOffice** | Hospital staff management database. Source of employee data, shift definitions, and vacation records. Target for finalized schedules. | SQL Server (accessed via ODBC) |
+| **StaffScheduling** | Constraint-programming solver. Fetches data from TimeOffice, optimizes shift assignments, and writes solutions. | Python 3.12, Google OR-Tools CP-SAT, FastAPI |
+| **StaffSchedulingWeb** | Web interface for the entire workflow. Manages wishes, displays schedules, triggers solver operations. | Next.js 16, React 19, TypeScript, LowDB |
+
+All three systems share data through a common `cases/` directory on the filesystem. The web application
+communicates with the solver either via its REST API (FastAPI on port 8000) or by invoking the Python CLI
+directly.
+
+---
+
 ## Tech Stack
 
 | Technology | Version | Purpose |
 |---|---|---|
 | **Next.js** | 16 | App Router, Server Components & Server Actions |
 | **React** | 19 | UI rendering |
-| **TypeScript** | 5.9 | Type safety |
+| **TypeScript** | 5.9 | Type safety (strict mode) |
 | **Zod** | 4 | Schema validation & type inference |
 | **@evyweb/ioctopus** | 1.3 | Dependency Injection container |
 | **LowDB** | 7 | File-based JSON database |
 | **Tailwind CSS** | 4 | Utility-first CSS framework |
-| **Radix UI / shadcn/ui** | – | Accessible UI component primitives |
+| **Radix UI / shadcn/ui** | — | Accessible UI component primitives (New York style) |
+| **react-hook-form** | 7.66 | Form state management |
+| **date-fns** | 4.1 | Date manipulation |
+| **next-themes** | 0.4 | Dark/light theme support |
+| **sonner** | 2.0 | Toast notifications |
+| **Nextra** | 4.6 | This documentation site |
 
 ---
 
 ## Structure of This Documentation
-
-This documentation is divided into two main parts:
 
 ### [User Guide →](./user-guide)
 
@@ -51,6 +90,20 @@ prerequisites, configuration, and the full scheduling workflow from start to fin
 
 Aimed at **developers who will take over and extend the project**. Explains the Clean Architecture layers,
 the Dependency Injection mechanism, the folder structure, and a step-by-step tutorial for adding new features.
+
+### [Underlying Data →](./underlying_data)
+
+Reference documentation for **all JSON file structures** used by the system. Covers solver-side files,
+web-managed files, and templates with full schema descriptions.
+
+### [Solver Integration →](./solver-integration)
+
+Technical reference for the **communication between the web app and the Python solver**. Covers the
+FastAPI endpoints, CLI commands, progress tracking, and the solver's three-phase optimization process.
+
+### [Troubleshooting →](./troubleshooting)
+
+Common issues and their solutions for both users and developers.
 
 ---
 

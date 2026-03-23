@@ -1,8 +1,8 @@
 # Underlying Data Structures
 
-This reference documents all JSON files used by the StaffScheduling system. Files are stored on
-disk and accessed by both the web application (via LowDB) and the Python solver. Understanding
-these structures is essential when debugging, migrating data, or contributing to the codebase.
+This reference documents all JSON files used by the StaffScheduling system. Files are stored on disk
+and accessed by both the web application (via LowDB) and the Python solver. Understanding these
+structures is essential when debugging, migrating data, or contributing to the codebase.
 
 ---
 
@@ -16,34 +16,58 @@ cases/
     │   ├── minimal-staff.json
     │   └── weights.json
     └── <monthYear>/                   # e.g. 11_2024
-        ├── employees.json
-        ├── employee_types.json
-        ├── wishes_and_blocked.json
-        ├── global_wishes_and_blocked.json
-        ├── minimal_number_of_staff.json
-        ├── weights.json
-        ├── general_settings.json
-        ├── shift_information.json
-        ├── target_working_minutes.json
-        ├── free_shifts_and_vacation_days.json
-        ├── worked_sundays.json
+        ├── employees.json             # ← Solver writes, Web reads
+        ├── employee_types.json        # ← Solver writes, Web reads
+        ├── wishes_and_blocked.json    # ← Web writes, Solver reads
+        ├── global_wishes_and_blocked.json  # ← Web writes only
+        ├── minimal_number_of_staff.json    # ← Web writes, Solver reads
+        ├── weights.json               # ← Web writes, Solver reads
+        ├── general_settings.json      # ← Solver writes, Web reads
+        ├── shift_information.json     # ← Solver writes, Web reads
+        ├── target_working_minutes.json     # ← Solver writes, Web reads
+        ├── free_shifts_and_vacation_days.json  # ← Solver writes, Web reads
+        ├── worked_sundays.json        # ← Solver writes, Web reads
         └── web/                       # Written exclusively by the web application
             ├── jobs.json
             ├── schedules.json
-            └── schedule_<id>.json     # One file per imported schedule
+            ├── schedule_<id>.json     # One file per imported schedule
+            └── last_inserted.json     # Tracks the last inserted solution
 ```
 
-The `caseId` is a numeric identifier matching the TimeOffice unit number. The `monthYear`
+The `caseId` is a numeric identifier matching the TimeOffice planning unit number. The `monthYear`
 directory uses the format `MM_YYYY` (e.g. `11_2024` for November 2024).
+
+## Data Ownership Matrix
+
+The following table clarifies which system writes and reads each file. This is critical for
+understanding which files are safe to edit manually and which will be overwritten.
+
+| File | Written by | Read by | Safe to edit manually? |
+|---|---|---|---|
+| `employees.json` | Solver (fetch) | Web | No — re-fetch overwrites |
+| `employee_types.json` | Solver (fetch) | Web, Solver | Yes (static template) |
+| `shift_information.json` | Solver (fetch) | Web | No — re-fetch overwrites |
+| `general_settings.json` | Solver (fetch) | Solver | Yes (static template) |
+| `target_working_minutes.json` | Solver (fetch) | Solver | No — re-fetch overwrites |
+| `free_shifts_and_vacation_days.json` | Solver (fetch) | Solver | No — re-fetch overwrites |
+| `worked_sundays.json` | Solver (fetch) | Solver | No — re-fetch overwrites |
+| `wishes_and_blocked.json` | Web | Solver | Yes — but global wishes may overwrite |
+| `global_wishes_and_blocked.json` | Web | Web | Yes |
+| `minimal_number_of_staff.json` | Web | Solver | Yes |
+| `weights.json` | Web | Solver | Yes |
+| `web/jobs.json` | Web | Web | Not recommended |
+| `web/schedules.json` | Web | Web | Not recommended |
+| `web/schedule_<id>.json` | Web | Web | Not recommended |
+| `web/last_inserted.json` | Web | Web | Not recommended |
 
 ---
 
 ## Solver-Side Files
 
-These files are created and updated by the StaffScheduling Python project (via the fetch and
-solve operations). The web application reads them but does not write to them directly.
+These files are created and updated by the StaffScheduling Python project (via the `fetch`
+operation). The web application reads them but does not write to them directly.
 
-### `employees.json`
+### employees.json
 
 A flat list of employees belonging to the ward.
 
@@ -67,9 +91,7 @@ A flat list of employees belonging to the ward.
 | `firstname` | `string` | First name |
 | `type` | `string` | Full role type string from TimeOffice (see `employee_types.json`) |
 
----
-
-### `employee_types.json`
+### employee_types.json
 
 Maps the raw `type` strings from `employees.json` to one of three solver categories:
 **Fachkraft** (skilled professional), **Hilfskraft** (support worker), **Azubi** (trainee).
@@ -95,9 +117,11 @@ Maps the raw `type` strings from `employees.json` to one of three solver categor
 | `Hilfskraft` | Support | Determines minimum staffing for the support rows |
 | `Azubi` | Trainee | Determines minimum staffing for the trainee rows |
 
----
+> **Note:** If a new employee type appears in TimeOffice that is not listed in any of the three
+> categories, the solver will not be able to classify that employee. In this case, you must
+> manually add the new type string to the appropriate category in this file.
 
-### `shift_information.json`
+### shift_information.json
 
 An array of shift definitions fetched from TimeOffice. The solver uses these to identify which
 shift IDs correspond to Early (F), Late (S), and Night (N) shifts.
@@ -126,9 +150,17 @@ shift IDs correspond to Early (F), Late (S), and Night (N) shifts.
 | `shift_duration` | `number` | Total shift duration in minutes |
 | `shift_name` | `string` | Human-readable label from TimeOffice |
 
----
+**Standard shift types recognized by the solver:**
 
-### `general_settings.json`
+| Abbreviation | Internal ID | Name | German |
+|---|---|---|---|
+| F | 0 | Early | Frühschicht |
+| Z | 1 | Intermediate | Zwischenschicht |
+| S | 2 | Late | Spätschicht |
+| N | 3 | Night | Nachtschicht |
+| Z60 | 4 | Management | Leitungsschicht |
+
+### general_settings.json
 
 Maps the three solver shift identifiers (Early, Late, Night) to their internal index values,
 and stores any special per-employee qualifications.
@@ -151,9 +183,7 @@ and stores any special per-employee qualifications.
 | `SHIFT_NAME_TO_INDEX` | `Record<string, number>` | Maps canonical shift names to indices (always 0/1/2) |
 | `qualifications` | `Record<string, string[]>` | Employee key → list of special qualifications (e.g. `"rounds"` for round-eligible employees) |
 
----
-
-### `target_working_minutes.json`
+### target_working_minutes.json
 
 The monthly working time target and current actual (accumulated) total for each employee.
 
@@ -177,9 +207,7 @@ The monthly working time target and current actual (accumulated) total for each 
 | `target` | `number` | Monthly target working minutes |
 | `actual` | `number` | Actual worked minutes so far (0 before scheduling, updated after insertion) |
 
----
-
-### `free_shifts_and_vacation_days.json`
+### free_shifts_and_vacation_days.json
 
 Pre-planned absences and pre-assigned shifts fetched from TimeOffice. The solver uses this as
 hard constraints: employees cannot be scheduled on their `vacation_days` or `forbidden_days`.
@@ -205,9 +233,7 @@ hard constraints: employees cannot be scheduled on their `vacation_days` or `for
 | `forbidden_days` | `number[]` | Calendar days the employee may not work (public holidays, prior commitments) |
 | `planned_shifts` | `array` | Pre-assigned shifts that must be kept in the schedule |
 
----
-
-### `worked_sundays.json`
+### worked_sundays.json
 
 Historical count of Sundays worked by each employee. The solver uses this to fairly distribute
 Sunday assignments across the team.
@@ -231,7 +257,7 @@ Sunday assignments across the team.
 
 These files are created and maintained exclusively by the Next.js web application.
 
-### `wishes_and_blocked.json`
+### wishes_and_blocked.json
 
 Stores monthly (date-specific) employee preferences entered via the Wishes & Blocked page.
 
@@ -255,14 +281,12 @@ Stores monthly (date-specific) employee preferences entered via the Wishes & Blo
 |---|---|---|---|
 | `wish_days` | `number[]` | Soft | Calendar days (1–31) the employee prefers to have off |
 | `wish_shifts` | `[number, "F"\|"S"\|"N"][]` | Soft | Preferred shifts: `[day, shiftCode]` |
-| `blocked_days` | `number[]` | **Hard** | Calendar days the employee must not work |
-| `blocked_shifts` | `[number, "F"\|"S"\|"N"][]` | **Hard** | Shifts the employee must not be assigned |
+| `blocked_days` | `number[]` | Hard | Calendar days the employee must not work |
+| `blocked_shifts` | `[number, "F"\|"S"\|"N"][]` | Hard | Shifts the employee must not be assigned |
 
 Day numbers are **calendar days** within the selected month (1–31).
 
----
-
-### `global_wishes_and_blocked.json`
+### global_wishes_and_blocked.json
 
 Stores recurring weekly preferences entered via the Global Wishes & Blocked page.
 The structure is identical to `wishes_and_blocked.json`, but day numbers refer to **weekday
@@ -282,7 +306,7 @@ indices** rather than calendar dates.
 }
 ```
 
-Weekday index mapping:
+**Weekday index mapping:**
 
 | Index | Weekday |
 |---|---|
@@ -297,12 +321,10 @@ Weekday index mapping:
 When a global wish is saved for an employee, the system regenerates all corresponding monthly
 entries in `wishes_and_blocked.json` (replacing any prior monthly entries for that employee).
 
----
+### minimal_number_of_staff.json
 
-### `minimal_number_of_staff.json`
-
-Defines the minimum number of employees per staffing category, per shift, per weekday.
-The solver enforces these as hard constraints.
+Defines the minimum number of employees per staffing category, per shift, per weekday. The solver
+enforces these as hard constraints.
 
 ```json
 {
@@ -325,16 +347,17 @@ The solver enforces these as hard constraints.
 ```
 
 Top-level keys correspond to the three solver categories (`Azubi`, `Fachkraft`, `Hilfskraft`).
+
 Weekday keys: `Mo`, `Di`, `Mi`, `Do`, `Fr`, `Sa`, `So`.
+
 Shift keys: `F` (Early), `S` (Late), `N` (Night).
 
----
-
-### `weights.json`
+### weights.json
 
 Penalty weights for soft constraints. Higher values make the solver more aggressively avoid
 a given pattern. These weights only apply when running the **`solve`** command (single schedule
-generation). `solve-multiple` ignores this file and uses three internal presets.
+generation). `solve-multiple` ignores this file and uses three internal presets
+(see [Solver Integration — Weight Presets](./solver-integration#weight-presets)).
 
 ```json
 {
@@ -354,7 +377,7 @@ generation). `solve-multiple` ignores this file and uses three internal presets.
 |---|---|
 | `free_weekend` | Penalty for not giving an employee at least one free weekend |
 | `consecutive_nights` | Penalty for more than three consecutive night shifts |
-| `hidden` | Internal penalty reserved for hard-coded solver constraints |
+| `hidden` | Internal penalty reserved for hard-coded solver constraints (hidden employees) |
 | `overtime` | Penalty per overtime hour |
 | `consecutive_days` | Penalty for more than five consecutive working days |
 | `rotate` | Penalty for violating the forward rotation rule (F → S → N) |
@@ -368,7 +391,7 @@ generation). `solve-multiple` ignores this file and uses three internal presets.
 
 The `web/` subdirectory is entirely managed by the Next.js application.
 
-### `web/jobs.json`
+### web/jobs.json
 
 A log of all solver operations triggered via the web interface.
 
@@ -408,9 +431,7 @@ A log of all solver operations triggered via the web interface.
 | `duration` | `number` | Wall-clock execution time in milliseconds |
 | `metadata.solutionsGenerated` | `number` | Number of schedules produced |
 
----
-
-### `web/schedules.json`
+### web/schedules.json
 
 Metadata and quality statistics for all schedules imported into this case.
 
@@ -450,13 +471,95 @@ Metadata and quality statistics for all schedules imported into this case.
 | `stats.not_free_after_night_shift` | Count of night shifts not followed by a free day |
 | `stats.violated_wish_total` | Total number of soft wishes that could not be satisfied |
 
----
+### web/schedule_&lt;id&gt;.json
 
-### `web/schedule_<id>.json`
-
-One file per imported or generated schedule. These contain the full shift assignment matrix as
+One file per imported or generated schedule. Contains the full shift assignment matrix as
 produced by the Python solver. The file name must match the `scheduleId` field in
 `web/schedules.json`.
+
+The structure follows the solver's processed solution format:
+
+```json
+{
+  "variables": {
+    "(459, '2024-11-01', 0)": 1,
+    "(459, '2024-11-02', 2)": 1
+  },
+  "employees": [
+    {
+      "id": 459,
+      "name": "Shoemake Sandra",
+      "level": "Fachkraft",
+      "target_working_time": 7680,
+      "actual_working_time": 1920,
+      "wishes": {
+        "shift_wishes": [[25, "F"]],
+        "day_off_wishes": [18, 22, 23]
+      },
+      "forbidden_days": [18, 22, 23, 24, 25],
+      "vacation_days": [2, 3, 4, 5]
+    }
+  ],
+  "days": ["2024-11-01", "2024-11-02"],
+  "shifts": [
+    {
+      "id": 0,
+      "name": "Früh",
+      "abbreviation": "F",
+      "color": "#a8d51f",
+      "duration": 460,
+      "is_exclusive": false
+    }
+  ],
+  "stats": {
+    "forward_rotation_violations": 5,
+    "consecutive_working_days_gt_5": 2,
+    "no_free_weekend": 1,
+    "consecutive_night_shifts_gt_3": 0,
+    "total_overtime_hours": 12.5,
+    "no_free_days_around_weekend": 3,
+    "not_free_after_night_shift": 1,
+    "violated_wish_total": 8
+  },
+  "fulfilled_shift_wish_cells": [[459, "2024-11-15"]],
+  "fulfilled_day_off_cells": [[459, "2024-11-18"]],
+  "all_shift_wish_colors": {
+    "459-2024-11-15": ["#a8d51f"]
+  },
+  "all_day_off_wish_cells": [[459, "2024-11-18"]]
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `variables` | `Record<string, 0\|1>` | Shift assignment matrix. Key format: `(employee_key, 'YYYY-MM-DD', shift_id)` |
+| `employees` | `array` | Employee data with wishes, vacation, and working time information |
+| `days` | `string[]` | All dates in the scheduling period (`YYYY-MM-DD`) |
+| `shifts` | `array` | Shift definitions with display colors for the UI |
+| `stats` | `object` | Quality metrics (same structure as in `schedules.json`) |
+| `fulfilled_shift_wish_cells` | `[number, string][]` | `[employee_id, date]` pairs where shift wishes were honored |
+| `fulfilled_day_off_cells` | `[number, string][]` | `[employee_id, date]` pairs where day-off wishes were honored |
+| `all_shift_wish_colors` | `Record<string, string[]>` | Map of `"employee_id-date"` → shift colors (for UI visualization) |
+| `all_day_off_wish_cells` | `[number, string][]` | All cells where a day-off wish existed (fulfilled or not) |
+
+### web/last_inserted.json
+
+Tracks the last schedule that was inserted into TimeOffice via the Insert operation. This allows
+the Delete operation to know which schedule to remove.
+
+```json
+{
+  "scheduleId": "imported_wdefault_2026-03-08T14-24-35-337Z",
+  "insertedAt": "2026-03-08T15:00:00.000Z"
+}
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `scheduleId` | `string` | ID of the schedule that was inserted |
+| `insertedAt` | `string` | ISO timestamp of the insertion |
+
+This file is created by the Insert operation and cleared by the Delete operation.
 
 ---
 
@@ -465,7 +568,7 @@ produced by the Python solver. The file name must match the `scheduleId` field i
 Templates are stored at the case level (`cases/<caseId>/templates/`) and are independent of
 any specific month. They allow saving and loading configurations across different months.
 
-### `templates/weights.json`
+### templates/weights.json
 
 ```json
 {
@@ -494,15 +597,13 @@ any specific month. They allow saving and loading configurations across differen
 
 The `content` object is identical in structure to `weights.json` described above.
 
----
-
-### `templates/minimal-staff.json`
+### templates/minimal-staff.json
 
 ```json
 {
   "templates": [
     {
-      "content": { ... },
+      "content": { },
       "_metadata": {
         "id": "...",
         "description": "default",
@@ -515,16 +616,14 @@ The `content` object is identical in structure to `weights.json` described above
 
 The `content` object is identical in structure to `minimal_number_of_staff.json`.
 
----
-
-### `templates/global-wishes.json`
+### templates/global-wishes.json
 
 ```json
 {
   "templates": [
     {
       "content": {
-        "employees": [ ... ]
+        "employees": [ ]
       },
       "_metadata": {
         "id": "...",

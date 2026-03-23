@@ -28,7 +28,7 @@ For further instructions on installing Node.js and npm, please refer to the offi
 
 | Requirement | Details |
 |---|---|
-| **Python** | 3.10+ (or the `uv` package runner) |
+| **Python** | 3.12+ (or the `uv` package runner) |
 | **StaffScheduling** | The Python solver project ([repository](https://github.com/CombiRWTH/StaffScheduling)) |
 
 ### Installation
@@ -95,6 +95,25 @@ npm start
 ```
 
 The production server will be available at [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Quick Start — Your First Schedule
+
+If you want to try the application immediately without a TimeOffice connection, the repository
+includes sample data for **Case 77, November 2024**. Follow these steps:
+
+1. Complete the installation above (set `casesDirectory` to `/cases` and leave solver `include`
+    as `false`).
+2. Start the dev server (`npm run dev`) and open `http://localhost:3000`.
+3. In the **Case Selector**, choose **Case 77 — 11/2024**.
+4. Navigate to **Mitarbeiter** — you should see the sample employee list.
+5. Navigate to **Wünsche & Blockierungen** — view or add wishes for individual employees.
+6. Navigate to **Dienstplan** — if you have a `processed_solution_*.json` file from a prior
+    solver run, click **Upload** to import it.
+
+To generate new schedules, you need a working solver connection (see the
+[Solver Integration](./solver-integration) page).
 
 ---
 
@@ -300,6 +319,20 @@ Navigate to **"Gewichtung"** (Weights) to view and adjust penalty weights for so
 Higher weights cause the solver to prioritize avoiding specific violations (e.g. forward rotation,
 consecutive night shifts).
 
+The available weights and their meaning:
+
+| Weight | Description | Default |
+|---|---|---|
+| `free_weekend` | Penalty for not granting a free weekend | 2 |
+| `consecutive_nights` | Penalty for more than 3 consecutive night shifts | 2 |
+| `hidden` | Internal penalty for using placeholder (hidden) employees | 100 |
+| `overtime` | Penalty per hour of overtime | 4 |
+| `consecutive_days` | Penalty for more than 5 consecutive working days | 1 |
+| `rotate` | Penalty for violating forward rotation (F → S → N) | 1 |
+| `wishes` | Penalty per unfulfilled employee wish | 15 |
+| `after_night` | Penalty for no free day after a night shift | 3 |
+| `second_weekend` | Penalty for working a second weekend in the month | 1 |
+
 <figure style={{ margin: "40px 0", marginLeft: "auto", marginRight: "auto" }}>
     ![Case Selection](./images/weights.png)
 </figure>
@@ -307,7 +340,12 @@ consecutive night shifts).
 #### Minimum Staff
 
 Navigate to **"Mindestbesetzung"** (Minimum Staff) to define the minimum number of employees required
-per shift type (F, S, N) for each day of the week.
+per shift type (F, S, N) for each day of the week, broken down by employee category
+(Fachkraft, Hilfskraft, Azubi).
+
+These are **hard constraints** — the solver will return INFEASIBLE if it cannot meet the
+minimum staffing requirements with the available employees. If you encounter INFEASIBLE results,
+try reducing these values first.
 
 <figure style={{ margin: "40px 0", marginLeft: "auto", marginRight: "auto" }}>
     ![Case Selection](./images/min-staffing.png)
@@ -335,6 +373,7 @@ Use the template dialogs to save, load, or import presets.
 > **`solve`** command (single schedule generation). When using **`solve-multiple`**, the solver
 > ignores this configuration and instead runs three internal fixed weight presets automatically.
 > Adjusting weights is therefore only relevant when running a single solve.
+> For details on the three presets, see [Solver Integration — Weight Presets](./solver-integration#weight-presets).
 
 ### Phase 5 — Generate Schedules
 
@@ -442,19 +481,23 @@ spot conflicts at a glance:
 1. Click **"Alle Pläne"** (All Schedules) to open the overview dialog.
 2. View quality statistics side by side for all imported schedules:
 
-| Metric | Description |
-|---|---|
-| Forward Rotation Violations | Shifts should rotate F → S → N — violations of this rule |
-| Consecutive Working Days > 5 | Employees working more than five days in a row |
-| Free Weekend Violations | Weekends where no two consecutive free days were given |
-| Free Days Near Weekend | Days off not grouped close to weekends |
-| Not Free After Night Shift | Cases where no recovery day was granted after a night shift |
-| Consecutive Night Shifts > 3 | Too many night shifts in a row |
-| Total Overtime Hours | Sum of overtime across all employees |
-| Violated Wishes | Number of soft-constraint wishes that could not be satisfied |
+| Metric | Description | What to aim for |
+|---|---|---|
+| Forward Rotation Violations | Shifts should rotate F → S → N — violations of this rule | Lower is better |
+| Consecutive Working Days > 5 | Employees working more than five days in a row | 0 is ideal |
+| Free Weekend Violations | Weekends where no two consecutive free days were given | Lower is better |
+| Free Days Near Weekend | Days off not grouped close to weekends | Lower is better |
+| Not Free After Night Shift | Cases where no recovery day was granted after a night shift | 0 is ideal |
+| Consecutive Night Shifts > 3 | Too many night shifts in a row | 0 is ideal |
+| Total Overtime Hours | Sum of overtime across all employees | Lower is better |
+| Violated Wishes | Number of soft-constraint wishes that could not be satisfied | Lower is better |
 
 3. In the same dialog you can **add or edit a description** for each schedule to help distinguish
    them (e.g. "Variant with fewer night violations"), and **delete** schedules you no longer need.
+
+> A schedule with 0 values for "Consecutive Night Shifts > 3", "Consecutive Working Days > 5",
+> and "Not Free After Night Shift", combined with low overtime and few wish violations, is
+> typically considered a good result.
 
 <figure style={{ margin: "40px 0", marginLeft: "auto", marginRight: "auto" }}>
     ![Case Selection](./images/schedules-dialog.png)
@@ -483,12 +526,18 @@ After reviewing the metrics and visual matrix:
 
 ### Phase 7 — Deploy the Schedule
 
-After selecting the optimal schedule:
+After selecting the optimal schedule, use the **Insert** operation to write it back to TimeOffice:
 
-1. The selected schedule is persisted and marked as the active plan for the case.
-2. Export the schedule JSON file from the `cases/<case_id>/<month_year>/web/` directory.
-3. Use the StaffScheduling insert tool to write the schedule back to TimeOffice.
-4. Perform a final manual review in TimeOffice before publishing to staff.
+1. Navigate to the **Solver** or **Workflow** page.
+2. Click **"Einfügen"** (Insert). This writes the selected schedule to the TimeOffice database
+    table `TPlanPersonalKommtGeht`.
+3. Perform a final manual review in TimeOffice before publishing to staff.
+
+If you need to undo the insertion, click **"Löschen"** (Delete) on the Solver page. This removes
+the inserted rows from TimeOffice and resets the insertion state.
+
+> **Note:** The Insert and Delete operations require a working connection to the TimeOffice
+> database. The solver must be configured with valid database credentials in its `.env` file.
 
 <figure style={{ margin: "40px 0", marginLeft: "auto", marginRight: "auto" }}>
     ![Case Selection](./images/insert-solution.png)
@@ -508,4 +557,5 @@ After selecting the optimal schedule:
 | Minimum Staff | `/minimal-staff` | Minimum staffing levels |
 | Templates | `/templates` | Saved configuration presets |
 | Schedule | `/schedule` | View, compare, and select schedules |
+| Solver | `/solver` | Manual solver operations |
 | Workflow | `/workflow` | Automated solver pipeline |

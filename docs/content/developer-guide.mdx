@@ -9,20 +9,61 @@ and provides a step-by-step walkthrough for adding new features.
 ## Architectural Overview
 
 StaffSchedulingWeb implements **Clean Architecture** as described by
-[Lazar Nikolov](https://github.com/nikolovlazar/nextjs-clean-architecture/tree/main), adapted
-for **Next.js 16** with Server Actions and the **@evyweb/ioctopus** Dependency Injection container.
+[Lazar Nikolov](https://github.com/nikolovlazar/nextjs-clean-architecture), adapted for
+**Next.js 16** with Server Actions and the **@evyweb/ioctopus** Dependency Injection container.
 
 The central principle is the **Dependency Rule**:
 
 > Dependencies always point **inward**. An inner layer never imports from an outer layer.
 
-<figure>
-    ![Clean Architecture Diagramm](https://raw.githubusercontent.com/nikolovlazar/nextjs-clean-architecture/main/assets/clean-architecture-diagram.jpg)
+```mermaid
+flowchart TB
+    subgraph PRESENTATION["Presentation Layer"]
+        direction LR
+        APP["app/ — Pages (Server Components)"]
+        FEAT["features/ — Server Actions + UI Components"]
+        COMP["components/ — Shared UI (shadcn/ui)"]
+    end
 
-    <figcaption style={{ textAlign: 'center', fontSize: '0.9em', color: 'gray', marginTop: '10px' }}>
-        Abbildung 1: Clean Architecture in Next.js. Quelle: Lazar Nikolov (2024), [GitHub Repository](https://github.com/nikolovlazar/nextjs-clean-architecture).
-    </figcaption>
-</figure>
+    subgraph APPLICATION["Application Layer"]
+        direction LR
+        PORTS["ports/ — Repository Interfaces"]
+        UC["use-cases/ — Business Logic"]
+        CTRL["controllers/ — Input Validation & Error Mapping"]
+    end
+
+    subgraph DOMAIN["Domain Layer"]
+        direction LR
+        MODELS["entities/models/ — Zod Schemas + Types"]
+        ERRORS["entities/errors/ — Domain Error Classes"]
+        VALID["entities/validation/ — Input Validators"]
+    end
+
+    subgraph INFRA["Infrastructure Layer"]
+        direction LR
+        REPOS["repositories/ — LowDB Implementations"]
+        SERVICES["services/ — Solver API, CLI, Workflow Session"]
+        PERSIST["persistence/lowdb/ — File I/O Helpers"]
+    end
+
+    subgraph CROSS["Cross-Cutting"]
+        direction LR
+        DI["di/ — IoC Container + 13 Modules"]
+        LIB["lib/ — Config, Logging, Utilities"]
+    end
+
+    PRESENTATION --> APPLICATION
+    APPLICATION --> DOMAIN
+    INFRA --> APPLICATION
+    CROSS --> APPLICATION
+    CROSS --> INFRA
+
+    style DOMAIN fill:#4CAF50,color:#FFFFFF,stroke:#388E3C
+    style APPLICATION fill:#2196F3,color:#FFFFFF,stroke:#1565C0
+    style PRESENTATION fill:#FF9800,color:#FFFFFF,stroke:#E65100
+    style INFRA fill:#9C27B0,color:#FFFFFF,stroke:#6A1B9A
+    style CROSS fill:#607D8B,color:#FFFFFF,stroke:#37474F
+```
 
 ---
 
@@ -55,10 +96,29 @@ export type Employee = z.infer<typeof EmployeeSchema>;
 ```
 
 **Rules:**
+
 - No `import` from `react`, `next/*`, `infrastructure/`, or any outer layer.
 - Entities are pure data descriptions — no side effects, no I/O.
 
----
+#### Error Hierarchy
+
+The domain layer defines a hierarchy of typed errors that propagate through the architecture:
+
+```
+DomainError (base class)
+├── ResourceNotFoundError     — entity not found in the database
+├── ValidationError           — input fails Zod or custom validation
+├── EmployeeNotFoundError     — specific employee key does not exist
+├── ScheduleNotFoundError     — schedule ID does not exist
+├── ScheduleAlreadyExistsError — duplicate schedule import
+├── SolverNotConfiguredError  — solver integration disabled in config
+├── SolveInfeasibleError      — solver cannot find a feasible schedule
+└── TemplateNotFoundError     — template ID does not exist
+```
+
+All custom errors must extend `DomainError`. The `isDomainError()` type guard in
+`src/entities/errors/base.errors.ts` is used by controllers to distinguish domain errors
+from unexpected runtime errors.
 
 ### 2. Application Layer — `src/application/`
 
@@ -66,8 +126,8 @@ This layer orchestrates business logic. It is split into two concerns:
 
 #### Ports (Repository Interfaces) — `src/application/ports/`
 
-Ports define **what** the application needs, not **how** it is provided.
-Each port is a TypeScript interface using only Domain types.
+Ports define **what** the application needs, not **how** it is provided. Each port is a TypeScript
+interface using only Domain types.
 
 ```ts
 // src/application/ports/employee.repository.ts
@@ -84,8 +144,8 @@ export interface IEmployeeRepository {
 
 | Port | File |
 |---|---|
-| `IEmployeeRepository` | `employee.repository.ts` |
 | `ICaseRepository` | `case.repository.ts` |
+| `IEmployeeRepository` | `employee.repository.ts` |
 | `IScheduleRepository` | `schedule.repository.ts` |
 | `IJobRepository` | `job.repository.ts` |
 | `IWeightsRepository` | `weights.repository.ts` |
@@ -100,8 +160,8 @@ export interface IEmployeeRepository {
 
 #### Use Cases — `src/application/use-cases/`
 
-Each use case is a **single business action** implemented as a factory function
-that receives its repository dependencies and returns an executable function.
+Each use case is a **single business action** implemented as a factory function that receives its
+repository dependencies and returns an executable function.
 
 ```ts
 // src/application/use-cases/employees/get-all-employees.use-case.ts
@@ -122,6 +182,7 @@ export function makeGetAllEmployeesUseCase(
 ```
 
 **Rules:**
+
 - One file = one use case = one business action.
 - Dependencies are injected via the factory's parameters — never imported directly.
 - Use cases **throw** Domain Errors; they do not catch them.
@@ -140,8 +201,6 @@ export function makeGetAllEmployeesUseCase(
 | Weights | `get-weights`, `update-weights` |
 | Minimal Staff | `get-minimal-staff`, `update-minimal-staff` |
 | Templates | `list-*-templates`, `get-*-template`, `create-*-template`, `update-*-template`, `delete-*-template` (for weights, minimal-staff, global-wishes) |
-
----
 
 ### 3. Interface Adapters Layer — `src/controllers/`
 
@@ -183,11 +242,10 @@ export function makeGetAllEmployeesController(
 ```
 
 **Rules:**
+
 - Controllers never leak internal stack traces or database errors to the frontend.
 - All Domain Errors are caught here and converted into `{ error: string }`.
 - Controllers return DTOs — never raw database objects.
-
----
 
 ### 4. Infrastructure Layer — `src/infrastructure/`
 
@@ -197,7 +255,18 @@ Concrete implementations of the ports defined in the Application layer.
 |---|---|
 | `repositories/` | Classes implementing `I*Repository` interfaces (e.g. `LowdbEmployeeRepository`) |
 | `persistence/lowdb/` | Low-level file system helpers for reading/writing JSON files via LowDB |
-| `services/` | External integrations: `solver-api-service.ts` (REST API to Python solver), `python-cli-service.ts` (direct Python execution), `workflow-session.service.ts` (cookie-based workflow state) |
+| `services/` | External integrations (see below) |
+
+**Services:**
+
+| Service | File | Description |
+|---|---|---|
+| `SolverApiService` | `solver-api-service.ts` | HTTP client for the external Python solver's FastAPI server (port 8000). Used in API mode. |
+| `PythonCliService` | `python-cli-service.ts` | Spawns the Python CLI as a child process. Used in CLI mode. |
+| `WorkflowSessionService` | `workflow-session.service.ts` | Cookie-based session management for workflow mode. |
+
+The choice between `SolverApiService` and `PythonCliService` is determined by the `config.json`
+setting. See [Solver Integration](./solver-integration) for details on both modes.
 
 **Example — `src/infrastructure/repositories/lowdb-employee.repository.ts`:**
 
@@ -225,11 +294,8 @@ export class LowdbEmployeeRepository implements IEmployeeRepository {
 }
 ```
 
-**Data storage convention:**
-Data is stored as JSON files under `cases/<case_id>/<month_year>/`. Web-specific data
-(schedules, jobs) goes into the `web/` subdirectory.
-
----
+**Data storage convention:** Data is stored as JSON files under `cases/<case_id>/<month_year>/`.
+Web-specific data (schedules, jobs) goes into the `web/` subdirectory.
 
 ### 5. Frameworks & Drivers Layer — `app/`, `features/`, `components/`, `di/`
 
@@ -246,7 +312,7 @@ export const DI_SYMBOLS = {
   IEmployeeRepository: Symbol.for('IEmployeeRepository'),
   IGetAllEmployeesUseCase: Symbol.for('IGetAllEmployeesUseCase'),
   IGetAllEmployeesController: Symbol.for('IGetAllEmployeesController'),
-  // ... 60+ symbols for all repositories, use cases, controllers, and services
+  // ... 120+ symbols for all repositories, use cases, controllers, and services
 };
 ```
 
@@ -360,12 +426,12 @@ StaffSchedulingWeb/
 │   │       └── input-validators.ts
 │   │
 │   ├── application/                       ← Application Layer
-│   │   ├── ports/                         ← Repository & Service Interfaces
+│   │   ├── ports/                         ← Repository & Service Interfaces (13 files)
 │   │   │   ├── employee.repository.ts
 │   │   │   ├── schedule.repository.ts
 │   │   │   ├── solver.service.ts
-│   │   │   └── ... (13 port files)
-│   │   └── use-cases/                     ← Business Logic
+│   │   │   └── ...
+│   │   └── use-cases/                     ← Business Logic (52 use cases)
 │   │       ├── employees/
 │   │       ├── schedule/
 │   │       ├── solver/
@@ -376,7 +442,7 @@ StaffSchedulingWeb/
 │   │       ├── templates/
 │   │       └── cases/
 │   │
-│   ├── controllers/                       ← Interface Adapters
+│   ├── controllers/                       ← Interface Adapters (56 controllers)
 │   │   ├── employees/
 │   │   ├── schedule/
 │   │   ├── solver/
@@ -391,51 +457,102 @@ StaffSchedulingWeb/
 │       ├── repositories/                  ← Port implementations (LowDB)
 │       ├── persistence/lowdb/             ← File I/O helpers
 │       └── services/                      ← External integrations
-│
+│           ├── solver-api-service.ts      ← HTTP client for Python solver API
+│           ├── python-cli-service.ts      ← Direct Python CLI execution
+│           └── workflow-session.service.ts ← Cookie-based session
+
 ├── di/                                    ← Dependency Injection
 │   ├── container.ts                       ← Container assembly + getInjection()
 │   ├── types.ts                           ← DI_SYMBOLS + DI_RETURN_TYPES
-│   └── modules/                           ← Per-feature DI modules
+│   └── modules/                           ← Per-feature DI modules (13 modules)
 │       ├── employees.module.ts
 │       ├── schedules.module.ts
 │       ├── solver.module.ts
-│       └── ... (12 module files)
-│
+│       └── ...
+
 ├── features/                              ← Server Actions + Feature Components
 │   ├── employees/
 │   │   ├── employees.actions.ts
-│   │   └── components/
+│   │   ├── components/
+│   │   └── utils/
 │   ├── schedule/
 │   ├── solver/
+│   │   ├── solver.actions.ts
+│   │   ├── components/
+│   │   └── hooks/
+│   │       └── use-solver-operations.ts   ← Complex solver execution state
 │   ├── wishes_and_blocked/
 │   ├── global_wishes_and_blocked/
 │   ├── weights/
 │   ├── minimal-staff/
 │   ├── templates/
 │   └── cases/
-│
+
 ├── app/                                   ← Next.js App Router
-│   ├── layout.tsx
-│   ├── page.tsx
+│   ├── layout.tsx                         ← Root layout (reads workflow session)
+│   ├── page.tsx                           ← Home page
+│   ├── error.tsx                          ← Error boundary
+│   ├── not-found.tsx                      ← 404 page
 │   ├── employees/page.tsx
 │   ├── schedule/page.tsx
+│   ├── solver/page.tsx
 │   ├── wishes-and-blocked/page.tsx
 │   ├── global-wishes-and-blocked/page.tsx
 │   ├── weights/page.tsx
 │   ├── minimal-staff/page.tsx
 │   ├── templates/page.tsx
 │   ├── workflow/page.tsx
+│   ├── globals.css
 │   └── api/
-│       ├── solver/status/
+│       ├── solver/status/route.ts         ← Proxy: polls Python solver /status
 │       └── workflow/
-│
+│           ├── start/route.ts             ← Initiates workflow session
+│           └── stop/route.ts              ← Clears workflow session
+
 ├── components/                            ← Shared UI Components
-│   ├── ui/                                ← Shadcn/UI primitives
-│   └── *.tsx                              ← App-level shared components
-│
+│   ├── ui/                                ← shadcn/ui primitives (21 components)
+│   ├── InteractiveCalendar.tsx
+│   ├── app-navigation.tsx
+│   ├── case-selector.tsx
+│   ├── employee-selector.tsx
+│   ├── schedule-selector.tsx
+│   ├── workflow-banner.tsx
+│   └── ...                                ← 10+ dialog components
+
+├── lib/                                   ← Shared Utilities
+│   ├── config/
+│   │   └── app-config.ts                  ← Configuration loader (config.json)
+│   ├── logging/
+│   │   └── logger.ts                      ← Logging utility
+│   ├── services/
+│   │   ├── global-to-current-wishes-converter.ts  ← Global → monthly wish conversion
+│   │   └── schedule-parser.ts             ← Parses processed_solution JSON
+│   ├── utils/
+│   │   ├── case-utils.ts                  ← Case directory helpers
+│   │   └── employee-matching.ts           ← Smart employee matching for template imports
+│   └── utils.ts                           ← cn() class merge utility
+
 ├── config.json                            ← Runtime configuration
-└── config.template.json                   ← Configuration template
+├── config.template.json                   ← Configuration template
+├── .github/workflows/
+│   ├── ci-check.yml                       ← Lint + Build CI (on every push/PR)
+│   └── docs.yml                           ← Nextra docs deployment to GitHub Pages
+└── docs/                                  ← This documentation site (Nextra 4.6)
 ```
+
+### `lib/` Utilities
+
+The `lib/` directory contains shared utilities used across layers:
+
+| File | Description |
+|---|---|
+| `config/app-config.ts` | Loads `config.json` (or falls back to `config.template.json`). Provides `getCasePath()`, `getCasesDirectory()`, and solver configuration. |
+| `logging/logger.ts` | Centralized logging utility used by infrastructure services. |
+| `services/global-to-current-wishes-converter.ts` | Converts weekly global wish patterns into specific calendar dates for the current month. Called by the `create-global-wishes` and `update-global-wishes` use cases. |
+| `services/schedule-parser.ts` | Parses the `processed_solution_*.json` format from the solver into the web app's internal `ScheduleSolution` model. |
+| `utils/case-utils.ts` | Helpers for case directory listing, path construction, and month-year parsing. |
+| `utils/employee-matching.ts` | Smart matching for template imports — matches employees by key first, then by name if keys differ between cases. |
+| `utils.ts` | The `cn()` utility for merging Tailwind CSS class names (re-exported from `clsx` + `tailwind-merge`). |
 
 ---
 
@@ -447,11 +564,11 @@ These rules must be followed in every change to maintain the separation of conce
 
 | Layer | May import from | Must not import from |
 |---|---|---|
-| **Domain** (`entities/`) | Nothing (only `zod`) | Everything else |
-| **Application** (`application/`) | Domain | Controllers, Infrastructure, App, Features |
-| **Controllers** (`controllers/`) | Domain, Application | Infrastructure, App, Features |
-| **Infrastructure** (`infrastructure/`) | Domain, Application (ports) | Controllers, App, Features |
-| **Frameworks** (`app/`, `features/`, `di/`) | All layers | — |
+| Domain (`entities/`) | Nothing (only `zod`) | Everything else |
+| Application (`application/`) | Domain | Controllers, Infrastructure, App, Features |
+| Controllers (`controllers/`) | Domain, Application | Infrastructure, App, Features |
+| Infrastructure (`infrastructure/`) | Domain, Application (ports) | Controllers, App, Features |
+| Frameworks (`app/`, `features/`, `di/`) | All layers | — |
 
 ### 2. Server Actions Are Gateways Only
 
@@ -469,10 +586,10 @@ export async function createProjectAction(data: InputType) {
 // WRONG — business logic in a Server Action
 'use server';
 export async function createProjectAction(data: InputType) {
-  const db = await getDatabase();           // ❌ Direct DB access
-  const exists = await db.find(data.name);  // ❌ Business logic
-  if (exists) throw new Error('Exists');    // ❌ Error handling
-  return db.insert(data);                   // ❌ Persistence
+  const db = await getDatabase(); // ❌ Direct DB access
+  const exists = await db.find(data.name); // ❌ Business logic
+  if (exists) throw new Error('Exists'); // ❌ Error handling
+  return db.insert(data); // ❌ Persistence
 }
 ```
 
@@ -496,6 +613,53 @@ Complex workflows call multiple use cases in sequence — they don't merge logic
 
 React components must not perform data aggregation (`reduce`, `filter` to compute statistics),
 validation, or any domain logic. If a component needs computed data, the Controller must provide it.
+
+---
+
+## API Routes
+
+The application exposes three API routes (Next.js App Router route handlers):
+
+### GET `/api/solver/status`
+
+Proxies solver status checks to the Python solver API's `/status` endpoint.
+Used by the client-side polling mechanism during solve operations.
+
+**Implementation:** `app/api/solver/status/route.ts`
+
+### GET `/api/workflow/start`
+
+Initiates workflow mode. Validates required query parameters, writes workflow state to httpOnly
+cookies, and redirects to `/workflow`.
+
+**Query Parameters:** `caseId`, `start` (DD.MM.YYYY), `end` (DD.MM.YYYY)
+
+**Example:** `http://localhost:3000/api/workflow/start?caseId=77&start=01.11.2024&end=30.11.2024`
+
+**Implementation:** `app/api/workflow/start/route.ts`
+
+### GET `/api/workflow/stop`
+
+Clears the workflow session cookies and redirects to the home page.
+
+**Implementation:** `app/api/workflow/stop/route.ts`
+
+### Workflow Session Mechanism
+
+The workflow state is stored in httpOnly, sameSite=lax cookies:
+
+| Cookie | Content |
+|---|---|
+| `workflow_mode` | `"true"` when workflow is active |
+| `workflow_caseId` | Active case ID |
+| `workflow_startDate` | Start date of the scheduling period |
+| `workflow_endDate` | End date of the scheduling period |
+| `workflow_monthYear` | Month-year string (e.g. `11_2024`) |
+
+The root `layout.tsx` reads these cookies on every request to conditionally render the
+`WorkflowBanner` component and modify navigation behavior.
+
+**Implementation:** `src/infrastructure/services/workflow-session.service.ts`
 
 ---
 
@@ -749,6 +913,18 @@ export function ShiftTypesPageClient({ shiftTypes }: Props) {
 }
 ```
 
+### Bonus — Adding a Write Operation
+
+The tutorial above covers a read operation. For a **create/update** operation, the pattern extends
+with additional error handling:
+
+1. **Use case** — Performs validation, checks for duplicates, throws `ValidationError` or
+   `ResourceAlreadyExistsError`.
+2. **Controller** — Parses the input body with Zod (`schema.safeParse(input)`), catches domain errors.
+3. **Server Action** — Passes the validated input to the controller and returns
+   `{ success: true }` or `{ success: false, error: string }`.
+4. **Client Component** — Calls the action via `useTransition`, shows success toast or error toast.
+
 ### Completion Checklist
 
 After implementing a new feature, verify:
@@ -775,12 +951,12 @@ The following table traces a single read operation (`getAllEmployees`) through e
 
 | Step | Layer | File | What happens |
 |---|---|---|---|
-| 1 | **Page** | `app/employees/page.tsx` | Server Component calls the Server Action |
-| 2 | **Action** | `features/employees/employees.actions.ts` | Retrieves controller from DI, executes it |
-| 3 | **Controller** | `src/controllers/employees/get-all-employees.controller.ts` | Validates input, calls use case, catches errors |
-| 4 | **Use Case** | `src/application/use-cases/employees/get-all-employees.use-case.ts` | Calls repository port method |
-| 5 | **Repository** | `src/infrastructure/repositories/lowdb-employee.repository.ts` | Reads from LowDB JSON file |
-| 6 | **DB Helper** | `src/infrastructure/persistence/lowdb/employees.db.ts` | Low-level `fs.readFile` + `JSON.parse` |
+| 1 | Page | `app/employees/page.tsx` | Server Component calls the Server Action |
+| 2 | Action | `features/employees/employees.actions.ts` | Retrieves controller from DI, executes it |
+| 3 | Controller | `src/controllers/employees/get-all-employees.controller.ts` | Validates input, calls use case, catches errors |
+| 4 | Use Case | `src/application/use-cases/employees/get-all-employees.use-case.ts` | Calls repository port method |
+| 5 | Repository | `src/infrastructure/repositories/lowdb-employee.repository.ts` | Reads from LowDB JSON file |
+| 6 | DB Helper | `src/infrastructure/persistence/lowdb/employees.db.ts` | Low-level `fs.readFile` + `JSON.parse` |
 
 Data flows back up the same chain in reverse (6 → 1), with the Controller transforming Domain Errors
 into `{ error: string }` if necessary.
@@ -800,5 +976,72 @@ into `{ error: string }` if necessary.
 | Server Action | `<feature>.actions.ts` | `employees.actions.ts` |
 | Page | `page.tsx` (Next.js convention) | `app/employees/page.tsx` |
 | Client component | `*-page-client.tsx` | `employees-page-client.tsx` |
+| DB helper | `<entity>.db.ts` | `employees.db.ts` |
 
 All files use **kebab-case**.
+
+---
+
+## CI/CD
+
+### Continuous Integration — `ci-check.yml`
+
+Runs on **every push and pull request** to any branch:
+
+1. **Lint** — `npm ci` + `npm run lint` (Node.js 24, ubuntu-latest)
+2. **Build** — `npm ci` + `npm run build` (Node.js 24, ubuntu-latest)
+
+Both jobs run in parallel. If either fails, the PR cannot be merged.
+
+Before pushing, verify locally:
+
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+
+### Documentation Deployment — `docs.yml`
+
+Triggers on pushes to `main` that modify files in the `docs/` directory:
+
+1. Installs dependencies in `docs/`.
+2. Builds the Nextra site (`npm run build`).
+3. Runs pagefind for full-text search indexing.
+4. Deploys to GitHub Pages via `peaceiris/actions-gh-pages`.
+
+The live documentation is available at
+[julian466.github.io/StaffSchedulingWeb](https://julian466.github.io/StaffSchedulingWeb/).
+
+---
+
+## Testing Strategy
+
+> **Current state:** No tests exist in the web application. The Python solver project has a
+> comprehensive test suite for all constraints (`tests/cp/constraints/`), but the Next.js frontend
+> has no unit, integration, or end-to-end tests.
+
+**Recommended approach for future development:**
+
+1. **Use Cases** are the best starting point for unit tests. They are pure functions with injected
+   dependencies, making them trivially mockable:
+   ```ts
+   const mockRepo = { getAll: vi.fn().mockResolvedValue([...]) };
+   const useCase = makeGetAllEmployeesUseCase(mockRepo);
+   const result = await useCase({ caseId: 77, monthYear: '11_2024' });
+   expect(result).toEqual([...]);
+   ```
+
+2. **Controllers** can be tested to verify error mapping:
+   ```ts
+   const mockUseCase = vi.fn().mockRejectedValue(new ValidationError('Invalid'));
+   const controller = makeGetAllEmployeesController(mockUseCase);
+   const result = await controller({ caseId: 77, monthYear: 'invalid' });
+   expect(result).toEqual({ error: 'Invalid' });
+   ```
+
+3. **Repositories** can be tested against temporary JSON files.
+
+4. **E2E tests** with Playwright would cover the full workflow.
+
+**Suggested tooling:** Vitest (compatible with Next.js 16) + Playwright for E2E.
