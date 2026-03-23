@@ -123,54 +123,54 @@ The diagram below shows how StaffSchedulingWeb fits into the larger scheduling p
 section below describes one phase of this workflow in detail.
 
 ```mermaid
-flowchart TD
-    %% Nodes mit FontAwesome Icons und breit unterstützten Shapes
-    A("fa:fa-database TimeOffice Database<br/>(Hospital Staff System)")@{ shape: cyl }
-    B("fa:fa-server Data Fetcher Tool<br/>(StaffScheduling)")@{ shape: process }
-    C("fa:fa-file-code JSON Files<br/>- employees.json<br/>- employee_types.json")@{ shape: docs }
-    D("fa:fa-laptop-code StaffSchedulingWeb (This App)<br/>• Review employee data<br/>• Define wishes & blocked<br/>• Gen: wishes_and_blocked")@{ shape: rect }
-    E("fa:fa-cogs Schedule Generator<br/>(CP-SAT Solver)")@{ shape: hexagon }
-    F("fa:fa-folder-open /found_solutions<br/>- solution_[1..n].json")@{ shape: rect }
-    I("fa:fa-folder-tree /processed_solutions<br/>- processed_solution_[1..n].json")@{ shape: rect }
-    G("fa:fa-list-check StaffSchedulingWeb (This App)<br/>• Upload generated schedules<br/>• Compare metrics<br/>• Visualize & Select")@{ shape: rect }
-    H("fa:fa-user-check Manual Review & TimeOffice Import<br/>◄──── Final Deployment")@{ shape: stadium }
+flowchart LR
+    %% --- Systems ---
+    A[(TimeOffice Database)]
 
-    %% Edge connections
-    A -->|"Data Export"| B
-    B <-.->|"Case ID (Month/Year)"| A
-    B -->|"generates"| C
-    C --> D
-    D -->|"provides preferences"| E
-    E <-.->|"Identifier for schedule"| D
-    E -->|"generates (multiple runs)"| F
+    subgraph WEB["StaffSchedulingWeb (This App)"]
+        G[Case setup + configuration\ncase, wishes, weights, minimum staff]
+        H[Run operations\nFetch, Solve, Solve Multiple, Insert, Delete]
+        I[Import + compare schedules\ndescription, metrics, selection]
+        J[(Selected schedule\nweb/schedules.json)]
+    end
 
-    %% Standard-Pfad
-    F --> G
+    subgraph SOLVER["StaffScheduling (Python Solver)"]
+        B[Fetch from TimeOffice]
+        C[[cases/<case>/<MM_YYYY>/*.json]]
+        D[CP-SAT Solve / Solve Multiple]
+        E[[processed_solutions/\nprocessed_solution_*.json]]
+        F[Insert/Delete in TimeOffice]
+    end
 
-    %% Ergänzung: Knoten 'I' als optionaler Verarbeitungsschritt
-    F -.->|"optional processing"| I
-    I -.->|"processed data"| G
+    K[/Manual upload of processed_solution_*.json/]
 
-    G -->|"selected schedule"| H
+    %% --- Main flow ---
+    A -->|Export source data| B
+    B --> C
+    C -->|Review/edit constraints| G
+    G --> H
+    H -->|Fetch via API or CLI| B
+    H -->|Solve or Solve Multiple via API or CLI| D
+    D --> E
+    E -->|Import results| I
+    K -->|Alternative import path| I
+    I --> J
+    J -->|Insert/Delete command| H
+    H --> F
+    F -->|Write/remove final plan| A
 
-    %% Styling (Kräftige Farben für gute Lesbarkeit)
-
-    %% Frontend (Web App) - Blau
-    style D color:#FFFFFF, fill:#2962FF, stroke:#2962FF
-    style G color:#FFFFFF, fill:#2962FF, stroke:#2962FF
-
-    %% Backend / Algorithmen - Lila
-    style B color:#FFFFFF, fill:#AA00FF, stroke:#AA00FF
-    style E color:#FFFFFF, fill:#AA00FF, stroke:#AA00FF
-
-    %% Datenbank & Finale Aktion - Dunkelgrau & Grün
-    style A color:#FFFFFF, fill:#455A64, stroke:#455A64
-    style H color:#FFFFFF, fill:#00C853, stroke:#00C853
-
-    %% Dateien / Ordner - Hellgrau für guten Kontrast
-    style C color:#333333, fill:#F5F5F5, stroke:#BDBDBD
-    style F color:#333333, fill:#F5F5F5, stroke:#BDBDBD
-    style I color:#333333, fill:#F5F5F5, stroke:#BDBDBD
+    %% --- Styling ---
+    style A fill:#455A64,color:#FFFFFF,stroke:#455A64
+    style G fill:#2962FF,color:#FFFFFF,stroke:#2962FF
+    style H fill:#2962FF,color:#FFFFFF,stroke:#2962FF
+    style I fill:#2962FF,color:#FFFFFF,stroke:#2962FF
+    style J fill:#2962FF,color:#FFFFFF,stroke:#2962FF
+    style B fill:#AA00FF,color:#FFFFFF,stroke:#AA00FF
+    style D fill:#AA00FF,color:#FFFFFF,stroke:#AA00FF
+    style F fill:#AA00FF,color:#FFFFFF,stroke:#AA00FF
+    style C fill:#F5F5F5,color:#333333,stroke:#BDBDBD
+    style E fill:#F5F5F5,color:#333333,stroke:#BDBDBD
+    style K fill:#F5F5F5,color:#333333,stroke:#BDBDBD
 
 ```
 
