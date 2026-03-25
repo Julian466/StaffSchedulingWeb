@@ -59,6 +59,61 @@ StaffSchedulingWeb (Next.js :3000)
 | Concurrent requests | Supported (async) | Blocks until completion |
 | Recommended for | Production, Workflow mode | Development, quick testing |
 
+## Configuring the Solver Mode
+
+The solver mode is controlled via the `solverMode` field in `config.json`:
+
+```json
+{
+  "casesDirectory": "/cases",
+  "staffSchedulingProject": {
+    "include": true,
+    "path": "/path/to/StaffScheduling",
+    "pythonExecutable": "uv"
+  },
+  "solverMode": "api"
+}
+```
+
+| Value | Behavior |
+|---|---|
+| `"cli"` | **Direct CLI execution** — Uses `PythonCliService`, spawns Python processes directly. No extra server needed. No progress tracking. |
+| `"api"` | **REST API with auto-start** — The API server is started automatically when the web app starts (`npm run dev` / `npm run start`). If already running, it is reused. |
+
+### API Mode Auto-Start
+
+When `solverMode` is set to `"api"`, the system automatically manages the Python FastAPI server:
+
+1. **App Start:** On `npm run dev` or `npm run start`, the web app checks `solverMode`.
+2. **Auto-Start:** If `solverMode` is `"api"` and the API is not already running, it is spawned in the background using `{pythonExecutable} run staff-scheduling-api` in `staffSchedulingProject.path`.
+3. **Reuse:** If an API process is already listening on `http://127.0.0.1:8000`, no second process is started.
+4. **Shutdown:** The spawned API process is terminated automatically when the Next.js process exits.
+
+### Setting Up API Mode
+
+To use API mode with auto-start:
+
+1. Update `config.json`:
+
+```json
+{
+  "solverMode": "api",
+  "staffSchedulingProject": {
+    "include": true,
+    "path": "/absolute/path/to/StaffScheduling",
+    "pythonExecutable": "uv"
+  }
+}
+```
+
+2. Start the web application:
+
+```bash
+npm run dev
+```
+
+3. Start the web app (`npm run dev` or `npm run start`) and the FastAPI server will be started automatically.
+
 ---
 
 ## API Endpoints

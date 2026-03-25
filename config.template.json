@@ -6,6 +6,8 @@
     "path": "-",
     "pythonExecutable": "uv"
   },
+  "solverMode": "api",
   "_comment_casesDirectory": "Path to the cases directory. Can be absolute (e.g., 'C:\\data\\cases' or '/absolute/path/cases') or relative to the project root (e.g., '/cases' or 'data/cases')",
-  "_comment_staffSchedulingProject": "Python solver configuration. 'include' enables solver integration, 'path' is absolute path to Python project directory, 'pythonExecutable' is command to run Python (e.g., 'uv', 'python', 'python3')"
+  "_comment_staffSchedulingProject": "Python solver configuration. 'include' enables solver integration, 'path' is absolute path to Python project directory, 'pythonExecutable' is command to run Python (e.g., 'uv', 'python', 'python3')",
+  "_comment_solverMode": "Solver mode: 'cli' for local Python CLI execution, 'api' for remote FastAPI server. When 'api' is selected, the FastAPI server will be auto-started if not already running."
 }

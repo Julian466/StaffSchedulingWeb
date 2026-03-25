@@ -1,6 +1,7 @@
 import {createModule} from '@evyweb/ioctopus';
 import {DI_SYMBOLS} from '@/di/types';
 import {ScheduleParserService} from '@/lib/services/schedule-parser';
+import {getAppConfig} from '@/lib/config/app-config';
 import {makeCheckSolverHealthUseCase} from '@/src/application/use-cases/solver/check-solver-health.use-case';
 import {makeExecuteSolverFetchUseCase} from '@/src/application/use-cases/solver/execute-solver-fetch.use-case';
 import {makeExecuteSolverSolveUseCase} from '@/src/application/use-cases/solver/execute-solver-solve.use-case';
@@ -30,7 +31,14 @@ export function createSolverModule() {
     const m = createModule();
 
     // Infrastructure services
-    m.bind(DI_SYMBOLS.ISolverService).toClass(SolverApiService, [], 'singleton');
+    const config = getAppConfig();
+
+    if (config.solverMode === 'api') {
+        m.bind(DI_SYMBOLS.ISolverService).toClass(SolverApiService, [], 'singleton');
+    } else {
+        m.bind(DI_SYMBOLS.ISolverService).toClass(PythonCliService, [], 'singleton');
+    }
+
     m.bind(DI_SYMBOLS.IScheduleParserService).toClass(ScheduleParserService, [], 'singleton');
 
     // Use Cases

@@ -63,7 +63,8 @@ Open `config.json` and set the cases directory:
     "include": false,
     "path": "-",
     "pythonExecutable": "uv"
-  }
+  },
+  "solverMode": "cli"
 }
 ```
 
@@ -73,9 +74,10 @@ Open `config.json` and set the cases directory:
 | `staffSchedulingProject.include` | Set to `true` to enable solver integration. If the solver cannot be reached, the programme will return an error message.  |
 | `staffSchedulingProject.path` | Absolute path to the StaffScheduling Python project on disk. |
 | `staffSchedulingProject.pythonExecutable` | The command used to invoke Python — `uv`, `python`, or `python3` depending on the local installation. |
+| `solverMode` | Solver communication mode: `"cli"` for direct CLI execution, or `"api"` for REST API (with automatic server startup). Default: `"cli"`. See [Solver Integration](./solver-integration#configuring-the-solver-mode) for details. |
 
-> **Important:** If you use the solver API server it is not necessary to change the `staffSchedulingProject` configuration since the API server will be used instead of direct execution regardless of these settings.
-   In this case it is sufficient to change the `casesDirectory` to point to the shared case folder between the web app and the solver.
+> **Important:** If you use `solverMode: "api"`, `npm run dev` / `npm run start` will automatically start the solver API using `staffSchedulingProject.path` and `staffSchedulingProject.pythonExecutable`.
+    Make sure these fields are configured correctly, and point `casesDirectory` to the shared case folder between web app and solver.
 
 4. **Start the development server**
 

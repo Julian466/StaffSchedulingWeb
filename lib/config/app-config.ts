@@ -2,6 +2,13 @@ import {join} from 'path';
 import {existsSync, readFileSync} from 'fs';
 
 /**
+ * Solver mode type definition.
+ * @type {'cli' | 'api'}
+ * @description 'cli' for local Python CLI execution, 'api' for remote FastAPI server
+ */
+export type SolverMode = 'cli' | 'api';
+
+/**
  * Application configuration structure.
  */
 interface AppConfig {
@@ -37,6 +44,13 @@ interface AppConfig {
          */
         pythonExecutable: string;
     };
+
+    /**
+     * Solver mode: 'cli' for local Python CLI execution, 'api' for remote FastAPI server.
+     * When 'api' is selected, the FastAPI server will be auto-started if not already running.
+     * @default 'cli'
+     */
+    solverMode: SolverMode;
 }
 
 /**
@@ -132,6 +146,14 @@ export interface PythonConfigValidation {
 export function getPythonConfig() {
     const config = loadConfig();
     return config.staffSchedulingProject;
+}
+
+/**
+ * Gets the complete application configuration.
+ * @returns Application configuration from config file
+ */
+export function getAppConfig() {
+    return loadConfig();
 }
 
 export interface SolverApiConfig {
