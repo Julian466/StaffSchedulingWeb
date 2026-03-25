@@ -9,85 +9,150 @@ to manage employee schedules in a healthcare environment.
 
 ### Prerequisites
 
+Before installing, please check these two tools:
+
 | Requirement | Minimum Version | Recommended |
 |---|---|---|
 | **Node.js** | 20.x | 24.x (LTS) |
 | **npm** | 9.x | 11.x |
 
-Verify your installation:
+### Which Node.js version should I install?
+
+- **Recommended:** Node.js **24 LTS**
+- **Minimum supported:** Node.js **20.x**
+
+If you are unsure, install the **LTS version** shown on the Node.js website.
+
+### Install Node.js (simple)
+
+1. Open [https://nodejs.org/en/download/](https://nodejs.org/en/download/)
+2. Download and install the **LTS** version (not “Current”)
+3. Keep the default installer options
+4. Close and reopen your terminal after installation
+
+### OS-specific hints
+
+- **macOS:** Download the `.pkg` installer from nodejs.org and open it.
+- **Windows:** Download the `.msi` installer from nodejs.org and run it as usual.
+- **Linux:** Use the package manager instructions on nodejs.org for your distribution.
+
+### Verify installation
+
+Run:
 
 ```bash
 node --version
 npm --version
 ```
 
-For further instructions on installing Node.js and npm, please refer to the official Node.js documentation:
-[https://nodejs.org/en/download/](https://nodejs.org/en/download/)
+Expected output example:
 
-**Optional** — if you intend to run the constraint-programming solver:
+- `node --version` → `v24.x.x` (recommended) or at least `v20.x.x`
+- `npm --version` → `9.x` or higher
+
+If both commands print a version number in that range, you are ready.
+
+> If a command says “not found”, close and reopen your terminal and try again.
+
+**Optional (only if you want to run the Python solver directly):**
 
 | Requirement | Details |
 |---|---|
 | **Python** | 3.12+ (or the `uv` package runner) |
 | **StaffScheduling** | The Python solver project ([repository](https://github.com/CombiRWTH/StaffScheduling)) |
 
-### Installation
+### Installation (Beginner-Friendly)
 
-1. **Clone the repository**
+Follow these steps in order.
+
+1. **Download the project**
 
 ```bash
 git clone https://github.com/Julian466/StaffSchedulingWeb.git
 cd StaffSchedulingWeb
 ```
 
-2. **Install dependencies**
+2. **Install all required packages**
 
 ```bash
 npm install
 ```
 
-3. **Create a configuration file**
+This can take a few minutes.
 
-Copy the template and adjust the paths:
+3. **Create your local config file**
 
 ```bash
 cp config.template.json config.json
 ```
 
-Open `config.json` and set the cases directory:
+If `cp` does not work on your system, copy `config.template.json` manually and rename the copy to `config.json`.
+
+4. **Set a simple default config (without solver)**
+
+Open `config.json` and make sure it looks like this:
 
 ```json
 {
-  "casesDirectory": "/cases",
-  "staffSchedulingProject": {
-    "include": false,
-    "path": "-",
-    "pythonExecutable": "uv"
-  },
-  "solverMode": "cli"
+    "casesDirectory": "/cases",
+    "staffSchedulingProject": {
+        "include": false,
+        "path": "-",
+        "pythonExecutable": "uv"
+    },
+    "solverMode": "api"
 }
 ```
 
-| Key | Description |
-|---|---|
-| `casesDirectory` | Path to the case data folder. Can be absolute (`C:\data\cases`) or relative to the project root (`/cases`). To share data with the StaffScheduling solver, point this to its `cases/` directory (e.g. `../StaffScheduling/cases`). |
-| `staffSchedulingProject.include` | Set to `true` to enable solver integration. If the solver cannot be reached, the programme will return an error message.  |
-| `staffSchedulingProject.path` | Absolute path to the StaffScheduling Python project on disk. |
-| `staffSchedulingProject.pythonExecutable` | The command used to invoke Python — `uv`, `python`, or `python3` depending on the local installation. |
-| `solverMode` | Solver communication mode: `"cli"` for direct CLI execution, or `"api"` for REST API (with automatic server startup). Default: `"cli"`. See [Solver Integration](./solver-integration#configuring-the-solver-mode) for details. |
+This setup is the easiest start because it runs the web app with local sample data and without requiring a Python solver.
 
-> **Important:** If you use `solverMode: "api"`, `npm run dev` / `npm run start` will automatically start the solver API using `staffSchedulingProject.path` and `staffSchedulingProject.pythonExecutable`.
-    Make sure these fields are configured correctly, and point `casesDirectory` to the shared case folder between web app and solver.
+### If you want real data from the solver
 
-4. **Start the development server**
+For productive/real scheduling data, you must adjust `config.json`:
+
+1. Set `staffSchedulingProject.include` to `true`
+2. Set `staffSchedulingProject.path` to your local **StaffScheduling** project folder
+3. Set `casesDirectory` to the shared `cases/` folder used by the solver
+
+Example:
+
+```json
+{
+    "casesDirectory": "../StaffScheduling/cases",
+    "staffSchedulingProject": {
+        "include": true,
+        "path": "/absolute/path/to/StaffScheduling",
+        "pythonExecutable": "uv"
+    },
+    "solverMode": "api"
+}
+```
+
+After this, use **Fetch** on the Solver page to load current data for your case.
+
+5. **Start the application**
 
 ```bash
 npm run dev
 ```
 
-5. **Open the application**
+6. **Open it in your browser**
 
-Navigate to [http://localhost:3000](http://localhost:3000) in your browser.
+Go to [http://localhost:3000](http://localhost:3000)
+
+If you see the StaffSchedulingWeb start page, installation is complete.
+
+### Config Fields (Explained Simply)
+
+| Key | Meaning |
+|---|---|
+| `casesDirectory` | Folder that contains your case data. Use `/cases` for the built-in sample data in this repository. |
+| `staffSchedulingProject.include` | `false` = do not use the Python solver. `true` = enable solver integration. |
+| `staffSchedulingProject.path` | Absolute path to your local StaffScheduling Python project. Needed only when `include` is `true`. |
+| `staffSchedulingProject.pythonExecutable` | Python command to run (`uv`, `python`, or `python3`). Needed only when `include` is `true`. |
+| `solverMode` | How the web app talks to the solver: `"cli"` or `"api"`. See [Solver Integration](./solver-integration#configuring-the-solver-mode). |
+
+> If you use solver mode `"api"`, the app will try to start the solver API automatically when needed. Make sure `staffSchedulingProject.path` and `staffSchedulingProject.pythonExecutable` are set correctly.
 
 ### Building for Production
 
